@@ -48,7 +48,7 @@ const progressSection = document.getElementById('progressSection');
 const stepsPorTipo = {
     'lote': 5,
     'casa': 5,
-    'departamento': 4
+    'departamento': 5
 };
 
 function actualizarIndicadoresProgreso() {
@@ -159,9 +159,13 @@ function navegarAPaso(step) {
             mostrarCaracteristicasDepartamento();
         }
     } else if (step === 4) {
-        mostrarPantallaComparables();
+        if (datosTasacion.tipo === 'lote') {
+            mostrarPantallaComparables();
+        } else {
+            mostrarHomogeneizacionSuperficie();
+        }
     } else if (step === 5) {
-        mostrarPantallaResultado();
+        mostrarPantallaComparables();
     }
 
     // Update button text after navigation
