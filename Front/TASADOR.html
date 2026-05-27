@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Tasaciones</title>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/shell.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/historial.css">
+    <link rel="stylesheet" href="css/tasacion.css">
+</head>
+<body data-vista="inicio">
+
+    <nav class="top-nav-bar" aria-label="Menú principal">
+
+        <div class="nav-section-left">
+            <div class="logo-placeholder">
+                <!-- Logo placeholder -->
+            </div>
+            <button
+                type="button"
+                class="nav-btn dark-mode-toggle"
+                id="darkModeToggle"
+                aria-label="Cambiar modo oscuro"
+                title="Cambiar modo oscuro">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+        </div>
+
+        <div class="nav-section-middle" id="progressSection">
+            <!-- Progress indicators will be added here dynamically -->
+        </div>
+
+        <div class="nav-section-right">
+            <button
+                type="button"
+                class="nav-btn"
+                data-vista="inicio">
+                <i class="fa-solid fa-house"></i>
+            </button>
+
+            <button
+                type="button"
+                class="nav-btn"
+                onclick="window.location.href='historial.html'">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+
+            <button
+                type="button"
+                class="nav-btn"
+                onclick="window.location.href='tasacion.html'">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+
+            <button
+                type="button"
+                class="profile-btn"
+                aria-label="Perfil de usuario"
+                title="Perfil">
+
+                <span class="profile-avatar" aria-hidden="true">
+                    <i class="fa-solid fa-user"></i>
+                </span>
+
+            </button>
+        </div>
+
+    </nav>
+
+    <section
+        class="historial-section"
+        id="panelHistorial"
+        aria-label="Historial"
+        style="display: none;">
+
+        <div class="historial-container">
+
+            <div class="historial-header">
+
+                <input
+                    type="text"
+                    placeholder="Dirección o código de propiedad"
+                    class="input-busqueda">
+
+                <div class="tabs-container">
+                    <button type="button" class="btn-tab active" data-tab="todas">Todas</button>
+                    <button type="button" class="btn-tab" data-tab="completadas">Completadas</button>
+                    <button type="button" class="btn-tab" data-tab="borradores">Borradores</button>
+                </div>
+
+            </div>
+
+            <div class="historial-content">
+
+                <div class="lista-propiedades"></div>
+
+                <div id="map"></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section
+        class="ajustes-section"
+        id="panelAjustes"
+        aria-label="Ajustes"
+        style="display: none;">
+
+        <div class="ajustes-container">
+
+            <h1>Ajustes</h1>
+
+            <p>
+                Preferencias de la aplicación. Más opciones se irán sumando acá.
+            </p>
+
+            <div class="ajustes-card">
+
+                <label for="apiUrlInput">
+                    URL del servidor de tasaciones
+                </label>
+
+                <input
+                    type="text"
+                    id="apiUrlInput"
+                    value="http://127.0.0.1:8000"
+                    placeholder="http://127.0.0.1:8000">
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="app-shell" id="appShell" style="display: none;"></div>
+
+    <main class="home-stage" id="homeStage" aria-label="Inicio">
+
+        <div class="home-inicio-container">
+
+            <div class="home-inicio-izquierda" id="homeInicioSaludo">
+
+                <p
+                    class="home-inicio-fecha"
+                    id="homeInicioFecha"></p>
+
+                <h1 class="home-inicio-titulo">
+                    Tasá Inmuebles con Precisión
+                </h1>
+
+                <p class="home-inicio-subtitulo">
+                    Sistema de tasacion mediante homogeneizacion de comparables. Calcula el valor de mercado de forma rapida y confiable
+                </p>
+
+                <a
+                    href="tasacion.html"
+                    class="btn-nueva-tasacion-home"
+                    role="button"
+                    aria-label="Abrir nueva tasación">
+
+                    Nueva Tasación
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+            <div class="home-inicio-derecha">
+                <img src="ImagenInicio.png" class="home-inicio-imagen" alt="Imagen de inicio">
+            </div>
+
+        </div>
+
+    </main>
+
+    <div class="modal-overlay" id="comparablesModalOverlay">
+
+        <div class="modal-tasacion" id="comparablesModalTasacion">
+
+            <button
+                type="button"
+                class="cerrar-modal"
+                id="comparablesModalCerrar"
+                aria-label="Cerrar">
+                ✕
+            </button>
+
+            <div id="comparablesModalContenido"></div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+
+        <div class="modal-tasacion" id="modalTasacion">
+
+            <button
+                type="button"
+                class="cerrar-modal"
+                id="cerrarModal"
+                aria-label="Cerrar">
+                ✕
+            </button>
+
+            <div id="contenidoModal"></div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="confirmacionSalirModal">
+
+        <div class="modal-confirmacion-salir">
+
+            <h2>¿Estás seguro de salir?</h2>
+
+            <p>
+                Estás en medio de una tasación. Si sales, perderás los datos no guardados.
+            </p>
+
+            <div class="modal-confirmacion-botones">
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-cancelar"
+                    id="btnCancelarSalir">
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-guardar"
+                    id="btnGuardarBorrador">
+                    Guardar borrador
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-no-guardar"
+                    id="btnNoGuardar">
+                    No guardar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="top-barra-fondo"></div>
+
+    <script src="js/global.js"></script>
+    <script src="js/historial.js"></script>
+    <script src="js/app-shell.js"></script>
+    <script src="js/home-tasacion.js"></script>
+    <script src="js/tasacion.js"></script>
+    <script src="js/tasacion-resultado.js"></script>
+
+</body>
+</html>

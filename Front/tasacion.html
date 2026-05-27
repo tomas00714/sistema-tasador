@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Tasación</title>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/shell.css">
+    <link rel="stylesheet" href="css/historial.css">
+    <link rel="stylesheet" href="css/tasacion.css">
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+</head>
+<body>
+
+    <nav class="top-nav-bar" aria-label="Menú principal">
+
+        <div class="nav-section-left">
+            <div class="logo-placeholder">
+                <!-- Logo placeholder -->
+            </div>
+            <button
+                type="button"
+                class="nav-btn dark-mode-toggle"
+                id="darkModeToggle"
+                aria-label="Cambiar modo oscuro"
+                title="Cambiar modo oscuro">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+        </div>
+
+        <div class="nav-section-middle" id="progressSection">
+            <!-- Progress indicators will be added here dynamically -->
+        </div>
+
+        <div class="nav-section-right">
+            <button
+                type="button"
+                class="nav-btn"
+                onclick="window.location.href='TASADOR.html'">
+                <i class="fa-solid fa-house"></i>
+            </button>
+
+            <button
+                type="button"
+                class="nav-btn"
+                onclick="window.location.href='historial.html'">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+
+            <button
+                type="button"
+                class="nav-btn active">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+
+            <button
+                type="button"
+                class="profile-btn"
+                aria-label="Perfil de usuario"
+                title="Perfil">
+
+                <span class="profile-avatar" aria-hidden="true">
+                    <i class="fa-solid fa-user"></i>
+                </span>
+
+            </button>
+        </div>
+
+    </nav>
+
+    <div class="content-wrapper">
+
+        <div class="panel-principal">
+
+            <div class="tasacion-contenido">
+
+            <div class="titulo-seccion">
+
+                <h1>Selección tipo de inmueble</h1>
+
+                <p>
+                    Elegí el tipo de propiedad que querés tasar.
+                </p>
+
+            </div>
+
+            <div class="grid-tipos">
+
+                <button class="card-tipo" data-tipo="lote">
+                    Lote
+                </button>
+
+                <button class="card-tipo" data-tipo="casa">
+                    Casa
+                </button>
+
+                <button class="card-tipo" data-tipo="departamento">
+                    Departamento / PH
+                </button>
+
+            </div>
+
+        </div>
+
+        </div>
+
+    </div>
+
+    <div class="bottom-nav-bar">
+
+        <button class="btn-volver-paso"
+                id="btnVolverPaso"
+                style="display:none;">
+            Volver
+        </button>
+
+        <button class="btn-siguiente"
+                id="btnSiguiente"
+                disabled>
+            Siguiente
+        </button>
+
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Calculando tasación...</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="comparablesModalOverlay">
+
+        <div class="modal-tasacion" id="comparablesModalTasacion">
+
+            <button
+                type="button"
+                class="cerrar-modal"
+                id="comparablesModalCerrar"
+                aria-label="Cerrar">
+                ✕
+            </button>
+
+            <div id="comparablesModalContenido"></div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="confirmacionSalirModal">
+
+        <div class="modal-confirmacion-salir">
+
+            <h2>¿Estás seguro de salir?</h2>
+
+            <p>
+                Estás en medio de una tasación. Si sales, perderás los datos no guardados.
+            </p>
+
+            <div class="modal-confirmacion-botones">
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-cancelar"
+                    id="btnCancelarSalir">
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-guardar"
+                    id="btnGuardarBorrador">
+                    Guardar borrador
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-no-guardar"
+                    id="btnNoGuardar">
+                    No guardar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="confirmacionCambiarTipoModal">
+
+        <div class="modal-confirmacion-salir">
+
+            <h2>¿Cambiar tipo de inmueble?</h2>
+
+            <p>
+                Al cambiar el tipo de inmueble se borrarán todos los datos de las pantallas posteriores (ubicación, lote, comparables).
+            </p>
+
+            <div class="modal-confirmacion-botones">
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-cancelar"
+                    id="btnCancelarCambiarTipo">
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-confirmacion-guardar"
+                    id="btnConfirmarCambiarTipo">
+                    Continuar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="top-barra-fondo"></div>
+    <div class="bottom-barra-fondo"></div>
+
+    <script src="js/global.js"></script>
+    <script src="js/tasacion.js"></script>
+    <script src="js/tasacion-resultado.js"></script>
+
+</body>
+</html>

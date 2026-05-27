@@ -1,0 +1,110 @@
+:root {
+
+    --shell-margin: 14px;
+
+    --top-nav-height: 64px;
+
+    --top-nav-offset: calc(var(--shell-margin) + var(--top-nav-height) + var(--shell-margin));
+}
+
+/* Escenario inicio: tarjeta sobre el fondo gris */
+.home-stage {
+
+    position: fixed;
+
+    top: var(--top-nav-offset);
+
+    right: var(--shell-margin);
+
+    bottom: var(--shell-margin);
+
+    left: var(--shell-margin);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 1;
+
+    pointer-events: auto;
+
+    transition: none;
+}
+
+body:not([data-vista="inicio"]) .home-stage {
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+/* Ajustes */
+.ajustes-panel {
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.ajustes-panel h1 {
+
+    margin: 0;
+
+    font-size: 1.75rem;
+}
+
+.ajustes-panel p {
+
+    margin: 0;
+
+    max-width: 520px;
+
+    line-height: 1.55;
+}
+
+.ajustes-card {
+
+    background: #f5f7fa;
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    border: 1px solid #e6ebf0;
+
+    max-width: 480px;
+}
+
+.ajustes-card label {
+
+    display: block;
+
+    font-size: 0.85rem;
+
+    color: #7d8b99;
+
+    margin-bottom: 8px;
+}
+
+.ajustes-card input {
+
+    width: 100%;
+
+    padding: 12px 14px;
+
+    border-radius: 12px;
+
+    border: 1px solid #d7dfe7;
+
+    font-family: inherit;
+
+    box-sizing: border-box;
+}
