@@ -205,12 +205,12 @@ function renderHistorial() {
 
         const tipoBadge = `<span class="card-badge card-badge-tipo">${tasacion.tipo.charAt(0).toUpperCase() + tasacion.tipo.slice(1)}</span>`;
 
-        // Buscar el valor en múltiples lugares
+        // Buscar el valor final en múltiples lugares
         let precio = "—";
-        if (tasacion.resultado?.valor_m2_homogeneizado) {
-            precio = `USD ${(tasacion.resultado.valor_m2_homogeneizado).toLocaleString('es-AR')}`;
-        } else if (tasacion.datosCompletos?.resultado?.valor_m2_homogeneizado) {
-            precio = `USD ${(tasacion.datosCompletos.resultado.valor_m2_homogeneizado).toLocaleString('es-AR')}`;
+        if (tasacion.resultado?.valor_final) {
+            precio = `USD ${(tasacion.resultado.valor_final).toLocaleString('es-AR')}`;
+        } else if (tasacion.datosCompletos?.resultado?.valor_final) {
+            precio = `USD ${(tasacion.datosCompletos.resultado.valor_final).toLocaleString('es-AR')}`;
         }
 
         lista.innerHTML += `

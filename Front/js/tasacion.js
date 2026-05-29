@@ -72,8 +72,9 @@ const datosTasacion = {
         banos: "",
         cochera: false,
         baulera: false,
-        infraestructura: [],
+        servicios: [],
         amenities: [],
+        infraestructura: [],
         observaciones: "",
 
         // Tercera pantalla
@@ -110,68 +111,84 @@ const datosTasacion = {
 ========================= */
 
 function manejarBtnSiguiente() {
+    const tipo = datosTasacion.tipo || 'lote';
+    const totalSteps = typeof getTotalSteps === 'function' ? getTotalSteps(tipo) : 5;
 
-    if (pasoActual === 5) {
-
+    // Check if it's the last step (save tasation)
+    if (pasoActual === totalSteps) {
         datosTasacion.resultado = resultadoTasacion;
-
         guardarTasacion();
-
         alert("Tasación guardada en el historial.");
-
         window.location.href = "TASADOR.html?view=historial";
-
         return;
     }
 
+    // Step 1: Selection type
     if (pasoActual === 1) {
-
         if (tipoSeleccionado === "lote") {
-
             mostrarFormularioLote();
-        } else if (tipoSeleccionado === "departamento" || tipoSeleccionado === "casa") {
-
+        } else if (tipoSeleccionado === "departamento") {
             mostrarFormularioDepartamento();
+        } else if (tipoSeleccionado === "casa") {
+            alert("El flujo de casa aún está en desarrollo.");
+        }
+        return;
+    }
+
+    // Get current step name using dynamic structure
+    const nombrePasoActual = typeof getNombrePaso === 'function' ? getNombrePaso(tipo, getIndexPaso(tipo, pasoActual)) : null;
+
+    // Validate current step criteria before proceeding
+    if (nombrePasoActual && typeof validarCriterioPaso === 'function') {
+        if (!validarCriterioPaso(tipo, nombrePasoActual)) {
+            // Show appropriate error message based on step
+            if (tipo === 'lote' && nombrePasoActual === 'datos') {
+                alert("Seleccioná el tipo de lote para continuar.");
+            } else if (tipo === 'lote' && nombrePasoActual === 'caracteristicas') {
+                alert("El frente y fondo deben ser mayores a 0 para continuar.");
+            } else if (nombrePasoActual === 'comparables') {
+                alert("Agregá al menos 1 comparable para continuar.");
+            }
+            return;
         }
     }
 
-    else if (pasoActual === 2) {
-
-        if (datosTasacion.tipo === "lote") {
+    // Navigate based on step name
+    if (nombrePasoActual === 'datos') {
+        if (tipo === 'lote') {
             guardarDatosPantalla1();
             mostrarCaracteristicasLote();
-        } else {
+        } else if (tipo === 'departamento') {
             guardarDatosPantallaDepartamento();
             mostrarCaracteristicasDepartamento();
         }
-    }
-
-    else if (pasoActual === 3) {
-
-        if (datosTasacion.tipo === "lote") {
+    } else if (nombrePasoActual === 'caracteristicas') {
+        if (tipo === 'lote') {
             guardarDatosPantalla3();
             mostrarPantallaComparables();
-        } else {
+        } else if (tipo === 'departamento') {
             guardarDatosCaracteristicasDepartamento();
             mostrarHomogeneizacionSuperficie();
         }
-    }
-
-    else if (pasoActual === 4) {
-
-        if (datosTasacion.tipo === "lote") {
-            if (datosTasacion.comparables.length < 1) {
-                alert("Agregá al menos 1 comparable para continuar.");
-                return;
-            }
-            if (datosTasacion.comparables.length > 10) {
-                alert("Máximo 10 comparables permitidos. Quitá algunos comparables antes de continuar.");
-                return;
-            }
-            calcularYMostrarResultado();
-        } else {
+    } else if (nombrePasoActual === 'superficie') {
+        if (tipo === 'departamento') {
             guardarDatosHomogeneizacion();
             mostrarPantallaComparables();
+        }
+    } else if (nombrePasoActual === 'comparables') {
+        // Validate comparables count
+        if (datosTasacion.comparables.length < 1) {
+            alert("Agregá al menos 1 comparable para continuar.");
+            return;
+        }
+        if (datosTasacion.comparables.length > 10) {
+            alert("Máximo 10 comparables permitidos. Quitá algunos comparables antes de continuar.");
+            return;
+        }
+        if (tipo === 'lote') {
+            calcularYMostrarResultado();
+        } else if (tipo === 'departamento') {
+            calcularYMostrarResultadoDepartamento();
         }
     }
 }
@@ -212,28 +229,38 @@ function inicializarBotonesTasacion() {
         newBtn.addEventListener("click", (e) => {
             e.preventDefault();
 
+            const tipo = datosTasacion.tipo || 'lote';
+            const nombrePasoActual = typeof getNombrePaso === 'function' ? getNombrePaso(tipo, getIndexPaso(tipo, pasoActual)) : null;
+
             if (pasoActual === 2) {
                 volverSeleccionTipo();
-            }
-            else if (pasoActual === 3) {
-                if (datosTasacion.tipo === 'lote') {
+            } else if (nombrePasoActual === 'datos') {
+                if (tipo === 'lote') {
                     mostrarFormularioLote();
-                } else {
+                } else if (tipo === 'departamento') {
                     mostrarFormularioDepartamento();
                 }
-            }
-            else if (pasoActual === 4) {
-                if (datosTasacion.tipo === 'lote') {
-                    mostrarCaracteristicasLote();
-                } else {
+            } else if (nombrePasoActual === 'caracteristicas') {
+                if (tipo === 'lote') {
+                    mostrarFormularioLote();
+                } else if (tipo === 'departamento') {
+                    mostrarFormularioDepartamento();
+                }
+            } else if (nombrePasoActual === 'superficie') {
+                if (tipo === 'departamento') {
                     mostrarCaracteristicasDepartamento();
                 }
-            }
-            else if (pasoActual === 5) {
-                if (datosTasacion.tipo === 'lote') {
-                    mostrarPantallaComparables();
-                } else {
+            } else if (nombrePasoActual === 'comparables') {
+                if (tipo === 'lote') {
+                    mostrarCaracteristicasLote();
+                } else if (tipo === 'departamento') {
                     mostrarHomogeneizacionSuperficie();
+                }
+            } else if (nombrePasoActual === 'resultado') {
+                if (tipo === 'lote') {
+                    mostrarPantallaComparables();
+                } else if (tipo === 'departamento') {
+                    mostrarPantallaComparables();
                 }
             }
         });
@@ -263,7 +290,16 @@ function verificarModoEdicion() {
                 // Si no tiene datosCompletos, cargar desde la estructura antigua
                 datosTasacion.tipo = tasacion.tipo;
                 datosTasacion.ubicacion = tasacion.ubicacion || { direccion: "", provincia: "", localidad: "", lat: null, lon: null };
-                datosTasacion.lote = tasacion.lote || { tipoLote: "", servicios: [], caracteristicas: {} };
+                
+                // Cargar datos según el tipo de inmueble
+                if (tasacion.tipo === 'lote') {
+                    datosTasacion.lote = tasacion.lote || { tipoLote: "", servicios: [], caracteristicas: {} };
+                } else if (tasacion.tipo === 'departamento') {
+                    datosTasacion.departamento = tasacion.departamento || { ambientes: "", dormitorios: "", banos: "", cochera: false, baulera: false, servicios: [], amenities: [], infraestructura: [], observaciones: "" };
+                } else if (tasacion.tipo === 'casa') {
+                    datosTasacion.casa = tasacion.casa || {};
+                }
+                
                 datosTasacion.comparables = tasacion.comparables || [];
                 resultadoTasacion = tasacion.resultado || null;
                 pasoActual = tasacion.datosCompletos?.pasoActual || 2;
@@ -272,18 +308,11 @@ function verificarModoEdicion() {
             
             // Limpiar localStorage
             localStorage.removeItem("tasacionEnEdicion");
-            
-            // Navegar a la pantalla correspondiente
+
+            // Navegar a la pantalla correspondiente usando estructura dinámica
             if (pasoActual >= 2) {
-                if (pasoActual === 2) {
-                    mostrarFormularioLote();
-                } else if (pasoActual === 3) {
-                    mostrarCaracteristicasLote();
-                } else if (pasoActual === 4) {
-                    mostrarPantallaComparables();
-                } else if (pasoActual === 5) {
-                    // Si está en pantalla 5, mostrar resultado
-                    calcularYMostrarResultado();
+                if (typeof navegarAPaso === 'function') {
+                    navegarAPaso(pasoActual);
                 }
             }
         }
@@ -617,6 +646,7 @@ function inicializarDelegacionSeleccionTipo() {
 function generarHTMLUbicacionConMapa(opciones = {}) {
     const incluirOrientacion = opciones.incluirOrientacion || false;
     const orientacionValue = opciones.orientacion || "";
+    const incluirTipoLote = opciones.incluirTipoLote || false;
 
     let orientacionHTML = "";
     if (incluirOrientacion) {
@@ -646,6 +676,54 @@ function generarHTMLUbicacionConMapa(opciones = {}) {
                             <div class="autocomplete-item">Suroeste</div>
                             <div class="autocomplete-item">Oeste</div>
                             <div class="autocomplete-item">Noroeste</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+        `;
+    }
+
+    let tipoLoteHTML = "";
+    if (incluirTipoLote) {
+        tipoLoteHTML = `
+                <div class="input-group">
+
+                    <label>Tipo de lote</label>
+
+                    <div class="autocomplete-container">
+
+                        <input
+                            type="text"
+                            id="tipoLoteInput"
+                            placeholder="Seleccionar tipo"
+                            autocomplete="off"
+                            readonly
+                            value="${datosTasacion.lote.tipoLote || ""}"
+                        >
+
+                        <div class="autocomplete-list" id="tipoLoteList">
+
+                            <div class="autocomplete-item">
+                                Medial
+                            </div>
+
+                            <div class="autocomplete-item">
+                                Esquina
+                            </div>
+
+                            <div class="autocomplete-item">
+                                Esquina larga (+30m)
+                            </div>
+
+                            <div class="autocomplete-item">
+                                Salida a dos calles
+                            </div>
+
+                            <div class="autocomplete-item">
+                                Irregular
+                            </div>
 
                         </div>
 
@@ -713,6 +791,8 @@ function generarHTMLUbicacionConMapa(opciones = {}) {
 
                 ${orientacionHTML}
 
+                ${tipoLoteHTML}
+
             </div>
 
             <div class="form-right">
@@ -749,7 +829,15 @@ function generarHTMLAmenities(amenitiesActuales = []) {
         "Seguridad 24hs",
         "Lavadero",
         "Balcón",
-        "Terraza"
+        "Terraza",
+        "Sauna",
+        "Solarium",
+        "Jacuzzi",
+        "Parrilla",
+        "Laundry",
+        "Coworking",
+        "Terraza común",
+        "Espacios verdes"
     ];
 
     return opcionesAmenities.map(amenity => `
@@ -761,6 +849,30 @@ function generarHTMLAmenities(amenitiesActuales = []) {
                     ${amenitiesActuales.includes(amenity) ? "checked" : ""}
                 >
                 ${amenity}
+            </label>
+        </div>
+    `).join("");
+}
+
+function generarHTMLInfraestructura(infraestructuraActuales = []) {
+    const opcionesInfraestructura = [
+        "Ascensor",
+        "Encargado",
+        "Seguridad",
+        "Portero electrónico",
+        "Cámara de seguridad",
+        "Hall de ingreso"
+    ];
+
+    return opcionesInfraestructura.map(infra => `
+        <div class="check-servicio">
+            <label>
+                <input
+                    type="checkbox"
+                    value="${infra}"
+                    ${infraestructuraActuales.includes(infra) ? "checked" : ""}
+                >
+                ${infra}
             </label>
         </div>
     `).join("");
@@ -790,6 +902,31 @@ function inicializarOrientacion() {
     });
 }
 
+function inicializarOrientacionLote() {
+    const input = document.getElementById("orientacionLoteInput");
+    const list = document.getElementById("orientacionLoteList");
+
+    if (!input || !list) return;
+
+    input.addEventListener("focus", () => {
+        list.style.display = "block";
+    });
+
+    list.querySelectorAll(".autocomplete-item").forEach(item => {
+        item.addEventListener("click", () => {
+            input.value = item.textContent;
+            datosTasacion.ubicacion.orientacion = item.textContent;
+            list.style.display = "none";
+        });
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!input.parentElement.contains(e.target)) {
+            list.style.display = "none";
+        }
+    });
+}
+
 /* =========================
    FORMULARIO LOTE
 ========================= */
@@ -799,6 +936,7 @@ function mostrarFormularioLote() {
     pasoActual = 2;
     actualizarIndicadoresProgreso();
     actualizarTextoBotonSiguiente();
+    actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
@@ -817,56 +955,11 @@ function mostrarFormularioLote() {
 
         <div class="form-grid">
 
-            ${generarHTMLUbicacionConMapa()}
-
-            <div class="form-left" style="grid-column: 1 / -1;">
-
-                <div class="input-group">
-
-                    <label>Tipo de lote</label>
-
-                    <div class="autocomplete-container">
-
-                        <input
-                            type="text"
-                            id="tipoLoteInput"
-                            placeholder="Seleccionar tipo"
-                            autocomplete="off"
-                            readonly
-                            value="${datosTasacion.lote.tipoLote || ""}"
-                        >
-
-                        <div class="autocomplete-list" id="tipoLoteList">
-
-                            <div class="autocomplete-item">
-                                Medial
-                            </div>
-
-                            <div class="autocomplete-item">
-                                Esquina
-                            </div>
-
-                            <div class="autocomplete-item">
-                                Esquina larga (+30m)
-                            </div>
-
-                            <div class="autocomplete-item">
-                                Salida a dos calles
-                            </div>
-
-                            <div class="autocomplete-item">
-                                Irregular
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
+            ${generarHTMLUbicacionConMapa({ incluirTipoLote: true })}
 
         </div>
+
+        <div class="separador-formulario"></div>
 
         <div style="margin-top:32px;">
 
@@ -882,23 +975,10 @@ function mostrarFormularioLote() {
 
     `;
 
-    const btnSiguiente = getBtnSiguiente();
-    if (datosTasacion.lote.tipoLote) {
-
-        btnSiguiente.disabled = false;
-
-        btnSiguiente.classList.add("activo");
-
+    // Update button state using dynamic validation
+    if (typeof actualizarEstadoBotonSiguiente === 'function') {
+        actualizarEstadoBotonSiguiente();
     }
-
-    else {
-
-        btnSiguiente.disabled = true;
-
-        btnSiguiente.classList.remove("activo");
-    }
-
-    
 
     cargarProvincias();
 
@@ -927,6 +1007,7 @@ function mostrarFormularioDepartamento() {
     pasoActual = 2;
     actualizarIndicadoresProgreso();
     actualizarTextoBotonSiguiente();
+    actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
@@ -1055,26 +1136,18 @@ function mostrarFormularioDepartamento() {
 
                     <label>Cochera</label>
 
-                    <div class="radio-group">
+                    <div class="switch-container-ascensor">
 
-                        <label>
+                        <label class="switch">
+
                             <input
-                                type="radio"
-                                name="cochera"
-                                value="si"
+                                type="checkbox"
+                                id="cocheraSwitch"
                                 ${datosTasacion.departamento.cochera ? "checked" : ""}
                             >
-                            Sí
-                        </label>
 
-                        <label>
-                            <input
-                                type="radio"
-                                name="cochera"
-                                value="no"
-                                ${!datosTasacion.departamento.cochera ? "checked" : ""}
-                            >
-                            No
+                            <span class="slider"></span>
+
                         </label>
 
                     </div>
@@ -1085,26 +1158,18 @@ function mostrarFormularioDepartamento() {
 
                     <label>Baulera</label>
 
-                    <div class="radio-group">
+                    <div class="switch-container-ascensor">
 
-                        <label>
+                        <label class="switch">
+
                             <input
-                                type="radio"
-                                name="baulera"
-                                value="si"
+                                type="checkbox"
+                                id="bauleraSwitch"
                                 ${datosTasacion.departamento.baulera ? "checked" : ""}
                             >
-                            Sí
-                        </label>
 
-                        <label>
-                            <input
-                                type="radio"
-                                name="baulera"
-                                value="no"
-                                ${!datosTasacion.departamento.baulera ? "checked" : ""}
-                            >
-                            No
+                            <span class="slider"></span>
+
                         </label>
 
                     </div>
@@ -1117,50 +1182,60 @@ function mostrarFormularioDepartamento() {
 
         <div class="separador-formulario"></div>
 
-        <!-- SECCIÓN 3: Infraestructura, Amenities y Observaciones -->
+        <!-- SECCIÓN 3: Servicios, Amenities y Observaciones -->
         <div style="margin-top: 32px;">
 
-            <div class="form-grid-departamento">
+            <h3>Servicios</h3>
 
-                <div>
+            <div class="servicios-grid">
 
-                    <h3>Infraestructura</h3>
-
-                    <div class="servicios-grid">
-
-                        ${generarHTMLServicios(datosTasacion.departamento.infraestructura)}
-
-                    </div>
-
-                </div>
-
-                <div>
-
-                    <h3>Amenities</h3>
-
-                    <div class="servicios-grid">
-
-                        ${generarHTMLAmenities(datosTasacion.departamento.amenities)}
-
-                    </div>
-
-                </div>
+                ${generarHTMLServicios(datosTasacion.departamento.servicios)}
 
             </div>
 
-            <div style="margin-top: 32px;">
+        </div>
 
-                <h3>Observaciones</h3>
+        <div class="separador-formulario"></div>
 
-                <div class="input-group">
+        <div style="margin-top: 32px;">
 
-                    <textarea
-                        id="observacionesInput"
-                        placeholder="Escribe cualquier observación adicional..."
-                        rows="4"
-                    >${datosTasacion.departamento.observaciones || ""}</textarea>
+            <h3>Infraestructura</h3>
 
-                </div>
+            <div class="servicios-grid">
+
+                ${generarHTMLInfraestructura(datosTasacion.departamento.infraestructura)}
+
+            </div>
+
+        </div>
+
+        <div class="separador-formulario"></div>
+
+        <div style="margin-top: 32px;">
+
+            <h3>Amenities</h3>
+
+            <div class="servicios-grid">
+
+                ${generarHTMLAmenities(datosTasacion.departamento.amenities)}
+
+            </div>
+
+        </div>
+
+        <div class="separador-formulario"></div>
+
+        <div style="margin-top: 32px;">
+
+            <h3>Observaciones</h3>
+
+            <div class="input-group">
+
+                <textarea
+                    id="observacionesInput"
+                    placeholder="Escribe cualquier observación adicional..."
+                    rows="4"
+                >${datosTasacion.departamento.observaciones || ""}</textarea>
 
             </div>
 
@@ -1168,9 +1243,10 @@ function mostrarFormularioDepartamento() {
 
     `;
 
-    const btnSiguiente = getBtnSiguiente();
-    btnSiguiente.disabled = false;
-    btnSiguiente.classList.add("activo");
+    // Update button state using dynamic validation
+    if (typeof actualizarEstadoBotonSiguiente === 'function') {
+        actualizarEstadoBotonSiguiente();
+    }
 
     cargarProvincias();
 
@@ -1187,6 +1263,10 @@ function mostrarFormularioDepartamento() {
         inicializarDormitorios();
 
         inicializarBanos();
+
+        inicializarSwitchCochera();
+
+        inicializarSwitchBaulera();
 
     });
 
@@ -1211,11 +1291,19 @@ function inicializarAmbientes() {
             input.value = item.textContent;
             list.style.display = "none";
 
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.ambientes = item.textContent;
+            }
+
             // Si es monoambiente, desactivar dormitorios
             const dormitoriosInput = document.getElementById("dormitoriosInput");
             if (item.textContent === "Monoambiente" && dormitoriosInput) {
                 dormitoriosInput.disabled = true;
                 dormitoriosInput.value = "";
+                if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                    datosTasacion.departamento.dormitorios = "";
+                }
             } else if (dormitoriosInput) {
                 dormitoriosInput.disabled = false;
             }
@@ -1243,6 +1331,11 @@ function inicializarDormitorios() {
         item.addEventListener("click", () => {
             input.value = item.textContent;
             list.style.display = "none";
+
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.dormitorios = item.textContent;
+            }
         });
     });
 
@@ -1267,6 +1360,11 @@ function inicializarBanos() {
         item.addEventListener("click", () => {
             input.value = item.textContent;
             list.style.display = "none";
+
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.banos = item.textContent;
+            }
         });
     });
 
@@ -1274,6 +1372,24 @@ function inicializarBanos() {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
         }
+    });
+}
+
+function inicializarSwitchCochera() {
+    const switchInput = document.getElementById("cocheraSwitch");
+    if (!switchInput) return;
+
+    switchInput.addEventListener("change", () => {
+        datosTasacion.departamento.cochera = switchInput.checked;
+    });
+}
+
+function inicializarSwitchBaulera() {
+    const switchInput = document.getElementById("bauleraSwitch");
+    if (!switchInput) return;
+
+    switchInput.addEventListener("change", () => {
+        datosTasacion.departamento.baulera = switchInput.checked;
     });
 }
 
@@ -1286,6 +1402,7 @@ function mostrarCaracteristicasDepartamento() {
     pasoActual = 3;
     actualizarIndicadoresProgreso();
     actualizarTextoBotonSiguiente();
+    actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
@@ -1516,9 +1633,10 @@ function mostrarCaracteristicasDepartamento() {
 
     `;
 
-    const btnSiguiente = getBtnSiguiente();
-    btnSiguiente.disabled = false;
-    btnSiguiente.classList.add("activo");
+    // Update button state using dynamic validation
+    if (typeof actualizarEstadoBotonSiguiente === 'function') {
+        actualizarEstadoBotonSiguiente();
+    }
 
     inicializarUbicacionPlanta();
     inicializarSwitchAscensor();
@@ -1526,6 +1644,26 @@ function mostrarCaracteristicasDepartamento() {
     inicializarSuperficieCubierta();
     inicializarEstadoConservacion();
     inicializarCaracteristicaConstructiva();
+
+    // Add real-time update for regular inputs
+    const ubicacionEdificioInput = document.getElementById("ubicacionEdificioInput");
+    if (ubicacionEdificioInput) {
+        ubicacionEdificioInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.ubicacionEdificio = ubicacionEdificioInput.value;
+            }
+        });
+    }
+
+    const antiguedadInput = document.getElementById("antiguedadInput");
+    if (antiguedadInput) {
+        antiguedadInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.antiguedad = antiguedadInput.value;
+                calcularCoeficienteAntiguedad();
+            }
+        });
+    }
 
     setTimeout(() => {
         inicializarBotonesTasacion();
@@ -1742,6 +1880,7 @@ function mostrarHomogeneizacionSuperficie() {
     pasoActual = 4;
     actualizarIndicadoresProgreso();
     actualizarTextoBotonSiguiente();
+    actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
@@ -1928,9 +2067,10 @@ function mostrarHomogeneizacionSuperficie() {
 
     `;
 
-    const btnSiguiente = getBtnSiguiente();
-    btnSiguiente.disabled = false;
-    btnSiguiente.classList.add("activo");
+    // Update button state using dynamic validation
+    if (typeof actualizarEstadoBotonSiguiente === 'function') {
+        actualizarEstadoBotonSiguiente();
+    }
 
     inicializarHomogeneizacion();
 
@@ -2039,6 +2179,393 @@ function guardarDatosHomogeneizacion() {
     console.log(datosTasacion);
 }
 
+/* =========================
+   SEXTA PANTALLA DEPARTAMENTO - RESULTADO
+========================= */
+
+async function calcularYMostrarResultadoDepartamento() {
+
+    // Por ahora, usamos la misma lógica que para lotes pero adaptada
+    // En el futuro, esto debería llamar a un endpoint específico para departamentos
+    const payload = armarPayloadTasacionDepartamento();
+    console.log("Payload enviado al backend (departamento):", payload);
+
+    const btnSiguiente = getBtnSiguiente();
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    if (btnSiguiente) {
+        btnSiguiente.disabled = true;
+        btnSiguiente.classList.remove("activo");
+    }
+
+    // Show loading overlay
+    if (loadingOverlay) {
+        loadingOverlay.style.display = "flex";
+    }
+
+    try {
+
+        // Por ahora, usamos modo demo ya que no hay endpoint para departamentos
+        console.log("Usando modo demo para departamento (sin backend específico)");
+
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.style.display = "none";
+        }
+
+        // Modo demo: generar resultado simulado
+        const hom = datosTasacion.departamento.homogeneizacion;
+        const superficieHomogeneizada = hom.totalHomogeneizada || 0;
+
+        // Calcular valor promedio de comparables
+        const comparables = datosTasacion.comparables || [];
+        let valorPromedio = 0;
+
+        if (comparables.length > 0) {
+            valorPromedio = comparables.reduce((sum, c) => {
+                const valorM2 = c.valor / (c.superficie || superficieHomogeneizada);
+                return sum + valorM2;
+            }, 0) / comparables.length;
+        }
+
+        const valorFinal = valorPromedio * superficieHomogeneizada;
+
+        resultadoTasacion = {
+            valor_final: valorFinal,
+            valor_m2: valorPromedio,
+            superficie_homogeneizada: superficieHomogeneizada,
+            comparables: comparables,
+            ajuste_final_porcentaje: 0
+        };
+
+        datosTasacion.resultado = resultadoTasacion;
+
+        mostrarPantallaResultadoDepartamento();
+
+    } catch (e) {
+
+        console.error("Error en la llamada al backend:", e);
+
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.style.display = "none";
+        }
+
+        alert("Error al calcular la tasación");
+
+        if (btnSiguiente) {
+            btnSiguiente.disabled = false;
+            btnSiguiente.classList.add("activo");
+        }
+    }
+}
+
+function armarPayloadTasacionDepartamento() {
+    // Esta función debería armar el payload específico para departamentos
+    // Por ahora, retorna un objeto básico
+    return {
+        tipo: "departamento",
+        ubicacion: datosTasacion.ubicacion,
+        departamento: datosTasacion.departamento,
+        comparables: datosTasacion.comparables
+    };
+}
+
+function mostrarPantallaResultadoDepartamento() {
+
+    pasoActual = 6;
+    actualizarIndicadoresProgreso();
+    actualizarEstadoBotonSiguiente();
+
+    const btnVolverPaso = getBtnVolverPaso();
+    if (btnVolverPaso) {
+        btnVolverPaso.style.display = "block";
+    }
+
+    cerrarModalComparables();
+
+    const contenido = getContenidoTasacion();
+    if (!contenido) {
+        return;
+    }
+
+    const r = resultadoTasacion;
+
+    if (!r) {
+        return;
+    }
+
+    // Calcular datos del departamento a tasar para mostrar como primera fila
+    const valorM2Depto = r.valor_m2 || 0;
+    const valorTotalDepto = r.valor_final || 0;
+    const superficieDepto = r.superficie_homogeneizada || 0;
+
+    const filaDeptoTasar = `
+        <tr class="fila-depto-tasar" style="color: #0066cc;">
+            <td><strong>${escapeHtml(datosTasacion.ubicacion.direccion || 'Departamento a tasar')}</strong></td>
+            <td><strong>${formatearMoneda(valorTotalDepto)}</strong></td>
+            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
+            <td><strong>${superficieDepto.toFixed(2)}</strong></td>
+            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
+            <td><strong>1.00</strong></td>
+            <td><input type="number" class="coef-ubicacion-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
+            <td><input type="number" class="coef-act-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
+            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
+            <td></td>
+        </tr>
+    `;
+
+    const filasComp = (r.comparables || [])
+        .map((c, index) => `
+        <tr data-comparable-index="${index}">
+            <td>${escapeHtml(c.direccion)}</td>
+            <td>${formatearMoneda(c.valor)}</td>
+            <td>${formatearMoneda(c.valor / (c.superficie || 1))}</td>
+            <td>${c.superficie || '-'}</td>
+            <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
+            <td>${c.coeficiente ? c.coeficiente.toFixed(2) : '1.00'}</td>
+            <td><input type="number" class="coef-ubicacion-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
+            <td><input type="number" class="coef-act-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
+            <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
+            <td>
+                <button type="button" class="btn-opciones-comparable" data-index="${index}">
+                    •••
+                </button>
+            </td>
+        </tr>
+    `)
+        .join("");
+
+    const d = "div";
+
+    contenido.innerHTML = `
+
+        <${d} class="titulo-seccion">
+
+            <h1>Resultado de la tasación</h1>
+
+            <p>
+                Valor estimado según comparables homogeneizados.
+            </p>
+
+        </${d}>
+
+        <${d} class="resultado-layout-vertical">
+
+            <${d} class="resultado-valor-card">
+
+                <${d} class="resultado-valor-top">
+                    <${d} class="resultado-valor-left">
+                        <span class="resultado-etiqueta">Valor final</span>
+                        <span class="resultado-valor">$ ${formatearMoneda(r.valor_final)}</span>
+                    </${d}>
+                </${d}>
+
+                <${d} class="resultado-separador"></${d}>
+
+                <${d} class="resultado-meta">
+                    <${d}>
+                        <span>Valor por m² homogeneizado</span>
+                        <strong>$ ${formatearMoneda(r.valor_m2)}</strong>
+                    </${d}>
+                    <${d}>
+                        <span>Superficie homogeneizada</span>
+                        <strong>${r.superficie_homogeneizada.toFixed(2)} m²</strong>
+                    </${d}>
+                </${d}>
+
+            </${d}>
+
+            <${d} class="resultado-comparables-card">
+
+                <h3>Comparables</h3>
+
+                <table class="tabla-comparables-resultado">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Dirección</th>
+
+                            <th>Valor</th>
+
+                            <th>Valor m²</th>
+
+                            <th>Superficie</th>
+
+                            <th>Valor m² homogeneizado</th>
+
+                            <th>Coeficiente</th>
+
+                            <th>Ubicacion</th>
+
+                            <th>ACT</th>
+
+                            <th>Valor m² final</th>
+
+                            <th></th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        ${filaDeptoTasar}${filasComp}
+
+                    </tbody>
+
+                </table>
+
+                <button type="button" class="btn-recalcular" id="btnRecalcular" disabled>
+                    Recalcular
+                </button>
+
+            </${d}>
+
+        </${d}>
+
+    `;
+
+    const btnSiguiente = getBtnSiguiente();
+    if (btnSiguiente) {
+        btnSiguiente.textContent = "Guardar tasación";
+        btnSiguiente.disabled = false;
+        btnSiguiente.classList.add("activo");
+    }
+
+    // Inicializar botones de quitar comparables
+    inicializarBotonesQuitarComparable();
+
+    // Add event listeners for coeficiente inputs
+    document.querySelectorAll(".coef-ubicacion-input, .coef-act-input").forEach(input => {
+        input.addEventListener("input", () => {
+            const btnRecalcular = document.getElementById("btnRecalcular");
+            if (btnRecalcular) {
+                btnRecalcular.disabled = false;
+            }
+        });
+    });
+
+    // Add event listener for recalcular button
+    const btnRecalcular = document.getElementById("btnRecalcular");
+    if (btnRecalcular) {
+        btnRecalcular.addEventListener("click", () => {
+            // Aquí iría la lógica para recalcular con los nuevos coeficientes
+            alert("Función de recalcular con nuevos coeficientes - pendiente de implementar");
+            btnRecalcular.disabled = true;
+        });
+    }
+
+    // Add event listeners for opciones buttons
+    document.querySelectorAll(".btn-opciones-comparable").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            mostrarMenuOpcionesComparable(index, e.target);
+        });
+    });
+
+    setTimeout(() => {
+        inicializarBotonesTasacion();
+    }, 100);
+}
+
+function mostrarMenuOpcionesComparable(index, buttonElement) {
+    // Cerrar cualquier menú existente
+    const menuExistente = document.querySelector('.menu-opciones-comparable');
+    if (menuExistente) {
+        menuExistente.remove();
+        return;
+    }
+
+    // Crear el menú
+    const menu = document.createElement('div');
+    menu.className = 'menu-opciones-comparable';
+    menu.innerHTML = `
+        <div class="menu-opciones-item" data-action="agregar-coeficiente" data-index="${index}">
+            Agregar coeficiente
+        </div>
+        <div class="menu-opciones-item menu-opciones-eliminar" data-action="eliminar" data-index="${index}">
+            Eliminar
+        </div>
+    `;
+
+    // Posicionar el menú
+    const rect = buttonElement.getBoundingClientRect();
+    menu.style.position = 'absolute';
+    menu.style.top = `${rect.bottom + 5}px`;
+    menu.style.right = `${window.innerWidth - rect.right}px`;
+    menu.style.zIndex = '1000';
+
+    // Agregar al DOM
+    document.body.appendChild(menu);
+
+    // Agregar event listeners
+    menu.querySelectorAll('.menu-opciones-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            const index = parseInt(e.target.dataset.index);
+            
+            if (action === 'eliminar') {
+                if (confirm('¿Estás seguro de eliminar este comparable?')) {
+                    datosTasacion.comparables.splice(index, 1);
+                    mostrarPantallaResultadoDepartamento();
+                }
+            } else if (action === 'agregar-coeficiente') {
+                alert('Función de agregar coeficiente - pendiente de implementar');
+            }
+            
+            menu.remove();
+        });
+    });
+
+    // Cerrar menú al hacer clic fuera
+    setTimeout(() => {
+        document.addEventListener('click', function cerrarMenu(e) {
+            if (!menu.contains(e.target) && e.target !== buttonElement) {
+                menu.remove();
+                document.removeEventListener('click', cerrarMenu);
+            }
+        });
+    }, 0);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function inicializarBotonesQuitarComparable() {
+    document.querySelectorAll(".btn-quitar-comparable").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && datosTasacion.comparables[index]) {
+                datosTasacion.comparables.splice(index, 1);
+                renderComparablesDerecha();
+                // Si estamos en la pantalla de resultado, recalcular
+                const tipo = datosTasacion.tipo || 'lote';
+                const pasos = pasosPorTipo[tipo] || [];
+                const resultadoIndex = pasos.indexOf('resultado');
+                const resultadoStep = resultadoIndex !== -1 ? resultadoIndex + 2 : (tipo === 'departamento' ? 6 : 5);
+                
+                if (pasoActual === resultadoStep) {
+                    if (tipo === 'lote') {
+                        calcularYMostrarResultado();
+                    } else if (tipo === 'departamento') {
+                        calcularYMostrarResultadoDepartamento();
+                    }
+                }
+            }
+        });
+    });
+}
+
 
 
 
@@ -2088,7 +2615,13 @@ function volverSeleccionTipo() {
                 }"
                 data-tipo="lote"
             >
-                Lote
+                <div class="card-tipo-icono">
+                    <i class="fa-solid fa-map-pin"></i>
+                </div>
+                <div class="card-tipo-contenido">
+                    <span class="card-tipo-nombre">Lote</span>
+                    <span class="card-tipo-descripcion">Terreno sin construcción</span>
+                </div>
             </button>
 
             <button
@@ -2099,7 +2632,13 @@ function volverSeleccionTipo() {
                 }"
                 data-tipo="casa"
             >
-                Casa
+                <div class="card-tipo-icono">
+                    <i class="fa-regular fa-house"></i>
+                </div>
+                <div class="card-tipo-contenido">
+                    <span class="card-tipo-nombre">Casa</span>
+                    <span class="card-tipo-descripcion">Vivienda unifamiliar</span>
+                </div>
             </button>
 
             <button
@@ -2110,7 +2649,13 @@ function volverSeleccionTipo() {
                 }"
                 data-tipo="departamento"
             >
-                Departamento / PH
+                <div class="card-tipo-icono">
+                    <i class="fa-regular fa-building"></i>
+                </div>
+                <div class="card-tipo-contenido">
+                    <span class="card-tipo-nombre">Departamento / PH</span>
+                    <span class="card-tipo-descripcion">Unidad funcional</span>
+                </div>
             </button>
 
         </div>
@@ -2227,15 +2772,25 @@ function guardarDatosPantallaDepartamento() {
     datosTasacion.departamento.banos =
         document.getElementById("banosInput").value;
 
-    const cocheraSeleccionado = document.querySelector('input[name="cochera"]:checked');
-    datosTasacion.departamento.cochera = cocheraSeleccionado ? cocheraSeleccionado.value === "si" : false;
+    const cocheraSwitch = document.getElementById("cocheraSwitch");
+    datosTasacion.departamento.cochera = cocheraSwitch ? cocheraSwitch.checked : false;
 
-    const bauleraSeleccionado = document.querySelector('input[name="baulera"]:checked');
-    datosTasacion.departamento.baulera = bauleraSeleccionado ? bauleraSeleccionado.value === "si" : false;
+    const bauleraSwitch = document.getElementById("bauleraSwitch");
+    datosTasacion.departamento.baulera = bauleraSwitch ? bauleraSwitch.checked : false;
+
+    const serviciosSeleccionados = [];
+    document.querySelectorAll('.servicios-grid input:checked').forEach(check => {
+        if (check.closest('div').previousElementSibling?.textContent === "Servicios") {
+            serviciosSeleccionados.push(check.value);
+        }
+    });
+    datosTasacion.departamento.servicios = serviciosSeleccionados;
 
     const infraestructuraSeleccionados = [];
     document.querySelectorAll('.servicios-grid input:checked').forEach(check => {
-        infraestructuraSeleccionados.push(check.value);
+        if (check.closest('div').previousElementSibling?.textContent === "Infraestructura") {
+            infraestructuraSeleccionados.push(check.value);
+        }
     });
     datosTasacion.departamento.infraestructura = infraestructuraSeleccionados;
 
@@ -2724,10 +3279,10 @@ function inicializarTipoLote() {
 
             list.style.display = "none";
 
-            const btnSiguiente = getBtnSiguiente();
-            btnSiguiente.disabled = false;
-
-            btnSiguiente.classList.add("activo");
+            // Update button state using dynamic validation
+            if (typeof actualizarEstadoBotonSiguiente === 'function') {
+                actualizarEstadoBotonSiguiente();
+            }
         });
     });
 
@@ -2747,6 +3302,7 @@ function mostrarCaracteristicasLote() {
     pasoActual = 3;
 
     actualizarIndicadoresProgreso();
+    actualizarEstadoBotonSiguiente();
 
     cerrarModalComparables();
 
@@ -3014,6 +3570,38 @@ function mostrarCaracteristicasLote() {
 
                 ${camposExtra}
 
+                <div class="input-group">
+
+                    <label>Orientación</label>
+
+                    <div class="autocomplete-container">
+
+                        <input
+                            type="text"
+                            id="orientacionLoteInput"
+                            placeholder="Seleccionar orientación"
+                            autocomplete="off"
+                            readonly
+                            value="${datosTasacion.ubicacion.orientacion || ""}"
+                        >
+
+                        <div class="autocomplete-list" id="orientacionLoteList">
+
+                            <div class="autocomplete-item">Norte</div>
+                            <div class="autocomplete-item">Noreste</div>
+                            <div class="autocomplete-item">Este</div>
+                            <div class="autocomplete-item">Sureste</div>
+                            <div class="autocomplete-item">Sur</div>
+                            <div class="autocomplete-item">Suroeste</div>
+                            <div class="autocomplete-item">Oeste</div>
+                            <div class="autocomplete-item">Noroeste</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
@@ -3021,20 +3609,17 @@ function mostrarCaracteristicasLote() {
 
     inicializarCalculosLote();
 
+    inicializarOrientacionLote();
+
     // Setup botón volver
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
         btnVolverPaso.style.display = "block";
     }
 
-    // Habilitar botón siguiente si ya hay datos guardados
-    const car = datosTasacion.lote.caracteristicas || {};
-    if (car.frente && car.superficie) {
-        const btnSiguiente = getBtnSiguiente();
-        if (btnSiguiente) {
-            btnSiguiente.disabled = false;
-            btnSiguiente.classList.add("activo");
-        }
+    // Update button state using dynamic validation
+    if (typeof actualizarEstadoBotonSiguiente === 'function') {
+        actualizarEstadoBotonSiguiente();
     }
 }
 
@@ -3119,18 +3704,91 @@ function inicializarCalculosLote() {
 
             calcularSuperficie();
             calcularFondoFicticio();
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.frente = frenteInput.value;
+            }
+            // Update button state dynamically
+            if (typeof actualizarEstadoBotonSiguiente === 'function') {
+                actualizarEstadoBotonSiguiente();
+            }
         }
     );
 
     fondoInput?.addEventListener(
         "input",
-        calcularSuperficie
+        () => {
+            calcularSuperficie();
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.fondo = fondoInput.value;
+            }
+            // Update button state dynamically
+            if (typeof actualizarEstadoBotonSiguiente === 'function') {
+                actualizarEstadoBotonSiguiente();
+            }
+        }
     );
 
     superficieInput?.addEventListener(
         "input",
-        calcularFondoFicticio
+        () => {
+            calcularFondoFicticio();
+            // Update datosTasacion in real-time
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.superficie = superficieInput.value;
+            }
+            // Update button state dynamically
+            if (typeof actualizarEstadoBotonSiguiente === 'function') {
+                actualizarEstadoBotonSiguiente();
+            }
+        }
     );
+
+    // Add real-time updates for irregular lot inputs
+    if (fondoFicticioInput) {
+        fondoFicticioInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.fondoFicticio = fondoFicticioInput.value;
+            }
+        });
+    }
+
+    const segundaCalleInput = document.getElementById("segundaCalleInput");
+    if (segundaCalleInput) {
+        segundaCalleInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.segundaCalle = segundaCalleInput.value;
+            }
+        });
+    }
+
+    const zonaInput = document.getElementById("zonaInput");
+    if (zonaInput) {
+        zonaInput.addEventListener("change", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.zona = zonaInput.value;
+            }
+        });
+    }
 }
 
 function guardarDatosPantalla3() {
@@ -4527,9 +5185,21 @@ function inicializarComparablesPantalla() {
 
 function mostrarPantallaComparables() {
 
-    pasoActual = 4;
+    // Establecer pasoActual usando estructura dinámica
+    const tipo = datosTasacion.tipo || 'lote';
+    const pasos = pasosPorTipo[tipo] || [];
+    const comparablesIndex = pasos.indexOf('comparables');
+    
+    if (comparablesIndex !== -1) {
+        pasoActual = comparablesIndex + 2; // +2 porque array empieza en 0 y paso 1 es común
+    } else {
+        // Fallback a lógica antigua si no encuentra el paso
+        pasoActual = tipo === 'departamento' ? 5 : 4;
+    }
+
     actualizarIndicadoresProgreso();
     actualizarTextoBotonSiguiente();
+    actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
     if (btnVolverPaso) {
