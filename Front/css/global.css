@@ -322,12 +322,13 @@ p {
     --color-white: #ffffff; /* Blanco */
     --color-black: #000000; /* Negro */
     --color-bg-modal: #e9edf2; /* Gris muy claro - modal imagen */
+    --color-scroll: #7d8b99; /*para la barra de scroll*/
 
     /* Info, Warning, Success */
     --color-info: #0085cc; /* Azul cian - badges info */
     --color-info-light: #e0f4ff; /* Azul cian claro - background info */
     --color-warning: #d97706; /* Amarillo/naranja - badges warning */
-    --color-warning-light: #fef3c7; /* Amarillo muy claro - background warning */
+    --color-warning-light: #fef3c7; /* Amarillo muy claro - background warning fff3cd */
     --color-success: #059669; /* Verde - badges success */
     --color-success-light: #d1fae5; /* Verde muy claro - background success */
 
@@ -377,6 +378,7 @@ body.dark-mode {
     --color-white: #1a1a1a; /* Gris oscuro en lugar de blanco */
     --color-black: #ffffff; /* Blanco en lugar de negro */
     --color-bg-modal: #252525; /* Gris oscuro - modal imagen */
+    --color-scroll: #333333; /*para la barra de scroll*/
 
     /* Info, Warning, Success (modo oscuro) */
     --color-info: #60d5ff; /* Azul cian claro - badges info */
@@ -393,4 +395,31 @@ body.dark-mode {
 .sidebar-texto {
 
     transition: none;
+}
+
+
+/* ancho scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+/* fondo */
+::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 15px 0;
+}
+
+/* barra */
+::-webkit-scrollbar-thumb {
+    background: var(--color-scroll);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+/* hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-lighter);
+    background-clip: content-box;
 }

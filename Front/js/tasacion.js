@@ -13,8 +13,10 @@ function getBtnVolverPaso() {
 
 function getContenidoTasacion() {
     // Esto asegura que busque dentro de la tarjeta expandida de TASADOR.html
-    return document.querySelector("#tarjetaNuevaTasacion .tasacion-contenido") ||
-           document.querySelector(".tasacion-contenido"); // Fallback para tasacion.html
+    const contenido = document.querySelector("#tarjetaNuevaTasacion .tasacion-contenido") ||
+                     document.querySelector(".tasacion-contenido"); // Fallback para tasacion.html
+    console.log("getContenidoTasacion() devolvió:", contenido);
+    return contenido;
 }
 
 let pasoActual = 1;
@@ -62,7 +64,8 @@ const datosTasacion = {
 
         servicios: [],
 
-        caracteristicas: {}
+        caracteristicas: {},
+        observaciones: ""
     },
 
     departamento: {
@@ -186,6 +189,7 @@ function manejarBtnSiguiente() {
             return;
         }
         if (tipo === 'lote') {
+            console.log("Navegando desde comparables a resultado para lote");
             calcularYMostrarResultado();
         } else if (tipo === 'departamento') {
             calcularYMostrarResultadoDepartamento();
@@ -289,11 +293,11 @@ function verificarModoEdicion() {
             } else {
                 // Si no tiene datosCompletos, cargar desde la estructura antigua
                 datosTasacion.tipo = tasacion.tipo;
-                datosTasacion.ubicacion = tasacion.ubicacion || { direccion: "", provincia: "", localidad: "", lat: null, lon: null };
+                datosTasacion.ubicacion = tasacion.ubicacion || { direccion: "", provincia: "", localidad: "", lat: null, lon: null, orientacion: "" };
                 
                 // Cargar datos según el tipo de inmueble
                 if (tasacion.tipo === 'lote') {
-                    datosTasacion.lote = tasacion.lote || { tipoLote: "", servicios: [], caracteristicas: {} };
+                    datosTasacion.lote = tasacion.lote || { tipoLote: "", servicios: [], caracteristicas: {}, observaciones: "" };
                 } else if (tasacion.tipo === 'departamento') {
                     datosTasacion.departamento = tasacion.departamento || { ambientes: "", dormitorios: "", banos: "", cochera: false, baulera: false, servicios: [], amenities: [], infraestructura: [], observaciones: "" };
                 } else if (tasacion.tipo === 'casa') {
@@ -302,17 +306,20 @@ function verificarModoEdicion() {
                 
                 datosTasacion.comparables = tasacion.comparables || [];
                 resultadoTasacion = tasacion.resultado || null;
-                pasoActual = tasacion.datosCompletos?.pasoActual || 2;
+                pasoActual = 2; // Siempre ir a pantalla 2 (datos) al editar
                 tipoSeleccionado = tasacion.tipo;
             }
             
             // Limpiar localStorage
             localStorage.removeItem("tasacionEnEdicion");
 
-            // Navegar a la pantalla correspondiente usando estructura dinámica
-            if (pasoActual >= 2) {
-                if (typeof navegarAPaso === 'function') {
-                    navegarAPaso(pasoActual);
+            // Navegar a la pantalla 2 (datos) del tipo correcto
+            if (tipoSeleccionado) {
+                pasoActual = 2;
+                if (tipoSeleccionado === 'lote') {
+                    mostrarFormularioLote();
+                } else if (tipoSeleccionado === 'departamento') {
+                    mostrarFormularioDepartamento();
                 }
             }
         }
@@ -968,6 +975,24 @@ function mostrarFormularioLote() {
             <div class="servicios-grid">
 
                 ${generarHTMLServicios(datosTasacion.lote.servicios)}
+
+            </div>
+
+        </div>
+
+        <div class="separador-formulario"></div>
+
+        <div style="margin-top: 32px;">
+
+            <h3>Observaciones</h3>
+
+            <div class="input-group">
+
+                <textarea
+                    id="observacionesLoteInput"
+                    placeholder="Escribe cualquier observación adicional..."
+                    rows="4"
+                >${datosTasacion.lote.observaciones || ""}</textarea>
 
             </div>
 
@@ -2273,8 +2298,20 @@ function armarPayloadTasacionDepartamento() {
 
 function mostrarPantallaResultadoDepartamento() {
 
-    pasoActual = 6;
+    // Establecer pasoActual usando estructura dinámica
+    const tipo = datosTasacion.tipo || 'departamento';
+    const pasos = pasosPorTipo[tipo] || [];
+    const resultadoIndex = pasos.indexOf('resultado');
+    
+    if (resultadoIndex !== -1) {
+        pasoActual = resultadoIndex + 2; // +2 porque array empieza en 0 y paso 1 es común
+    } else {
+        // Fallback a paso 6 para departamento
+        pasoActual = 6;
+    }
+
     actualizarIndicadoresProgreso();
+    actualizarTextoBotonSiguiente();
     actualizarEstadoBotonSiguiente();
 
     const btnVolverPaso = getBtnVolverPaso();
@@ -2309,7 +2346,7 @@ function mostrarPantallaResultadoDepartamento() {
             <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
             <td><strong>1.00</strong></td>
             <td><input type="number" class="coef-ubicacion-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
-            <td><input type="number" class="coef-act-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
+            <td><input type="number" class="coef-actividad-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
             <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
             <td></td>
         </tr>
@@ -2325,7 +2362,7 @@ function mostrarPantallaResultadoDepartamento() {
             <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
             <td>${c.coeficiente ? c.coeficiente.toFixed(2) : '1.00'}</td>
             <td><input type="number" class="coef-ubicacion-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
-            <td><input type="number" class="coef-act-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
+            <td><input type="number" class="coef-actividad-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
             <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
             <td>
                 <button type="button" class="btn-opciones-comparable" data-index="${index}">
@@ -2400,7 +2437,7 @@ function mostrarPantallaResultadoDepartamento() {
 
                             <th>Ubicacion</th>
 
-                            <th>ACT</th>
+                            <th>Actividad</th>
 
                             <th>Valor m² final</th>
 
@@ -2439,7 +2476,7 @@ function mostrarPantallaResultadoDepartamento() {
     inicializarBotonesQuitarComparable();
 
     // Add event listeners for coeficiente inputs
-    document.querySelectorAll(".coef-ubicacion-input, .coef-act-input").forEach(input => {
+    document.querySelectorAll(".coef-ubicacion-input, .coef-actividad-input").forEach(input => {
         input.addEventListener("input", () => {
             const btnRecalcular = document.getElementById("btnRecalcular");
             if (btnRecalcular) {
@@ -2729,6 +2766,9 @@ function guardarDatosPantalla1() {
 
     datosTasacion.lote.servicios =
         serviciosSeleccionados;
+
+    datosTasacion.lote.observaciones =
+        document.getElementById("observacionesLoteInput").value;
 
     // Reset resultadoCalculado when screen 2 data changes
     resultadoCalculado = false;
@@ -3119,8 +3159,12 @@ function inicializarMapa() {
 
     if (!contenedorMapa) return;
 
+    // Cargar posición guardada si existe
+    const latGuardado = datosTasacion.ubicacion.lat || -34.6037;
+    const lonGuardado = datosTasacion.ubicacion.lon || -58.3816;
+
     mapa = L.map(contenedorMapa).setView(
-        [-34.6037, -58.3816],
+        [latGuardado, lonGuardado],
         13
     );
 
@@ -3135,7 +3179,7 @@ function inicializarMapa() {
     ).addTo(mapa);
 
     marcador = L.marker(
-        [-34.6037, -58.3816],
+        [latGuardado, lonGuardado],
         {
             draggable: true
         }
@@ -3320,17 +3364,6 @@ function mostrarCaracteristicasLote() {
 
             <div class="input-group">
 
-                <label>Segunda calle</label>
-
-                <input
-                    type="text"
-                    id="segundaCalleInput"
-                >
-
-            </div>
-
-            <div class="input-group">
-
                 <label>Zona</label>
 
                 <select id="zonaInput">
@@ -3402,26 +3435,7 @@ function mostrarCaracteristicasLote() {
     }
 
     if (tipo === "Salida a dos calles") {
-
-        camposExtra += `
-
-            <div class="input-group">
-
-                <label>Segunda calle</label>
-
-                <input
-                    type="text"
-                    id="segundaCalleInput"
-                    value="${
-                        datosTasacion
-                        .lote
-                        .caracteristicas
-                        .segundaCalle || ""
-                    }"
-                >
-
-            </div>
-        `;
+        // No additional fields needed for salida a dos calles
     }
 
     if (tipo === "Irregular") {
@@ -3603,6 +3617,91 @@ function mostrarCaracteristicasLote() {
                 </div>
 
             </div>
+
+            ${
+                tipo === "Esquina" ||
+                tipo === "Esquina larga (+30m)" ||
+                tipo === "Salida a dos calles"
+                ? `
+            <div class="form-right">
+
+                <div class="input-group">
+
+                    <label>Calle principal</label>
+
+                    <input
+                        type="text"
+                        id="callePrincipalInput"
+                        value="${datosTasacion.ubicacion.direccion || ""}"
+                        readonly
+                        disabled
+                    >
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Calle secundaria</label>
+
+                    <input
+                        type="text"
+                        id="segundaCalleInput"
+                        value="${
+                            datosTasacion
+                            .lote
+                            .caracteristicas
+                            .segundaCalle || ""
+                        }"
+                    >
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>¿Qué lado corresponde a la calle de MAYOR valor?</label>
+
+                    <select id="ladoMayorValorInput">
+
+                        <option
+                            value="frente"
+                            ${
+                                datosTasacion
+                                .lote
+                                .caracteristicas
+                                .ladoMayorValor === "frente" ||
+                                !datosTasacion
+                                .lote
+                                .caracteristicas
+                                .ladoMayorValor
+                                    ? "selected"
+                                    : ""
+                            }
+                        >
+                            Frente
+                        </option>
+
+                        <option
+                            value="fondo"
+                            ${
+                                datosTasacion
+                                .lote
+                                .caracteristicas
+                                .ladoMayorValor === "fondo"
+                                    ? "selected"
+                                    : ""
+                            }
+                        >
+                            Fondo
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+                `
+                : ""
+            }
 
         </div>
     `;
@@ -3786,6 +3885,18 @@ function inicializarCalculosLote() {
                     datosTasacion.lote.caracteristicas = {};
                 }
                 datosTasacion.lote.caracteristicas.zona = zonaInput.value;
+            }
+        });
+    }
+
+    const ladoMayorValorInput = document.getElementById("ladoMayorValorInput");
+    if (ladoMayorValorInput) {
+        ladoMayorValorInput.addEventListener("change", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.lote) {
+                if (!datosTasacion.lote.caracteristicas) {
+                    datosTasacion.lote.caracteristicas = {};
+                }
+                datosTasacion.lote.caracteristicas.ladoMayorValor = ladoMayorValorInput.value;
             }
         });
     }
@@ -5320,6 +5431,10 @@ function mostrarPantallaComparables() {
     `;
 
     inicializarComparablesPantalla();
+
+    setTimeout(() => {
+        inicializarBotonesTasacion();
+    }, 100);
 }
 
 function inicializarComparablesModalListenersOnce() {
@@ -5414,18 +5529,32 @@ function guardarTodosLosDatos() {
 }
 
 function capturarDatosCompletos() {
-    return {
+    const datos = {
         pasoActual: pasoActual,
         tipo: datosTasacion.tipo,
         ubicacion: { ...datosTasacion.ubicacion },
-        lote: {
-            tipoLote: datosTasacion.lote.tipoLote,
-            servicios: [...datosTasacion.lote.servicios],
-            caracteristicas: { ...datosTasacion.lote.caracteristicas }
-        },
         comparables: JSON.parse(JSON.stringify(datosTasacion.comparables)),
         resultado: resultadoTasacion ? { ...resultadoTasacion } : null
     };
+    
+    // Guardar datos según el tipo
+    if (datosTasacion.tipo === 'lote') {
+        datos.lote = {
+            tipoLote: datosTasacion.lote.tipoLote,
+            servicios: [...datosTasacion.lote.servicios],
+            caracteristicas: { ...datosTasacion.lote.caracteristicas },
+            observaciones: datosTasacion.lote.observaciones || ""
+        };
+    } else if (datosTasacion.tipo === 'departamento') {
+        datos.departamento = { ...datosTasacion.departamento };
+    }
+    
+    // Guardar coeficientes personalizados si existen
+    if (typeof coeficientesPersonalizados !== 'undefined' && Object.keys(coeficientesPersonalizados).length > 0) {
+        datos.coeficientesPersonalizados = JSON.parse(JSON.stringify(coeficientesPersonalizados));
+    }
+    
+    return datos;
 }
 
 function limpiarDatosTasacion() {
@@ -5461,13 +5590,29 @@ function cargarDatosCompletos(datosCompletos) {
     // Cargar datos desde la estructura guardada
     datosTasacion.tipo = datosCompletos.tipo;
     datosTasacion.ubicacion = { ...datosCompletos.ubicacion };
-    datosTasacion.lote = {
-        tipoLote: datosCompletos.lote.tipoLote,
-        servicios: [...datosCompletos.lote.servicios],
-        caracteristicas: { ...datosCompletos.lote.caracteristicas }
-    };
+    
+    // Cargar datos según el tipo
+    if (datosCompletos.tipo === 'lote') {
+        datosTasacion.lote = {
+            tipoLote: datosCompletos.lote.tipoLote,
+            servicios: [...datosCompletos.lote.servicios],
+            caracteristicas: { ...datosCompletos.lote.caracteristicas },
+            observaciones: datosCompletos.lote.observaciones || ""
+        };
+    } else if (datosCompletos.tipo === 'departamento') {
+        datosTasacion.departamento = { ...datosCompletos.departamento };
+    }
+    
     datosTasacion.comparables = JSON.parse(JSON.stringify(datosCompletos.comparables));
     resultadoTasacion = datosCompletos.resultado ? { ...datosCompletos.resultado } : null;
+    
+    // Cargar coeficientes personalizados si existen
+    if (datosCompletos.coeficientesPersonalizados) {
+        if (typeof coeficientesPersonalizados === 'undefined') {
+            window.coeficientesPersonalizados = {};
+        }
+        coeficientesPersonalizados = JSON.parse(JSON.stringify(datosCompletos.coeficientesPersonalizados));
+    }
     
     // Establecer el paso actual
     pasoActual = datosCompletos.pasoActual || 2;

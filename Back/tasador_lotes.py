@@ -3,7 +3,10 @@ from services.homogeneizacion import (
     obtener_superficie_lote,
 )
 
-from tablas.fitto_cervini import normalizar_tipologia
+from tablas.fitto_cervini import (
+    coeficiente_fitto_cervini,
+    normalizar_tipologia,
+)
 from tablas.valvano import coeficiente_valvano
 
 
@@ -92,11 +95,36 @@ def tasar_lote(datos):
         * valor_promedio_m2
     )
 
+    # Calcular coeficiente Fitto y Cervini para el lote objetivo
+    fondo_objetivo = datos.fondo
+    if fondo_objetivo is None and datos.superficie and datos.frente:
+        fondo_objetivo = datos.superficie / datos.frente
+
+    coeficiente_fitto_lote = 1.0
+    if fondo_objetivo and datos.frente:
+        try:
+            coeficiente_fitto_lote = coeficiente_fitto_cervini(
+                datos.frente,
+                fondo_objetivo
+            )
+            print(f"DEBUG: Coeficiente Fitto-Cervini del lote objetivo: {coeficiente_fitto_lote}")
+        except Exception as e:
+            print(f"DEBUG: Error al calcular coeficiente Fitto-Cervini del lote objetivo: {e}")
+            coeficiente_fitto_lote = 1.0
+
+    # Aplicar coeficiente Fitto del lote objetivo al valor final
+    print(f"DEBUG: Valor final antes de aplicar coeficiente Fitto: {valor_final}")
+    valor_final *= coeficiente_fitto_lote
+    print(f"DEBUG: Valor final después de aplicar coeficiente Fitto ({coeficiente_fitto_lote}): {valor_final}")
+
     coef_valvano, relacion_frentes = (
         _coeficiente_esquina_valvano(datos)
     )
 
-    valor_final *= coef_valvano
+    if coef_valvano != 1.0:
+        print(f"DEBUG: Aplicando coeficiente Valvano: {coef_valvano}")
+        valor_final *= coef_valvano
+        print(f"DEBUG: Valor final después de aplicar Valvano: {valor_final}")
 
     ajuste_final = datos.ajuste_final_porcentaje or 0
 
@@ -137,6 +165,11 @@ def tasar_lote(datos):
             2
         ),
 
+        "valor_m2": round(
+            valor_promedio_m2,
+            2
+        ),
+
         "ajuste_final_porcentaje": ajuste_final,
 
         "comparables": (
@@ -144,4 +177,12 @@ def tasar_lote(datos):
         ),
 
         "extras": extras,
+
+        # Coeficientes del lote objetivo
+        "coeficiente_fitto_lote": round(
+            coeficiente_fitto_lote,
+            4
+        ),
+        "coeficiente_ubicacion": 1.0,
+        "coeficiente_actividad": 1.0,
     }
