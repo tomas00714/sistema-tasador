@@ -52,3 +52,22 @@ class TasacionLoteRequest(BaseModel):
     ajuste_final_porcentaje: float = 0
 
     valor_final_manual: Optional[float] = None
+
+
+class TasacionDepartamentoRequest(BaseModel):
+
+    direccion: str
+
+    tipo: str  # departamento o ph
+
+    superficie_cubierta: float
+
+    antiguedad: int  # años
+
+    estado_conservacion: int  # 1-9
+
+    valor_m2_referencia: float
+
+    ajuste_final_porcentaje: float = 0
+
+    valor_final_manual: Optional[float] = None

@@ -83,10 +83,39 @@ function validarCriterioPaso(tipo, nombrePaso) {
             // Requiere frente y fondo mayores a 0
             const frente = parseFloat(datosTasacion?.lote?.caracteristicas?.frente) || 0;
             const fondo = parseFloat(datosTasacion?.lote?.caracteristicas?.fondo) || 0;
+            const fondoFicticio = parseFloat(datosTasacion?.lote?.caracteristicas?.fondoFicticio) || 0;
+            const superficie = parseFloat(datosTasacion?.lote?.caracteristicas?.superficie) || 0;
+            const tipoLote = datosTasacion?.lote?.tipoLote || '';
+            const zona = datosTasacion?.lote?.caracteristicas?.zona || '';
+
+            // Para irregular: requiere frente, superficie y fondo ficticio mayores a 0
+            if (tipoLote === 'Irregular') {
+                if (frente <= 0 || superficie <= 0 || fondoFicticio <= 0) {
+                    return false;
+                }
+            } else {
+                // Validación básica: frente y fondo mayores a 0
+                if (frente <= 0 || fondo <= 0) {
+                    return false;
+                }
+            }
+
+            // Para esquina y esquina +30m: requiere zona seleccionada
+            if (tipoLote === 'Esquina' || tipoLote === 'Esquina larga (+30m)') {
+                if (!zona || zona === '') {
+                    return false;
+                }
+            }
+
+            // Para esquina +30m: requiere que uno de los lados sea mayor a 30
+            if (tipoLote === 'Esquina larga (+30m)') {
+                if (frente <= 30 && fondo <= 30) {
+                    return false;
+                }
+            }
+
             return typeof datosTasacion !== 'undefined' &&
-                   datosTasacion?.lote?.caracteristicas &&
-                   frente > 0 &&
-                   fondo > 0;
+                   datosTasacion?.lote?.caracteristicas;
         }
         if (nombrePaso === 'comparables') {
             // Requiere al menos 1 comparable

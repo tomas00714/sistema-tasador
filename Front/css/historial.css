@@ -5,6 +5,14 @@
     right: var(--shell-margin);
     bottom: var(--shell-margin);
     z-index: 50;
+    background: var(--color-white);
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1.5px solid var(--color-border);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
 }
 
 .historial-container {
@@ -53,9 +61,9 @@
 
     border-radius: 14px;
 
-    border: 1px solid var(--color-border-medium);
+    border: 1px solid var(--color-border);
 
-    background: var(--color-white);
+    background: var(--color-bg-light);
 
     box-sizing: border-box;
 
@@ -78,7 +86,7 @@
 
     background: var(--color-white);
 
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
 
     cursor: pointer;
 
@@ -123,6 +131,8 @@
     padding: 16px;
 
     overflow-y: auto;
+
+    border: 1.5px solid var(--color-border);
 }
 
 #map {
@@ -131,6 +141,7 @@
     min-height: 400px;
 
     border-radius: 18px;
+    border: 1.5px solid var(--color-border);
 }
 
 /* =========================
@@ -162,7 +173,7 @@
     flex-direction: column;
     background: var(--color-white);
     border-radius: 18px;
-    border: 1.5px solid var(--color-border-lighter);
+    border: 1.5px solid var(--color-border);
     cursor: pointer;
     transition: all 0.15s ease;
     min-height: 160px;
@@ -199,7 +210,7 @@
     justify-content: center;
     background: var(--color-bg-lighter);
     border-radius: 18px;
-    color: var(--color-border-medium);
+    color: var(--color-border);
     font-size: 2.5rem;
 }
 
@@ -288,7 +299,7 @@
 
 .card-divider {
     height: 1px;
-    background: var(--color-border-lighter);
+    background: var(--color-border);
     margin: 0 16px;
 }
 
@@ -403,19 +414,9 @@ html.modal-open {
 
     transition: transform 0.18s ease;
 
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
 }
 
-/* Modal comparable manual (tasacion): desplegables sobre el pie del modal */
-#comparablesModalOverlay .modal-tasacion {
-
-    overflow: visible;
-}
-
-.modal-overlay.active .modal-tasacion {
-
-    transform: scale(1);
-}
 
 /* Override modal-tasacion styles when using perfil-card structure */
 .modal-overlay.active .modal-tasacion.perfil-modal {
@@ -483,7 +484,7 @@ html.modal-open {
 
     box-sizing: border-box;
 
-    border: 1.5px solid var(--color-border-lighter);
+    border: 1.5px solid var(--color-border);
 
     border-bottom: none;
 
@@ -516,7 +517,7 @@ html.modal-open {
 
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 
-    border: 1.5px solid var(--color-border-lighter);
+    border: 1.5px solid var(--color-border);
 
     border-top: none;
 
@@ -539,7 +540,7 @@ html.modal-open {
 
     box-sizing: border-box;
 
-    border: 1.5px solid var(--color-border-lighter);
+    border: 1.5px solid var(--color-border);
 
     border-top: none;
 
@@ -758,7 +759,7 @@ html.modal-open {
 
     gap: 8px;
 
-    border: 1.5px solid var(--color-border-lighter);
+    border: 1.5px solid var(--color-border);
 }
 
 .perfil-card-full {
@@ -1035,7 +1036,7 @@ html.modal-open {
 
     background: var(--color-bg-lighter);
 
-    color: var(--color-text-label);
+    color: var(--color-text-secondary);
 }
 
 /* =========================
@@ -1048,7 +1049,7 @@ html.modal-open {
 
     overflow-y: hidden;
 
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
 
     border-radius: 16px;
 
@@ -1081,7 +1082,7 @@ html.modal-open {
 
     overflow: hidden;
 
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
 }
 
 .resultado-tabla th,
@@ -1098,19 +1099,19 @@ html.modal-open {
 
     background: var(--color-bg-light);
 
-    color: var(--color-text-label);
+    color: var(--color-text-secondary);
 
     font-weight: 600;
 }
 
 .resultado-tabla tbody tr:not(:last-child) td {
 
-    border-bottom: 1px solid var(--color-border-lighter);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .valor-promedio-row {
 
     background: var(--color-bg-light);
 
-    border-top: 2px solid var(--color-border-light);
+    border-top: 2px solid var(--color-border);
 }

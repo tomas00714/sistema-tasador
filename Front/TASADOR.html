@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="css/shell.css">
     <link rel="stylesheet" href="css/home.css">
-    <link rel="stylesheet" href="css/historial.css">
     <link rel="stylesheet" href="css/tasacion.css">
 </head>
 <body data-vista="inicio">
@@ -79,41 +78,6 @@
         </div>
 
     </nav>
-
-    <section
-        class="historial-section"
-        id="panelHistorial"
-        aria-label="Historial"
-        style="display: none;">
-
-        <div class="historial-container">
-
-            <div class="historial-header">
-
-                <input
-                    type="text"
-                    placeholder="Dirección o código de propiedad"
-                    class="input-busqueda">
-
-                <div class="tabs-container">
-                    <button type="button" class="btn-tab active" data-tab="todas">Todas</button>
-                    <button type="button" class="btn-tab" data-tab="completadas">Completadas</button>
-                    <button type="button" class="btn-tab" data-tab="borradores">Borradores</button>
-                </div>
-
-            </div>
-
-            <div class="historial-content">
-
-                <div class="lista-propiedades"></div>
-
-                <div id="map"></div>
-
-            </div>
-
-        </div>
-
-    </section>
 
     <section
         class="ajustes-section"
@@ -188,22 +152,11 @@
 
     </main>
 
-    <div class="modal-overlay" id="comparablesModalOverlay">
-
-        <div class="modal-tasacion" id="comparablesModalTasacion">
-
-            <button
-                type="button"
-                class="cerrar-modal"
-                id="comparablesModalCerrar"
-                aria-label="Cerrar">
-                ✕
-            </button>
-
-            <div id="comparablesModalContenido"></div>
-
+    <!-- Vista ComparableEditor para crear/editar/visualizar comparables -->
+    <div class="comparable-editor-container" id="comparableEditorContainer" style="display: none;">
+        <div class="comparable-editor" id="comparableEditor">
+            <!-- El contenido se renderizará dinámicamente según modo y tipo -->
         </div>
-
     </div>
 
     <div class="modal-overlay" id="modalOverlay">
@@ -265,8 +218,8 @@
 
     <div class="top-barra-fondo"></div>
 
+    <script src="js/entidades.js"></script>
     <script src="js/global.js"></script>
-    <script src="js/historial.js"></script>
     <script src="js/app-shell.js"></script>
     <script src="js/home-tasacion.js"></script>
     <script src="js/tasacion.js"></script>

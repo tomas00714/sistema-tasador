@@ -532,7 +532,7 @@ body:not([data-vista="inicio"])
 
 
 
-    color: var(--color-text-muted-light);
+    color: var(--color-text-secondary);
 
 
 
@@ -584,7 +584,7 @@ body:not([data-vista="inicio"])
 
     font-weight: 400;
 
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
 
     text-align: left;
 
@@ -629,10 +629,9 @@ body:not([data-vista="inicio"])
     text-decoration: none;
 
     transition: background-color 0.2s ease;
+    transition: box-shadow 0.3s ease;
 
     pointer-events: auto;
-
-    box-shadow: 0 0 40px rgba(53, 134, 249, 0.5);
 
 }
 
@@ -640,6 +639,8 @@ body:not([data-vista="inicio"])
 
 .btn-nueva-tasacion-home:hover {
     background-color: var(--color-primary-hover);
+
+    box-shadow: 0 0 40px rgba(53, 134, 249, 0.5);
 
 }
 
