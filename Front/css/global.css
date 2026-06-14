@@ -22,7 +22,7 @@ body {
 
     -webkit-backdrop-filter: blur(12px);
 
-    border-radius: 18px;
+    border-radius: 24px;
     border: 1.5px solid var(--color-border);
     display: flex;
     align-items: center;
@@ -39,7 +39,7 @@ body {
     height: 80px;
    
     background: var(--color-white);
-    border-radius: 18px;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -221,7 +221,7 @@ p {
 
     background: var(--color-white);
 
-    border-radius: 18px;
+    border-radius: 24px;
 
     border: 1px solid var(--color-border);
 

@@ -1454,24 +1454,53 @@ function mostrarCaracteristicasDepartamento() {
 
                     <label>Ubicación en planta</label>
 
-                    <div class="autocomplete-container">
+                    <div class="input-dividido-container">
 
-                        <input
-                            type="text"
-                            id="ubicacionPlantaInput"
-                            placeholder="Seleccionar ubicación"
-                            autocomplete="off"
-                            readonly
-                            value="${datosTasacion.departamento.ubicacionPlanta || ""}"
-                        >
+                        <div class="input-dividido-principal">
+                            <div class="autocomplete-container">
 
-                        <div class="autocomplete-list" id="ubicacionPlantaList">
+                                <input
+                                    type="text"
+                                    id="ubicacionPlantaInput"
+                                    placeholder="Seleccionar ubicación"
+                                    autocomplete="off"
+                                    readonly
+                                    value="${datosTasacion.departamento.ubicacionPlanta || ""}"
+                                >
 
-                            <div class="autocomplete-item" data-coef="1">Frente (1)</div>
-                            <div class="autocomplete-item" data-coef="0.95">Contrafrente (0.95)</div>
-                            <div class="autocomplete-item" data-coef="0.90">Patio interior (0.90)</div>
-                            <div class="autocomplete-item" data-coef="0.93">Lateral (0.93)</div>
+                                <div class="autocomplete-list" id="ubicacionPlantaList">
 
+                                    <div class="autocomplete-item" data-coef="1" data-rango="1">
+                                        <span>Frente</span>
+                                        <span class="coef-display">1</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95">
+                                        <span>Contrafrente</span>
+                                        <span class="coef-display">0.95</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90">
+                                        <span>Patio interior</span>
+                                        <span class="coef-display">0.90</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="0.93" data-rango="0.93">
+                                        <span>Lateral</span>
+                                        <span class="coef-display">0.93</span>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="input-dividido-coef">
+                            <input
+                                type="number"
+                                id="ubicacionPlantaCoef"
+                                placeholder="Coef"
+                                step="0.01"
+                                min="0"
+                                value="${datosTasacion.departamento.ubicacionPlantaCoef || ""}"
+                            >
                         </div>
 
                     </div>
@@ -1483,47 +1512,39 @@ function mostrarCaracteristicasDepartamento() {
 
                     <label>Ubicación en piso</label>
 
-                    <div class="autocomplete-container">
+                    <div class="input-dividido-container">
 
-                        <input
-                            type="text"
-                            id="ubicacionPisoInput"
-                            placeholder="Seleccionar piso"
-                            autocomplete="off"
-                            readonly
-                            value="${datosTasacion.departamento.ubicacionPiso || ""}"
-                        >
+                        <div class="input-dividido-principal">
+                            <div class="autocomplete-container">
 
-                        <div class="autocomplete-list" id="ubicacionPisoList">
+                                <input
+                                    type="text"
+                                    id="ubicacionPisoInput"
+                                    placeholder="Seleccionar piso"
+                                    autocomplete="off"
+                                    readonly
+                                    value="${datosTasacion.departamento.ubicacionPiso || ""}"
+                                >
 
-                            <!-- Se llena dinámicamente según si tiene ascensor -->
+                                <div class="autocomplete-list" id="ubicacionPisoList">
 
+                                    <!-- Se llena dinámicamente según si tiene ascensor -->
+
+                                </div>
+
+                            </div>
                         </div>
 
-                    </div>
-
-                </div>
-
-                <!-- Switch de ascensor -->
-                <div class="input-group input-2-3">
-
-                    <label></label>
-
-                    <div class="switch-container-ascensor">
-
-                        <label class="switch-label">Tiene<br>ascensor</label>
-
-                        <label class="switch">
-
+                        <div class="input-dividido-coef">
                             <input
-                                type="checkbox"
-                                id="tieneAscensorSwitch"
-                                ${datosTasacion.departamento.tieneAscensor === "si" ? "checked" : ""}
+                                type="number"
+                                id="ubicacionPisoCoef"
+                                placeholder="Coef"
+                                step="0.01"
+                                min="0"
+                                value="${datosTasacion.departamento.ubicacionPisoCoef || ""}"
                             >
-
-                            <span class="slider"></span>
-
-                        </label>
+                        </div>
 
                     </div>
 
@@ -1534,25 +1555,57 @@ function mostrarCaracteristicasDepartamento() {
 
                     <label>Característica constructiva</label>
 
-                    <div class="autocomplete-container">
+                    <div class="input-dividido-container">
 
-                        <input
-                            type="text"
-                            id="caracteristicaConstructivaInput"
-                            placeholder="Seleccionar característica"
-                            autocomplete="off"
-                            readonly
-                            value="${datosTasacion.departamento.caracteristicaConstructiva || ""}"
-                        >
+                        <div class="input-dividido-principal">
+                            <div class="autocomplete-container">
 
-                        <div class="autocomplete-list" id="caracteristicaConstructivaList">
+                                <input
+                                    type="text"
+                                    id="caracteristicaConstructivaInput"
+                                    placeholder="Seleccionar característica"
+                                    autocomplete="off"
+                                    readonly
+                                    value="${datosTasacion.departamento.caracteristicaConstructiva || ""}"
+                                >
 
-                            <div class="autocomplete-item" data-coef="0.90">Económica (0.90)</div>
-                            <div class="autocomplete-item" data-coef="1">Buena económica (1)</div>
-                            <div class="autocomplete-item" data-coef="1.07">Buena sin servicios (1.05-1.10)</div>
-                            <div class="autocomplete-item" data-coef="1.17">Buena con servicios (1.15-1.20)</div>
-                            <div class="autocomplete-item" data-coef="1.27">Muy buena (1.25-1.30)</div>
+                                <div class="autocomplete-list" id="caracteristicaConstructivaList">
 
+                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90">
+                                        <span>Económica</span>
+                                        <span class="coef-display">0.90</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1" data-rango="1">
+                                        <span>Buena económica</span>
+                                        <span class="coef-display">1</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1.07" data-rango="1.07">
+                                        <span>Buena sin servicios</span>
+                                        <span class="coef-display">1.07</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1.17" data-rango="1.17">
+                                        <span>Buena con servicios</span>
+                                        <span class="coef-display">1.17</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1.27" data-rango="1.27">
+                                        <span>Muy buena</span>
+                                        <span class="coef-display">1.27</span>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="input-dividido-coef">
+                            <input
+                                type="number"
+                                id="caracteristicaConstructivaCoef"
+                                placeholder="Coef"
+                                step="0.01"
+                                min="0"
+                                value="${datosTasacion.departamento.caracteristicaConstructivaCoef || ""}"
+                            >
                         </div>
 
                     </div>
@@ -1575,7 +1628,35 @@ function mostrarCaracteristicasDepartamento() {
 
             </div>
 
-            <!-- COLUMNA 2 (3 inputs) -->
+            <!-- COLUMNA 2 (switch de ascensor) -->
+            <div class="columna-departamento-centro">
+
+                <!-- Switch de ascensor -->
+                <div class="input-group input-2-3">
+
+                    <label>Tiene ascensor</label>
+
+                    <div class="switch-container-ascensor">
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                id="tieneAscensorSwitch"
+                                ${datosTasacion.departamento.tieneAscensor === "si" || !datosTasacion.departamento.tieneAscensor ? "checked" : ""}
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- COLUMNA 3 (inputs que estaban en columna 2) -->
             <div class="columna-departamento">
 
                 <!-- Superficie cubierta propia -->
@@ -1583,25 +1664,57 @@ function mostrarCaracteristicasDepartamento() {
 
                     <label>Superficie cubierta propia</label>
 
-                    <div class="autocomplete-container">
+                    <div class="input-dividido-container">
 
-                        <input
-                            type="text"
-                            id="superficieCubiertaInput"
-                            placeholder="Seleccionar rango"
-                            autocomplete="off"
-                            readonly
-                            value="${datosTasacion.departamento.superficieCubierta || ""}"
-                        >
+                        <div class="input-dividido-principal">
+                            <div class="autocomplete-container">
 
-                        <div class="autocomplete-list" id="superficieCubiertaList">
+                                <input
+                                    type="text"
+                                    id="superficieCubiertaInput"
+                                    placeholder="Seleccionar rango"
+                                    autocomplete="off"
+                                    readonly
+                                    value="${datosTasacion.departamento.superficieCubierta || ""}"
+                                >
 
-                            <div class="autocomplete-item" data-coef="1.10">Hasta 30m² (1.10)</div>
-                            <div class="autocomplete-item" data-coef="1.05">De 30 a 50m² (1.05)</div>
-                            <div class="autocomplete-item" data-coef="1">De 50 a 100m² (1)</div>
-                            <div class="autocomplete-item" data-coef="0.95">De 100 a 150m² (0.95)</div>
-                            <div class="autocomplete-item" data-coef="0.90">Más de 150m² (0.90)</div>
+                                <div class="autocomplete-list" id="superficieCubiertaList">
 
+                                    <div class="autocomplete-item" data-coef="1.10" data-rango="1.10">
+                                        <span>Hasta 30m²</span>
+                                        <span class="coef-display">1.10</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05">
+                                        <span>De 30 a 50m²</span>
+                                        <span class="coef-display">1.05</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="1" data-rango="1">
+                                        <span>De 50 a 100m²</span>
+                                        <span class="coef-display">1</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95">
+                                        <span>De 100 a 150m²</span>
+                                        <span class="coef-display">0.95</span>
+                                    </div>
+                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90">
+                                        <span>Más de 150m²</span>
+                                        <span class="coef-display">0.90</span>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="input-dividido-coef">
+                            <input
+                                type="number"
+                                id="superficieCubiertaCoef"
+                                placeholder="Coef"
+                                step="0.01"
+                                min="0"
+                                value="${datosTasacion.departamento.superficieCubiertaCoef || ""}"
+                            >
                         </div>
 
                     </div>
@@ -1696,11 +1809,24 @@ function mostrarCaracteristicasDepartamento() {
 
 }
 
+function validarRangoCoeficiente(input, valor, coeficienteSeleccionado) {
+    // El coeficiente es válido si es igual al coeficiente seleccionado
+    // Si el usuario lo modifica, se pone amarillo si es diferente
+    if (Math.abs(valor - coeficienteSeleccionado) > 0.001) {
+        input.classList.add("fuera-de-rango");
+    } else {
+        input.classList.remove("fuera-de-rango");
+    }
+}
+
 function inicializarUbicacionPlanta() {
     const input = document.getElementById("ubicacionPlantaInput");
+    const coefInput = document.getElementById("ubicacionPlantaCoef");
     const list = document.getElementById("ubicacionPlantaList");
 
     if (!input || !list) return;
+
+    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPlantaCoef || 1;
 
     input.addEventListener("focus", () => {
         list.style.display = "block";
@@ -1708,9 +1834,17 @@ function inicializarUbicacionPlanta() {
 
     list.querySelectorAll(".autocomplete-item").forEach(item => {
         item.addEventListener("click", () => {
-            input.value = item.textContent;
-            datosTasacion.departamento.ubicacionPlanta = item.textContent;
+            const textSpan = item.querySelector('span:first-child');
+            const coefSpan = item.querySelector('.coef-display');
+            
+            input.value = textSpan ? textSpan.textContent : item.textContent;
+            if (coefInput && coefSpan) {
+                coefInput.value = coefSpan.textContent;
+            }
+            
+            datosTasacion.departamento.ubicacionPlanta = textSpan ? textSpan.textContent : item.textContent;
             datosTasacion.departamento.ubicacionPlantaCoef = parseFloat(item.dataset.coef);
+            coeficienteSeleccionado = parseFloat(item.dataset.coef);
             list.style.display = "none";
         });
     });
@@ -1720,6 +1854,28 @@ function inicializarUbicacionPlanta() {
             list.style.display = "none";
         }
     });
+
+    // Validación de coeficiente
+    if (coefInput) {
+        coefInput.addEventListener("input", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                datosTasacion.departamento.ubicacionPlantaCoef = valor;
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("focus", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("blur", () => {
+            coefInput.classList.remove("fuera-de-rango");
+        });
+    }
 }
 
 function inicializarSwitchAscensor() {
@@ -1729,6 +1885,18 @@ function inicializarSwitchAscensor() {
     switchInput.addEventListener("change", () => {
         datosTasacion.departamento.tieneAscensor = switchInput.checked ? "si" : "no";
         actualizarListaPisos(switchInput.checked ? "si" : "no");
+        
+        // Reiniciar ubicación en piso al cambiar el switch
+        const ubicacionPisoInput = document.getElementById("ubicacionPisoInput");
+        const ubicacionPisoCoef = document.getElementById("ubicacionPisoCoef");
+        if (ubicacionPisoInput) {
+            ubicacionPisoInput.value = "";
+            datosTasacion.departamento.ubicacionPiso = "";
+        }
+        if (ubicacionPisoCoef) {
+            ubicacionPisoCoef.value = "";
+            datosTasacion.departamento.ubicacionPisoCoef = "";
+        }
     });
 
     // Inicializar lista según valor actual
@@ -1746,36 +1914,42 @@ function actualizarListaPisos(tieneAscensor) {
 
     if (tieneAscensor === "si") {
         opciones = [
-            { texto: "PB (0.90)", coef: 0.90 },
-            { texto: "PB con patio y jardín al fondo (1)", coef: 1 },
-            { texto: "1ro y 2do (0.95)", coef: 0.95 },
-            { texto: "3ro y 4to (1)", coef: 1 },
-            { texto: "5to y 6to (1.05)", coef: 1.05 },
-            { texto: "7mo y 8vo (1.10)", coef: 1.10 },
-            { texto: "Pisos superiores (1.5)", coef: 1.5 },
-            { texto: "Último piso (0.90)", coef: 0.90 }
+            { texto: "PB", coef: 0.90 },
+            { texto: "PB con patio y jardín al fondo", coef: 1 },
+            { texto: "1ro y 2do", coef: 0.95 },
+            { texto: "3ro y 4to", coef: 1 },
+            { texto: "5to y 6to", coef: 1.05 },
+            { texto: "7mo y 8vo", coef: 1.10 },
+            { texto: "Pisos superiores", coef: 1.5 },
+            { texto: "Último piso", coef: 0.90 }
         ];
     } else {
         opciones = [
-            { texto: "PB (1)", coef: 1 },
-            { texto: "PB con patio y jardín al fondo (1)", coef: 1 },
-            { texto: "1ro (1)", coef: 1 },
-            { texto: "2do (0.95)", coef: 0.95 },
-            { texto: "3ro y 4to (0.90)", coef: 0.90 },
-            { texto: "Último piso (0.90)", coef: 0.90 }
+            { texto: "PB", coef: 1 },
+            { texto: "PB con patio y jardín al fondo", coef: 1 },
+            { texto: "1ro", coef: 1 },
+            { texto: "2do", coef: 0.95 },
+            { texto: "3ro y 4to", coef: 0.90 },
+            { texto: "Último piso", coef: 0.90 }
         ];
     }
 
     list.innerHTML = opciones.map(op => `
-        <div class="autocomplete-item" data-coef="${op.coef}">${op.texto}</div>
+        <div class="autocomplete-item" data-coef="${op.coef}">
+            <span>${op.texto}</span>
+            <span class="coef-display">${op.coef}</span>
+        </div>
     `).join("");
 }
 
 function inicializarUbicacionPiso() {
     const input = document.getElementById("ubicacionPisoInput");
+    const coefInput = document.getElementById("ubicacionPisoCoef");
     const list = document.getElementById("ubicacionPisoList");
 
     if (!input || !list) return;
+
+    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPisoCoef || 1;
 
     input.addEventListener("focus", () => {
         list.style.display = "block";
@@ -1783,9 +1957,17 @@ function inicializarUbicacionPiso() {
 
     list.addEventListener("click", (e) => {
         if (e.target.classList.contains("autocomplete-item")) {
-            input.value = e.target.textContent;
-            datosTasacion.departamento.ubicacionPiso = e.target.textContent;
+            const textSpan = e.target.querySelector('span:first-child');
+            const coefSpan = e.target.querySelector('.coef-display');
+            
+            input.value = textSpan ? textSpan.textContent : e.target.textContent;
+            if (coefInput && coefSpan) {
+                coefInput.value = coefSpan.textContent;
+            }
+            
+            datosTasacion.departamento.ubicacionPiso = textSpan ? textSpan.textContent : e.target.textContent;
             datosTasacion.departamento.ubicacionPisoCoef = parseFloat(e.target.dataset.coef);
+            coeficienteSeleccionado = parseFloat(e.target.dataset.coef);
             list.style.display = "none";
         }
     });
@@ -1795,13 +1977,38 @@ function inicializarUbicacionPiso() {
             list.style.display = "none";
         }
     });
+
+    // Validación de coeficiente
+    if (coefInput) {
+        coefInput.addEventListener("input", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                datosTasacion.departamento.ubicacionPisoCoef = valor;
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("focus", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("blur", () => {
+            coefInput.classList.remove("fuera-de-rango");
+        });
+    }
 }
 
 function inicializarSuperficieCubierta() {
     const input = document.getElementById("superficieCubiertaInput");
+    const coefInput = document.getElementById("superficieCubiertaCoef");
     const list = document.getElementById("superficieCubiertaList");
 
     if (!input || !list) return;
+
+    let coeficienteSeleccionado = datosTasacion.departamento.superficieCubiertaCoef || 1;
 
     input.addEventListener("focus", () => {
         list.style.display = "block";
@@ -1809,9 +2016,17 @@ function inicializarSuperficieCubierta() {
 
     list.querySelectorAll(".autocomplete-item").forEach(item => {
         item.addEventListener("click", () => {
-            input.value = item.textContent;
-            datosTasacion.departamento.superficieCubierta = item.textContent;
+            const textSpan = item.querySelector('span:first-child');
+            const coefSpan = item.querySelector('.coef-display');
+            
+            input.value = textSpan ? textSpan.textContent : item.textContent;
+            if (coefInput && coefSpan) {
+                coefInput.value = coefSpan.textContent;
+            }
+            
+            datosTasacion.departamento.superficieCubierta = textSpan ? textSpan.textContent : item.textContent;
             datosTasacion.departamento.superficieCubiertaCoef = parseFloat(item.dataset.coef);
+            coeficienteSeleccionado = parseFloat(item.dataset.coef);
             list.style.display = "none";
         });
     });
@@ -1821,6 +2036,28 @@ function inicializarSuperficieCubierta() {
             list.style.display = "none";
         }
     });
+
+    // Validación de coeficiente
+    if (coefInput) {
+        coefInput.addEventListener("input", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                datosTasacion.departamento.superficieCubiertaCoef = valor;
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("focus", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("blur", () => {
+            coefInput.classList.remove("fuera-de-rango");
+        });
+    }
 }
 
 function inicializarEstadoConservacion() {
@@ -1872,9 +2109,12 @@ function calcularCoeficienteAntiguedad() {
 
 function inicializarCaracteristicaConstructiva() {
     const input = document.getElementById("caracteristicaConstructivaInput");
+    const coefInput = document.getElementById("caracteristicaConstructivaCoef");
     const list = document.getElementById("caracteristicaConstructivaList");
 
     if (!input || !list) return;
+
+    let coeficienteSeleccionado = datosTasacion.departamento.caracteristicaConstructivaCoef || 1;
 
     input.addEventListener("focus", () => {
         list.style.display = "block";
@@ -1882,9 +2122,17 @@ function inicializarCaracteristicaConstructiva() {
 
     list.querySelectorAll(".autocomplete-item").forEach(item => {
         item.addEventListener("click", () => {
-            input.value = item.textContent;
-            datosTasacion.departamento.caracteristicaConstructiva = item.textContent;
+            const textSpan = item.querySelector('span:first-child');
+            const coefSpan = item.querySelector('.coef-display');
+            
+            input.value = textSpan ? textSpan.textContent : item.textContent;
+            if (coefInput && coefSpan) {
+                coefInput.value = coefSpan.textContent;
+            }
+            
+            datosTasacion.departamento.caracteristicaConstructiva = textSpan ? textSpan.textContent : item.textContent;
             datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(item.dataset.coef);
+            coeficienteSeleccionado = parseFloat(item.dataset.coef);
             list.style.display = "none";
         });
     });
@@ -1894,6 +2142,28 @@ function inicializarCaracteristicaConstructiva() {
             list.style.display = "none";
         }
     });
+
+    // Validación de coeficiente
+    if (coefInput) {
+        coefInput.addEventListener("input", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                datosTasacion.departamento.caracteristicaConstructivaCoef = valor;
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("focus", () => {
+            const valor = parseFloat(coefInput.value);
+            if (!isNaN(valor)) {
+                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
+            }
+        });
+
+        coefInput.addEventListener("blur", () => {
+            coefInput.classList.remove("fuera-de-rango");
+        });
+    }
 }
 
 /* =========================
@@ -3148,8 +3418,8 @@ let marcador;
 let tilesLayer;
 
 const TILE_URLS = {
-    light: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    dark: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 };
 
 function inicializarMapa() {
@@ -4527,14 +4797,10 @@ function inicializarTipoLoteComparableManual() {
 
 async function abrirPanelComparableManual() {
 
-    const cont =
-        document.getElementById("comparablesModalContenido");
+    const tipoActual = datosTasacion.tipo;
 
-    const overlay =
-        document.getElementById("comparablesModalOverlay");
-
-    if (!cont || !overlay) {
-
+    if (!tipoActual) {
+        alert("Seleccioná el tipo de inmueble antes de agregar un comparable.");
         return;
     }
 
@@ -4542,313 +4808,52 @@ async function abrirPanelComparableManual() {
 
     comparablePanelModo = "manual";
 
-    const tipoActual =
-        datosTasacion.tipo;
-
-    const esLote =
-        tipoActual === "lote";
-
-    const bloqueTipoLote = esLote
-        ? `
-
-            <div class="input-group">
-
-                <label>Tipo de lote</label>
-
-                <div class="autocomplete-container">
-
-                    <input
-                        type="text"
-                        id="compManualTipoLoteInput"
-                        placeholder="Seleccionar tipo"
-                        autocomplete="off"
-                        readonly
-                    >
-
-                    <div
-                        class="autocomplete-list"
-                        id="compManualTipoLoteList"
-                        style="display:none"
-                    >
-
-                        <div class="autocomplete-item">
-                            Medial
-                        </div>
-
-                        <div class="autocomplete-item">
-                            Esquina
-                        </div>
-
-                        <div class="autocomplete-item">
-                            Esquina larga (+30m)
-                        </div>
-
-                        <div class="autocomplete-item">
-                            Salida a dos calles
-                        </div>
-
-                        <div class="autocomplete-item">
-                            Irregular
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-        `
-        : `
-
-            <div class="comparables-tipo-inmueble-leido">
-
-                <span>Tipo de lote</span>
-
-                <strong>
-                    No aplica para este tipo de inmueble
-                </strong>
-
-            </div>
-        `;
-
-    cont.innerHTML = `
-
-            <div class="modal-header">
-
-                <div class="modal-titulo">
-
-                        <h2>
-                            Nuevo comparable manual
-                        </h2>
-
-                        <p>
-                            Completá los datos de la propiedad comparable.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            <div class="modal-contenido-scroll">
-
-                <div class="modal-seccion">
-
-                    <h3>
-                        Ubicación
-                    </h3>
-
-                    <div class="input-group">
-
-                        <label>Dirección</label>
-
-                        <input
-                            type="text"
-                            id="compManualDireccionInput"
-                            autocomplete="off"
-                        >
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>Provincia</label>
-
-                        <div class="autocomplete-container">
-
-                            <input
-                                type="text"
-                                id="compManualProvinciaInput"
-                                placeholder="Escribí una provincia"
-                                autocomplete="off"
-                            >
-
-                            <div
-                                class="autocomplete-list"
-                                id="compManualProvinciaList">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>Localidad</label>
-
-                        <div class="autocomplete-container">
-
-                            <input
-                                type="text"
-                                id="compManualLocalidadInput"
-                                placeholder="Seleccioná provincia primero"
-                                autocomplete="off"
-                                disabled
-                            >
-
-                            <div
-                                class="autocomplete-list"
-                                id="compManualLocalidadList">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="modal-seccion">
-
-                    <h3>
-                        Medidas del lote
-                    </h3>
-
-                    <div class="input-group">
-
-                        <label>Frente (m)</label>
-
-                        <input
-                            type="number"
-                            id="compManualFrenteInput"
-                            min="0"
-                            step="any"
-                        >
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>Fondo (m)</label>
-
-                        <input
-                            type="number"
-                            id="compManualFondoInput"
-                            min="0"
-                            step="any"
-                        >
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>Superficie (m²)</label>
-
-                        <input
-                            type="number"
-                            id="compManualSuperficieInput"
-                            min="0"
-                            step="any"
-                        >
-
-                    </div>
-
-                </div>
-
-                <div class="modal-seccion">
-
-                    <h3>
-                        Inmueble
-                    </h3>
-
-                    <div class="comparables-tipo-inmueble-leido">
-
-                        <span>
-                            Tipo de inmueble (de esta tasación)
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(etiquetaTipoInmueble(tipoActual))}
-                        </strong>
-
-                    </div>
-
-                    ${bloqueTipoLote}
-
-                </div>
-
-                <div class="modal-seccion">
-
-                    <h3>
-                        Valor
-                    </h3>
-
-                    <div class="comparables-valor-fila">
-
-                        <div class="input-group">
-
-                            <label>Valor total (USD)</label>
-
-                            <input
-                                type="number"
-                                id="compManualValorInput"
-                                min="0"
-                                step="any"
-                                placeholder="0"
-                            >
-
-                        </div>
-
-                        <div class="comparables-tipo-valor">
-
-                            <label>
-
-                                <input
-                                    type="radio"
-                                    name="compManualTipoValor"
-                                    value="venta"
-                                    checked>
-
-                                Valor de venta
-
-                            </label>
-
-                            <label>
-
-                                <input
-                                    type="radio"
-                                    name="compManualTipoValor"
-                                    value="oferta">
-
-                                Valor de oferta
-
-                            </label>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    type="button"
-                    class="btn-modal btn-editar"
-                    id="btnAgregarComparableManual">
-                    Agregar a comparables
-                </button>
-
-            </div>
-    `;
-
-    overlay.classList.add("active");
-
-    try {
-
-        await asegurarDatasetProvincias();
-
-        bindComparableManualUbicacion();
-
-        if (esLote) {
-
-            inicializarTipoLoteComparableManual();
-        }
-
-    } catch (e) {
-
-        console.error(e);
+    // Usar ComparableEditor en modo crear
+    if (window.comparableEditor) {
+        window.comparableEditor.abrir({
+            modo: 'crear',
+            tipo: tipoActual,
+            onGuardar: (datos) => {
+                agregarComparableManualDesdeComparableEditor(datos);
+            }
+        });
+    } else {
+        console.error('ComparableEditor no está disponible');
     }
+}
+
+function agregarComparableManualDesdeComparableEditor(datos) {
+    // Convertir datos de ComparableEditor al formato esperado por datosTasacion.comparables
+    const comparable = {
+        fuente: "manual",
+        direccion: datos.ubicacion.direccion,
+        valor: datos.valor.monto,
+        tipoValor: datos.valor.tipo,
+        ubicacion: datos.ubicacion
+    };
+    
+    if (datos.tipo === 'lote') {
+        comparable.frente = datos.lote.frente;
+        comparable.fondo = datos.lote.fondo;
+        comparable.superficie = datos.lote.superficie;
+        comparable.tipoLote = datos.lote.tipoLote;
+    } else if (datos.tipo === 'casa') {
+        comparable.superficieCubierta = datos.casa.superficieCubierta;
+        comparable.superficieTerreno = datos.casa.superficieTerreno;
+        comparable.antiguedad = datos.casa.antiguedad;
+    } else if (datos.tipo === 'departamento') {
+        comparable.superficieTotal = datos.departamento.superficieTotal;
+        comparable.antiguedad = datos.departamento.antiguedad;
+        comparable.tieneAscensor = datos.departamento.tieneAscensor;
+    }
+    
+    // Agregar a datosTasacion.comparables
+    datosTasacion.comparables.push(comparable);
+    
+    // Actualizar UI
+    renderComparablesDerecha();
+    actualizarIndicadoresProgreso();
+    actualizarEstadoBotonSiguiente();
 }
 
 function abrirPanelComparableHistorial() {
