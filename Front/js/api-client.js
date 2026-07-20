@@ -9,8 +9,12 @@ const API_BASE_URL = (() => {
         const fromQuery = params.get('api_base_url');
         if (fromQuery) return fromQuery;
         if (window.API_BASE_URL_OVERRIDE) return window.API_BASE_URL_OVERRIDE;
+
+        const host = window.location.hostname;
+        const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '';
+        if (isLocal) return 'http://127.0.0.1:8080';
     }
-    return "http://127.0.0.1:8080";
+    return 'https://sistema-tasador.onrender.com';
 })();
 
 // =========================
