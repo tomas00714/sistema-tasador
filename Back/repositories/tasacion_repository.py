@@ -139,28 +139,22 @@ class TasacionRepository(BaseRepository):
     def obtener_comparables(self, tasacion_id: int) -> List[Dict[str, Any]]:
         """Obtiene los comparables de una tasación."""
         query = """
-            SELECT c.*
+            SELECT c.* 
             FROM comparables c
             INNER JOIN tasacion_comparable tc ON c.id = tc.comparable_id
             WHERE tc.tasacion_id = %s
             ORDER BY tc.orden
         """
-        logger.info(f"[OBTENER_COMPARABLES] tasacion_id={tasacion_id}")
         conn = get_connection()
         cursor = conn.cursor()
-
+        
         try:
             cursor.execute(query, (tasacion_id,))
             columns = [desc[0] for desc in cursor.description]
-            rows = cursor.fetchall()
-            results = [dict(zip(columns, row)) for row in rows]
-            logger.info(
-                f"[OBTENER_COMPARABLES] tasacion_id={tasacion_id} count={len(results)} "
-                f"ids={[c.get('id_publico') for c in results]}"
-            )
+            results = [dict(zip(columns, row)) for row in cursor.fetchall()]
             return results
         except Exception as e:
-            logger.error(f"[OBTENER_COMPARABLES] Error para tasacion_id={tasacion_id}: {e}", exc_info=True)
+            logger.error(f"Error al obtener comparables: {e}")
             return []
         finally:
             cursor.close()

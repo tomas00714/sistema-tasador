@@ -15,7 +15,6 @@ class BaseRepository(ABC):
     
     def execute_query(self, query: str, params: tuple = None, fetch: bool = True):
         """Ejecuta una query y retorna los resultados."""
-        logger.info(f"[EXECUTE_QUERY] query={query} params={params} fetch={fetch}")
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -23,14 +22,9 @@ class BaseRepository(ABC):
             cursor.execute(query, params or ())
 
             if fetch:
-                logger.info("[EXECUTE_QUERY] commit antes de fetchall (fetch=True)")
-                conn.commit()  # Commit para asegurar que los cambios se guarden
                 columns = [desc[0] for desc in cursor.description]
-                logger.info(f"[EXECUTE_QUERY] columns={columns}")
                 rows = cursor.fetchall()
-                logger.info(f"[EXECUTE_QUERY] row_count={len(rows)}")
-                for i, row in enumerate(rows):
-                    logger.info(f"[EXECUTE_QUERY] row[{i}] types={[type(v).__name__ for v in row]}")
+                conn.commit()  # Commit después de leer para no cerrar el portal antes de fetchall
                 results = [dict(zip(columns, row)) for row in rows]
                 return results
             else:
@@ -38,7 +32,7 @@ class BaseRepository(ABC):
                 return cursor.rowcount
         except Exception as e:
             conn.rollback()
-            logger.error(f"[EXECUTE_QUERY] Error en query: {e}", exc_info=True)
+            logger.error(f"Error en query: {e}")
             raise
         finally:
             cursor.close()
@@ -116,16 +110,15 @@ class BaseRepository(ABC):
         """Busca registros con condiciones WHERE."""
         where_clauses = []
         params = []
-
+        
         for column, value in conditions.items():
             where_clauses.append(f"{column} = %s")
             params.append(value)
-
+        
         where_str = ' AND '.join(where_clauses)
         query = f"SELECT * FROM {self.table_name} WHERE {where_str}"
-
+        
         if limit:
             query += f" LIMIT {limit}"
-
-        logger.info(f"[FIND_WHERE] table={self.table_name} query={query} params={tuple(params)}")
+        
         return self.execute_query(query, tuple(params))

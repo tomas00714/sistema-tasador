@@ -518,54 +518,31 @@ def obtener_tasacion(tasacion_id: str):
 @app.get("/api/tasaciones", response_model=list[TasacionResponse])
 def listar_tasaciones(usuario_id: int = 1, estado: str = None):
     """Lista todas las tasaciones de un usuario (opcionalmente filtrado por estado)."""
-    logger.info(f"[LISTAR] usuario_id={usuario_id} estado={estado}")
-
+    logger.info(f"Listando tasaciones para usuario: {usuario_id}, estado: {estado}")
+    
     try:
         repo = TasacionRepository()
-
+        
         if estado:
-            logger.info("[LISTAR] rama get_by_usuario_and_estado")
             tasaciones = repo.get_by_usuario_and_estado(usuario_id, estado)
         else:
-            logger.info("[LISTAR] rama get_by_usuario")
             tasaciones = repo.get_by_usuario(usuario_id)
-
-        logger.info(f"[LISTAR] raw_count={len(tasaciones)}")
-        for i, t in enumerate(tasaciones):
-            logger.info(
-                f"[LISTAR] raw[{i}] id={t.get('id')} id_publico={t.get('id_publico')} "
-                f"estado={t.get('estado')} tipo={t.get('tipo')} "
-                f"datos_type={type(t.get('datos')).__name__} keys={list(t.keys())}"
+        
+        return [
+            TasacionResponse(
+                id=t['id_publico'],
+                usuario_id=t['usuario_id'],
+                tipo=t['tipo'],
+                estado=t['estado'],
+                datos=t['datos'],
+                comparables_ids=[c['id_publico'] for c in repo.obtener_comparables(t['id'])],
+                fecha_creacion=t['fecha_creacion'],
+                fecha_modificacion=t['fecha_modificacion']
             )
-
-        resultados = []
-        for i, t in enumerate(tasaciones):
-            logger.info(f"[LISTAR] procesando fila {i}: id={t.get('id')} id_publico={t.get('id_publico')}")
-            try:
-                comparables = repo.obtener_comparables(t['id'])
-                tr = TasacionResponse(
-                    id=t['id_publico'],
-                    usuario_id=t['usuario_id'],
-                    tipo=t['tipo'],
-                    estado=t['estado'],
-                    datos=t['datos'],
-                    comparables_ids=[c['id_publico'] for c in comparables],
-                    fecha_creacion=t['fecha_creacion'],
-                    fecha_modificacion=t['fecha_modificacion']
-                )
-                resultados.append(tr)
-                logger.info(f"[LISTAR] TasacionResponse OK id={t.get('id_publico')}")
-            except Exception as e_inner:
-                logger.error(
-                    f"[LISTAR] ERROR fila {i} id={t.get('id')} id_publico={t.get('id_publico')}: {e_inner}",
-                    exc_info=True
-                )
-                raise
-
-        logger.info(f"[LISTAR] total_respuesta={len(resultados)}")
-        return resultados
+            for t in tasaciones
+        ]
     except Exception as e:
-        logger.error(f"[LISTAR] Error al listar tasaciones: {e}", exc_info=True)
+        logger.error(f"Error al listar tasaciones: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
