@@ -3391,13 +3391,13 @@ input:checked + .slider:before {
     background: var(--color-bg-light);
     border-radius: 15px;
     padding: 16px;
+    overflow: auto;
 }
 
 .lista-items-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 16px;
-    overflow-y: auto;
 }
 
 .lista-vacia {
