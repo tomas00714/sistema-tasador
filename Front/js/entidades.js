@@ -4,66 +4,54 @@
 ========================= */
 
 /* =========================
-   GENERADORES DE IDs
+   GENERADORES DE IDS
 ========================= */
 
 /**
- * Genera un ID público único para una entidad
- * @param {string} prefijo - Prefijo del ID (T, C, S)
- * @param {Function} existeFn - Función para verificar si el ID ya existe
- * @returns {string} ID público único
+ * Genera un ID único para una entidad (prefijo + número secuencial)
+ * @param {string} prefijo - Prefijo del ID (T, C, U, S)
+ * @returns {Promise<string>} ID único (ej: T-15432)
  */
-function generarIdPublico(prefijo, existeFn) {
-    const caracteres = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let id;
-    let intentos = 0;
-    const maxIntentos = 100;
-
-    do {
-        id = prefijo + '-';
-        for (let i = 0; i < 6; i++) {
-            id += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-        }
-        intentos++;
-        
-        if (intentos >= maxIntentos) {
-            throw new Error(`No se pudo generar un ID único después de ${maxIntentos} intentos`);
-        }
-    } while (existeFn && existeFn(id));
-
-    return id;
-}
-
-/**
- * Genera un UUID v4
- * @returns {string} UUID único
- */
-function generarUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
+async function generarId(prefijo) {
+    const API_URL = 'http://127.0.0.1:8080';
+    const response = await fetch(`${API_URL}/api/ids/generar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: prefijo })
     });
+    
+    if (!response.ok) {
+        throw new Error(`Error al generar ID: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.id;
 }
 
 /* =========================
    ALMACENAMIENTO DE ENTIDADES
 ========================= */
 
-const STORAGE_KEYS = {
-    TASACIONES: 'tasador_tasaciones_v2',
-    COMPARABLES: 'tasador_comparables_v2',
-    SOLICITUDES: 'tasador_solicitudes_v2'
-};
 
 /**
  * Lee todas las tasaciones del almacenamiento
- * @returns {Array} Array de tasaciones
+ * @returns {Promise<Array>} Array de tasaciones
  */
-function leerTasaciones() {
+async function leerTasaciones() {
     try {
-        const data = localStorage.getItem(STORAGE_KEYS.TASACIONES);
-        return data ? JSON.parse(data) : [];
+        const tasaciones = await listarTasacionesAPI(1);
+        // Convertir formato de API al formato esperado por el frontend
+        return tasaciones.map(t => ({
+            id: t.id,
+            idNum: parseInt(t.id.split('-')[1]),
+            tipo: t.tipo,
+            estado: t.estado,
+            fechaCreacion: t.fecha_creacion,
+            fechaModificacion: t.fecha_modificacion,
+            ...t.datos,
+            comparables: t.comparables_ids || [],
+            datosCompletos: t.datos
+        }));
     } catch (e) {
         console.error('Error al leer tasaciones:', e);
         return [];
@@ -75,21 +63,24 @@ function leerTasaciones() {
  * @param {Array} tasaciones - Array de tasaciones
  */
 function guardarTasaciones(tasaciones) {
-    try {
-        localStorage.setItem(STORAGE_KEYS.TASACIONES, JSON.stringify(tasaciones));
-    } catch (e) {
-        console.error('Error al guardar tasaciones:', e);
-    }
+    // Esta función ya no se usa directamente, las tasaciones se guardan individualmente
+    console.warn('guardarTasaciones está deprecado, usar crearTasacionAPI o actualizarTasacionAPI');
 }
 
 /**
  * Lee todas las comparables del almacenamiento
- * @returns {Array} Array de comparables
+ * @returns {Promise<Array>} Array de comparables
  */
-function leerComparables() {
+async function leerComparables() {
     try {
-        const data = localStorage.getItem(STORAGE_KEYS.COMPARABLES);
-        return data ? JSON.parse(data) : [];
+        const comparables = await listarComparablesAPI(1);
+        // Convertir formato de API al formato esperado por el frontend
+        return comparables.map(c => ({
+            id: c.id,
+            fechaCreacion: c.fecha_creacion,
+            fechaModificacion: c.fecha_modificacion,
+            ...c.datos
+        }));
     } catch (e) {
         console.error('Error al leer comparables:', e);
         return [];
@@ -101,21 +92,166 @@ function leerComparables() {
  * @param {Array} comparables - Array de comparables
  */
 function guardarComparables(comparables) {
+    // Esta función ya no se usa directamente, los comparables se guardan individualmente
+    console.warn('guardarComparables está deprecado, usar crearComparableAPI o actualizarComparableAPI');
+}
+
+/**
+ * Crea un nuevo comparable como entidad independiente
+ * @param {Object} datos - Datos del comparable
+ * @returns {Promise<Object>} Comparable creado con ID
+ */
+async function crearComparable(datos) {
     try {
-        localStorage.setItem(STORAGE_KEYS.COMPARABLES, JSON.stringify(comparables));
-    } catch (e) {
-        console.error('Error al guardar comparables:', e);
+        // Normalizar fuente para que coincida con el CHECK de la base de datos
+        const fuente = (datos.fuente === 'deTasacion' || datos.fuente === 'de_tasacion')
+            ? 'de_tasacion'
+            : (datos.fuente || 'manual');
+
+        // Asegurar lat/lon no nulos (la tabla comparables tiene NOT NULL)
+        const ubicacion = datos.ubicacion || {};
+        if (ubicacion.lat === undefined || ubicacion.lat === null || ubicacion.lat === '') ubicacion.lat = 0;
+        if (ubicacion.lon === undefined || ubicacion.lon === null || ubicacion.lon === '') ubicacion.lon = 0;
+
+        // Usar ?? en campos numericos para no perder el 0
+        const datosPayload = {
+            fuente: fuente,
+            tipoInmueble: datos.tipoInmueble,
+            ubicacion: ubicacion,
+            valor: datos.valor,
+            tipoValor: datos.tipoValor || 'venta',
+            tasacionOrigenId: datos.tasacionOrigenId || null,
+            tipoLote: datos.tipoLote || null,
+            frente: datos.frente ?? null,
+            fondo: datos.fondo ?? null,
+            superficie: datos.superficie ?? null,
+            superficieCubierta: datos.superficieCubierta ?? null,
+            superficieTerreno: datos.superficieTerreno ?? null,
+            superficieTotal: datos.superficieTotal ?? null,
+            antiguedad: datos.antiguedad ?? null,
+            estadoConservacion: datos.estadoConservacion || null,
+            ambientes: datos.ambientes ?? null,
+            dormitorios: datos.dormitorios ?? null,
+            banos: datos.banos ?? null,
+            cochera: datos.cochera ?? null,
+            tieneAscensor: datos.tieneAscensor ?? null,
+            tienePileta: datos.tienePileta ?? null,
+            tieneJardin: datos.tieneJardin ?? null,
+            idEnviador: datos.idEnviador || null,
+            idCreador: datos.idCreador || null,
+            nombreCreador: datos.nombreCreador || null,
+            lote: datos.lote || null,
+            departamento: datos.departamento || null,
+            casa: datos.casa || null,
+            observaciones: datos.observaciones || '',
+            fechaCreacion: new Date().toISOString()
+        };
+
+        const comparableAPI = await crearComparableAPI({
+            usuario_id: 1,
+            tipo_inmueble: datos.tipoInmueble,
+            fuente: fuente,
+            datos: datosPayload
+        });
+        
+        return {
+            id: comparableAPI.id,
+            idNum: parseInt(comparableAPI.id.split('-')[1]),
+            ...datosPayload
+        };
+    } catch (error) {
+        console.error('Error al crear comparable en API:', error);
+        throw error;
+    }
+}
+
+/**
+ * Crea un comparable compartido desde un link o envío
+ * @param {Object} datos - Datos del comparable
+ * @param {string} metodo - 'link' o 'enviado'
+ * @param {string} idEnviador - ID del usuario que lo compartió (solo para 'enviado')
+ * @param {string} idCreador - ID del usuario que lo creó
+ * @param {string} nombreCreador - Nombre del creador (obligatorio para links sin cuenta)
+ * @returns {Promise<Object>} Comparable compartido creado
+ */
+async function crearComparableCompartido(datos, metodo, idEnviador, idCreador, nombreCreador) {
+    const comparable = await crearComparable({
+        ...datos,
+        fuente: 'compartido',
+        idEnviador: metodo === 'enviado' ? idEnviador : null,
+        idCreador: idCreador || 0,
+        nombreCreador: nombreCreador || 'Anónimo'
+    });
+    
+    return comparable;
+}
+
+/**
+ * Obtiene un comparable por su ID
+ * @param {string} id - ID del comparable
+ * @returns {Promise<Object|null>} Comparable o null si no existe
+ */
+async function obtenerComparablePorId(id) {
+    try {
+        const comparable = await obtenerComparableAPI(id);
+        if (!comparable) return null;
+        
+        return {
+            id: comparable.id,
+            ...comparable.datos
+        };
+    } catch (error) {
+        console.error('Error al obtener comparable:', error);
+        return null;
+    }
+}
+
+/**
+ * Actualiza un comparable existente
+ * @param {string} id - ID del comparable
+ * @param {Object} datos - Datos actualizados
+ * @returns {Promise<boolean>} true si se actualizó correctamente
+ */
+async function actualizarComparable(id, datos) {
+    try {
+        await actualizarComparableAPI(id, { datos });
+        return true;
+    } catch (error) {
+        console.error('Error al actualizar comparable:', error);
+        return false;
+    }
+}
+
+/**
+ * Elimina un comparable por su ID
+ * @param {string} id - ID del comparable
+ * @returns {Promise<boolean>} true si se eliminó correctamente
+ */
+async function eliminarComparable(id) {
+    try {
+        await eliminarComparableAPI(id);
+        return true;
+    } catch (error) {
+        console.error('Error al eliminar comparable:', error);
+        return false;
     }
 }
 
 /**
  * Lee todas las solicitudes del almacenamiento
- * @returns {Array} Array de solicitudes
+ * @returns {Promise<Array>} Array de solicitudes
  */
-function leerSolicitudes() {
+async function leerSolicitudes() {
     try {
-        const data = localStorage.getItem(STORAGE_KEYS.SOLICITUDES);
-        return data ? JSON.parse(data) : [];
+        const solicitudes = await listarSolicitudesAPI(1);
+        // Convertir formato de API al formato esperado por el frontend
+        return solicitudes.map(s => ({
+            id: s.id,
+            tasacionId: s.tasacion_id,
+            linkPublico: s.link_publico,
+            estado: s.estado,
+            ...s.datos
+        }));
     } catch (e) {
         console.error('Error al leer solicitudes:', e);
         return [];
@@ -127,11 +263,8 @@ function leerSolicitudes() {
  * @param {Array} solicitudes - Array de solicitudes
  */
 function guardarSolicitudes(solicitudes) {
-    try {
-        localStorage.setItem(STORAGE_KEYS.SOLICITUDES, JSON.stringify(solicitudes));
-    } catch (e) {
-        console.error('Error al guardar solicitudes:', e);
-    }
+    // Esta función ya no se usa directamente, las solicitudes se guardan individualmente
+    console.warn('guardarSolicitudes está deprecado, usar crearSolicitudAPI o actualizarSolicitudAPI');
 }
 
 /* =========================
@@ -141,29 +274,11 @@ function guardarSolicitudes(solicitudes) {
 /**
  * Crea una nueva entidad Tasación
  * @param {Object} datos - Datos de la tasación
- * @returns {Object} Entidad Tasación
+ * @returns {Promise<Object>} Entidad Tasación
  */
-function crearTasacion(datos = {}) {
-    const tasaciones = leerTasaciones();
-    
-    const tasacion = {
-        // Identificadores
-        id: generarIdPublico('T', (id) => tasaciones.some(t => t.id === id)),
-        uuid: generarUUID(),
-        
-        // Metadatos
-        tipo: datos.tipo || 'lote',
-        estado: datos.estado || 'borrador',
-        origen: datos.origen || 'propia',
-        origenId: datos.origenId || null,
-        propietarioId: datos.propietarioId || null,
-        
-        // Fechas
-        fechaCreacion: datos.fechaCreacion || new Date().toISOString(),
-        fechaModificacion: datos.fechaModificacion || new Date().toISOString(),
-        
-        // Datos de la tasación (estructura existente)
-        datos: datos.datos || {
+async function crearTasacion(datos = {}) {
+    try {
+        const datosCompletos = datos.datos || {
             tipo: null,
             ubicacion: {
                 direccion: "",
@@ -212,129 +327,66 @@ function crearTasacion(datos = {}) {
                 }
             },
             comparables: []
-        },
+        };
         
-        // Resultado de la tasación
-        resultado: datos.resultado || null,
+        const tasacionAPI = await crearTasacionAPI({
+            usuario_id: 1,
+            tipo: datos.tipo || 'lote',
+            estado: datos.estado || 'borrador',
+            datos: datosCompletos,
+            comparables_ids: datos.comparables || []
+        });
         
-        // Referencias a comparables (IDs públicos)
-        comparables: datos.comparables || []
-    };
-    
-    return tasacion;
-}
-
-/**
- * Crea una nueva entidad Comparable
- * @param {Object} datos - Datos del comparable
- * @returns {Object} Entidad Comparable
- */
-function crearComparable(datos = {}) {
-    const comparables = leerComparables();
-    
-    const comparable = {
-        // Identificadores
-        id: generarIdPublico('C', (id) => comparables.some(c => c.id === id)),
-        uuid: generarUUID(),
-        
-        // Metadatos
-        tipo: datos.tipo || 'lote',
-        clase: datos.clase || 'guardado',
-        origen: datos.origen || 'manual',
-        origenId: datos.origenId || null,
-        propietarioId: datos.propietarioId || null,
-        
-        // Fechas
-        fechaCreacion: datos.fechaCreacion || new Date().toISOString(),
-        fechaModificacion: datos.fechaModificacion || new Date().toISOString(),
-        
-        // Datos del comparable (estructura existente)
-        datos: datos.datos || {
-            ubicacion: {
-                direccion: "",
-                provincia: "",
-                localidad: "",
-                lat: null,
-                lon: null
-            },
-            lote: {
-                tipoLote: "",
-                servicios: [],
-                caracteristicas: {},
-                observaciones: ""
-            },
-            departamento: {
-                ambientes: "",
-                dormitorios: "",
-                banos: "",
-                cochera: false,
-                baulera: false,
-                servicios: [],
-                amenities: [],
-                infraestructura: [],
-                observaciones: "",
-                ubicacionPlanta: "",
-                ubicacionPlantaCoef: 0,
-                tieneAscensor: "",
-                ubicacionPiso: "",
-                ubicacionPisoCoef: 0,
-                superficieCubierta: "",
-                superficieCubiertaCoef: 0,
-                antiguedad: "",
-                estadoConservacion: "",
-                estadoConservacionCoef: 0,
-                caracteristicaConstructiva: "",
-                caracteristicaConstructivaCoef: 0,
-                ubicacionEdificio: "",
-                homogeneizacion: {
-                    cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
-                    semicubierto: { superficie: 0, coeficiente: 0.50, homogeneizada: 0 },
-                    balcon: { superficie: 0, coeficiente: 0.30, homogeneizada: 0 },
-                    descubierto: { superficie: 0, coeficiente: 0.20, homogeneizada: 0 },
-                    totalSuperficie: 0,
-                    totalHomogeneizada: 0
-                }
-            },
-            valor: 0,
-            tipoValor: 'venta'
-        },
-        
-        // Para comparables derivados: referencia a la tasación origen
-        tasacionOrigenId: datos.tasacionOrigenId || null
-    };
-    
-    return comparable;
+        return {
+            id: tasacionAPI.id,
+            idNum: parseInt(tasacionAPI.id.split('-')[1]),
+            tipo: datos.tipo || 'lote',
+            estado: datos.estado || 'borrador',
+            origen: datos.origen || 'propia',
+            origenId: datos.origenId || null,
+            propietarioId: datos.propietarioId || null,
+            fechaCreacion: tasacionAPI.fecha_creacion,
+            fechaModificacion: tasacionAPI.fecha_modificacion,
+            datos: datosCompletos,
+            resultado: datos.resultado || null,
+            comparables: datos.comparables || [],
+            datosCompletos: datosCompletos
+        };
+    } catch (error) {
+        console.error('Error al crear tasación en API:', error);
+        throw error;
+    }
 }
 
 /**
  * Crea una nueva entidad Solicitud
  * @param {Object} datos - Datos de la solicitud
- * @returns {Object} Entidad Solicitud
+ * @returns {Promise<Object>} Entidad Solicitud
  */
-function crearSolicitud(datos = {}) {
-    const solicitudes = leerSolicitudes();
-    
-    const solicitud = {
-        // Identificadores
-        id: generarIdPublico('S', (id) => solicitudes.some(s => s.id === id)),
-        uuid: generarUUID(),
+async function crearSolicitud(datos = {}) {
+    try {
+        const solicitudAPI = await crearSolicitudAPI({
+            usuario_id: 1,
+            tasacion_id: datos.tasacionId,
+            estado: datos.estado || 'pendiente',
+            datos: datos.datosSolicitados || {}
+        });
         
-        // Metadatos
-        tipo: datos.tipo || 'lote',
-        estado: datos.estado || 'pendiente',
-        creadorId: datos.creadorId || null,
-        
-        // Fechas
-        fechaCreacion: datos.fechaCreacion || new Date().toISOString(),
-        
-        // Link público para compartir
-        linkPublico: datos.linkPublico || null,
-        
-        // Datos solicitados
-        datosSolicitados: datos.datosSolicitados || {}
-    };
-    
-    return solicitud;
+        return {
+            id: solicitudAPI.id,
+            idNum: parseInt(solicitudAPI.id.split('-')[1]),
+            tipo: datos.tipo || 'lote',
+            estado: solicitudAPI.estado,
+            creadorId: datos.creadorId || null,
+            fechaCreacion: solicitudAPI.fecha_creacion,
+            linkPublico: solicitudAPI.link_publico,
+            datosSolicitados: datos.datosSolicitados || {},
+            tasacionId: solicitudAPI.tasacion_id
+        };
+    } catch (error) {
+        console.error('Error al crear solicitud en API:', error);
+        throw error;
+    }
 }
 
 /* =========================
@@ -345,88 +397,81 @@ function crearSolicitud(datos = {}) {
  * Guarda una tasación en el almacenamiento
  * @param {Object} tasacion - Tasación a guardar
  */
-function guardarTasacionEntidad(tasacion) {
-    const tasaciones = leerTasaciones();
-    const index = tasaciones.findIndex(t => t.uuid === tasacion.uuid);
-    
-    tasacion.fechaModificacion = new Date().toISOString();
-    
-    if (index !== -1) {
-        tasaciones[index] = tasacion;
-    } else {
-        tasaciones.push(tasacion);
+async function guardarTasacionEntidad(tasacion) {
+    try {
+        await actualizarTasacionAPI(tasacion.id, {
+            estado: tasacion.estado,
+            datos: tasacion.datos,
+            comparables_ids: tasacion.comparables || []
+        });
+    } catch (error) {
+        console.error('Error al guardar tasación:', error);
+        throw error;
     }
-    
-    guardarTasaciones(tasaciones);
 }
 
 /**
  * Elimina una tasación del almacenamiento
- * @param {string} uuid - UUID de la tasación a eliminar
+ * @param {string} id - ID de la tasación a eliminar
  */
-function eliminarTasacionEntidad(uuid) {
-    const tasaciones = leerTasaciones();
-    const filtradas = tasaciones.filter(t => t.uuid !== uuid);
-    guardarTasaciones(filtradas);
-}
-
-/**
- * Obtiene una tasación por su UUID
- * @param {string} uuid - UUID de la tasación
- * @returns {Object|null} Tasación encontrada o null
- */
-function obtenerTasacionPorUUID(uuid) {
-    const tasaciones = leerTasaciones();
-    return tasaciones.find(t => t.uuid === uuid) || null;
+async function eliminarTasacionEntidad(id) {
+    try {
+        await eliminarTasacionAPI(id);
+    } catch (error) {
+        console.error('Error al eliminar tasación:', error);
+        throw error;
+    }
 }
 
 /**
  * Obtiene una tasación por su ID público
  * @param {string} id - ID público de la tasación
- * @returns {Object|null} Tasación encontrada o null
+ * @returns {Promise<Object|null>} Tasación encontrada o null
  */
-function obtenerTasacionPorID(id) {
-    const tasaciones = leerTasaciones();
-    return tasaciones.find(t => t.id === id) || null;
+async function obtenerTasacionPorID(id) {
+    try {
+        const tasacion = await obtenerTasacionAPI(id);
+        if (!tasacion) return null;
+        
+        return {
+            id: tasacion.id,
+            idNum: parseInt(tasacion.id.split('-')[1]),
+            tipo: tasacion.tipo,
+            estado: tasacion.estado,
+            ...tasacion.datos,
+            comparables: tasacion.comparables_ids || [],
+            datosCompletos: tasacion.datos
+        };
+    } catch (error) {
+        console.error('Error al obtener tasación por ID:', error);
+        return null;
+    }
 }
 
 /**
  * Guarda un comparable en el almacenamiento
  * @param {Object} comparable - Comparable a guardar
  */
-function guardarComparableEntidad(comparable) {
-    const comparables = leerComparables();
-    const index = comparables.findIndex(c => c.uuid === comparable.uuid);
-    
-    comparable.fechaModificacion = new Date().toISOString();
-    
-    if (index !== -1) {
-        comparables[index] = comparable;
-    } else {
-        comparables.push(comparable);
+async function guardarComparableEntidad(comparable) {
+    try {
+        await actualizarComparableAPI(comparable.id, { datos: comparable });
+    } catch (error) {
+        console.error('Error al guardar comparable:', error);
+        throw error;
     }
-    
-    guardarComparables(comparables);
 }
 
 /**
  * Elimina un comparable del almacenamiento
  * @param {string} uuid - UUID del comparable a eliminar
  */
-function eliminarComparableEntidad(uuid) {
-    const comparables = leerComparables();
-    const filtrados = comparables.filter(c => c.uuid !== uuid);
-    guardarComparables(filtrados);
-}
-
-/**
- * Obtiene un comparable por su UUID
- * @param {string} uuid - UUID del comparable
- * @returns {Object|null} Comparable encontrado o null
- */
-function obtenerComparablePorUUID(uuid) {
-    const comparables = leerComparables();
-    return comparables.find(c => c.uuid === uuid) || null;
+async function eliminarComparableEntidad(id) {
+    try {
+        await eliminarComparableAPI(id);
+    } catch (error) {
+        console.error('Error al eliminar comparable:', error);
+        throw error;
+    }
 }
 
 /**
@@ -434,46 +479,48 @@ function obtenerComparablePorUUID(uuid) {
  * @param {string} id - ID público del comparable
  * @returns {Object|null} Comparable encontrado o null
  */
-function obtenerComparablePorID(id) {
-    const comparables = leerComparables();
-    return comparables.find(c => c.id === id) || null;
+async function obtenerComparablePorID(id) {
+    try {
+        const comparable = await obtenerComparableAPI(id);
+        if (!comparable) return null;
+        
+        return {
+            id: comparable.id,
+            ...comparable.datos
+        };
+    } catch (error) {
+        console.error('Error al obtener comparable por ID:', error);
+        return null;
+    }
 }
 
 /**
  * Guarda una solicitud en el almacenamiento
  * @param {Object} solicitud - Solicitud a guardar
  */
-function guardarSolicitudEntidad(solicitud) {
-    const solicitudes = leerSolicitudes();
-    const index = solicitudes.findIndex(s => s.uuid === solicitud.uuid);
-    
-    if (index !== -1) {
-        solicitudes[index] = solicitud;
-    } else {
-        solicitudes.push(solicitud);
+async function guardarSolicitudEntidad(solicitud) {
+    try {
+        await actualizarSolicitudAPI(solicitud.id, {
+            estado: solicitud.estado,
+            datos: solicitud.datosSolicitados || {}
+        });
+    } catch (error) {
+        console.error('Error al guardar solicitud:', error);
+        throw error;
     }
-    
-    guardarSolicitudes(solicitudes);
 }
 
 /**
  * Elimina una solicitud del almacenamiento
  * @param {string} uuid - UUID de la solicitud a eliminar
  */
-function eliminarSolicitudEntidad(uuid) {
-    const solicitudes = leerSolicitudes();
-    const filtradas = solicitudes.filter(s => s.uuid !== uuid);
-    guardarSolicitudes(filtradas);
-}
-
-/**
- * Obtiene una solicitud por su UUID
- * @param {string} uuid - UUID de la solicitud
- * @returns {Object|null} Solicitud encontrada o null
- */
-function obtenerSolicitudPorUUID(uuid) {
-    const solicitudes = leerSolicitudes();
-    return solicitudes.find(s => s.uuid === uuid) || null;
+async function eliminarSolicitudEntidad(id) {
+    try {
+        await eliminarSolicitudAPI(id);
+    } catch (error) {
+        console.error('Error al eliminar solicitud:', error);
+        throw error;
+    }
 }
 
 /**
@@ -481,9 +528,22 @@ function obtenerSolicitudPorUUID(uuid) {
  * @param {string} id - ID público de la solicitud
  * @returns {Object|null} Solicitud encontrada o null
  */
-function obtenerSolicitudPorID(id) {
-    const solicitudes = leerSolicitudes();
-    return solicitudes.find(s => s.id === id) || null;
+async function obtenerSolicitudPorID(id) {
+    try {
+        const solicitud = await obtenerSolicitudAPI(id);
+        if (!solicitud) return null;
+        
+        return {
+            id: solicitud.id,
+            tasacionId: solicitud.tasacion_id,
+            linkPublico: solicitud.link_publico,
+            estado: solicitud.estado,
+            ...solicitud.datos
+        };
+    } catch (error) {
+        console.error('Error al obtener solicitud por ID:', error);
+        return null;
+    }
 }
 
 /* =========================
@@ -493,28 +553,33 @@ function obtenerSolicitudPorID(id) {
 /**
  * Comparte una tasación creando una copia con nuevo ID y UUID
  * @param {string} tasacionId - ID público de la tasación a compartir
- * @returns {Object|null} Nueva tasación compartida o null
+ * @returns {Promise<Object|null>} Nueva tasación compartida o null
  */
-function compartirTasacion(tasacionId) {
-    const original = obtenerTasacionPorID(tasacionId);
+async function compartirTasacion(tasacionId) {
+    const original = await obtenerTasacionPorID(tasacionId);
     if (!original) return null;
     
     const copia = JSON.parse(JSON.stringify(original));
     
-    // Generar nuevos identificadores
-    const tasaciones = leerTasaciones();
-    copia.id = generarIdPublico('T', (id) => tasaciones.some(t => t.id === id));
-    copia.uuid = generarUUID();
-    
     // Actualizar metadatos
-    copia.origen = 'compartida';
-    copia.origenId = original.id;
+    copia.datosCompletos = copia.datosCompletos || {};
+    copia.datosCompletos.origen = 'compartida';
+    copia.datosCompletos.origenId = original.id;
     copia.estado = 'borrador';
     copia.fechaCreacion = new Date().toISOString();
     copia.fechaModificacion = new Date().toISOString();
     
-    // Guardar la copia
-    guardarTasacionEntidad(copia);
+    // Crear nueva copia en la API
+    const nuevaTasacion = await crearTasacionAPI({
+        usuario_id: 1,
+        tipo: copia.tipo || 'lote',
+        estado: 'borrador',
+        datos: copia.datosCompletos,
+        comparables_ids: copia.comparables || []
+    });
+    
+    copia.id = nuevaTasacion.id;
+    copia.idNum = parseInt(nuevaTasacion.id.split('-')[1]);
     
     return copia;
 }
@@ -522,26 +587,30 @@ function compartirTasacion(tasacionId) {
 /**
  * Comparte un comparable creando una copia con nuevo ID y UUID
  * @param {string} comparableId - ID público del comparable a compartir
- * @returns {Object|null} Nuevo comparable compartido o null
+ * @returns {Promise<Object|null>} Nuevo comparable compartido o null
  */
-function compartirComparable(comparableId) {
-    const original = obtenerComparablePorID(comparableId);
+async function compartirComparable(comparableId) {
+    const original = await obtenerComparablePorID(comparableId);
     if (!original) return null;
     
     const copia = JSON.parse(JSON.stringify(original));
     
-    // Generar nuevos identificadores
-    const comparables = leerComparables();
-    copia.id = generarIdPublico('C', (id) => comparables.some(c => c.id === id));
-    copia.uuid = generarUUID();
-    
     // Actualizar metadatos
+    copia.fuente = 'compartido';
     copia.origenId = original.id;
     copia.fechaCreacion = new Date().toISOString();
     copia.fechaModificacion = new Date().toISOString();
     
-    // Guardar la copia
-    guardarComparableEntidad(copia);
+    // Crear nueva copia en la API
+    const nuevoComparable = await crearComparableAPI({
+        usuario_id: 1,
+        tipo_inmueble: copia.tipoInmueble || copia.tipo || 'lote',
+        fuente: 'compartido',
+        datos: copia
+    });
+    
+    copia.id = nuevoComparable.id;
+    copia.idNum = parseInt(nuevoComparable.id.split('-')[1]);
     
     return copia;
 }
@@ -556,23 +625,20 @@ function compartirComparable(comparableId) {
  * @param {Object} datosRespuesta - Datos ingresados en la respuesta
  * @returns {Object|null} Nuevo comparable creado o null
  */
-function responderSolicitud(solicitudId, datosRespuesta) {
-    const solicitud = obtenerSolicitudPorID(solicitudId);
+async function responderSolicitud(solicitudId, datosRespuesta) {
+    const solicitud = await obtenerSolicitudPorID(solicitudId);
     if (!solicitud) return null;
     
     // Crear comparable guardado desde los datos de respuesta
-    const comparable = crearComparable({
-        tipo: solicitud.tipo,
-        clase: 'guardado',
-        origen: 'solicitado',
-        datos: datosRespuesta
+    const comparable = await crearComparable({
+        tipoInmueble: solicitud.tipo || datosRespuesta?.tipoInmueble || 'lote',
+        fuente: 'solicitado',
+        tasacionOrigenId: solicitud.tasacionId,
+        ...datosRespuesta
     });
     
-    // Guardar el comparable
-    guardarComparableEntidad(comparable);
-    
     // Eliminar la solicitud
-    eliminarSolicitudEntidad(solicitud.uuid);
+    await eliminarSolicitudEntidad(solicitud.id);
     
     return comparable;
 }
@@ -584,46 +650,51 @@ function responderSolicitud(solicitudId, datosRespuesta) {
 /**
  * Guarda un comparable temporal como guardado
  * @param {Object} comparableTemporal - Comparable temporal a guardar
- * @returns {Object|null} Nuevo comparable guardado o null
+ * @returns {Promise<Object|null>} Nuevo comparable guardado o null
  */
-function guardarComparableTemporalComoGuardado(comparableTemporal) {
-    // Crear nuevo comparable guardado
-    const comparableGuardado = crearComparable({
-        tipo: comparableTemporal.tipo,
-        clase: 'guardado',
-        origen: comparableTemporal.origen || 'manual',
-        datos: JSON.parse(JSON.stringify(comparableTemporal.datos))
+async function guardarComparableTemporalComoGuardado(comparableTemporal) {
+    const datos = JSON.parse(JSON.stringify(comparableTemporal.datos || comparableTemporal));
+    datos.fuente = comparableTemporal.fuente || 'manual';
+    datos.tipoInmueble = comparableTemporal.tipoInmueble || comparableTemporal.tipo || datos.tipoInmueble || 'lote';
+    if (comparableTemporal.origen) datos.origen = comparableTemporal.origen;
+    if (comparableTemporal.clase) datos.clase = comparableTemporal.clase;
+    
+    // Crear nuevo comparable guardado en la API
+    const comparableAPI = await crearComparableAPI({
+        usuario_id: 1,
+        tipo_inmueble: datos.tipoInmueble,
+        fuente: datos.fuente,
+        datos
     });
     
-    // Guardar el comparable
-    guardarComparableEntidad(comparableGuardado);
-    
-    return comparableGuardado;
+    return {
+        id: comparableAPI.id,
+        ...datos
+    };
 }
 
 /**
  * Crea un comparable derivado desde una tasación
  * @param {string} tasacionId - ID público de la tasación origen
- * @returns {Object|null} Nuevo comparable derivado o null
+ * @returns {Promise<Object|null>} Nuevo comparable derivado o null
  */
-function crearComparableDerivadoDesdeTasacion(tasacionId) {
-    const tasacion = obtenerTasacionPorID(tasacionId);
+async function crearComparableDerivadoDesdeTasacion(tasacionId) {
+    const tasacion = await obtenerTasacionPorID(tasacionId);
     if (!tasacion) return null;
     
     // Crear comparable derivado (referencia a la tasación)
-    const comparableDerivado = crearComparable({
-        tipo: tasacion.tipo,
-        clase: 'derivado',
-        origen: 'derivado_tasacion',
-        origenId: tasacionId,
-        datos: {} // No tiene datos propios, referencia a la tasación
+    const comparableDerivado = await crearComparable({
+        tipoInmueble: tasacion.tipo,
+        fuente: 'derivado_tasacion',
+        tasacionOrigenId: tasacionId,
+        datos: {
+            origen: 'derivado_tasacion',
+            tasacionOrigenId: tasacionId
+        }
     });
     
     // Guardar la referencia a la tasación origen
     comparableDerivado.tasacionOrigenId = tasacionId;
-    
-    // Guardar el comparable
-    guardarComparableEntidad(comparableDerivado);
     
     return comparableDerivado;
 }
@@ -633,149 +704,22 @@ function crearComparableDerivadoDesdeTasacion(tasacionId) {
  * @param {Object} comparable - Comparable derivado
  * @returns {Object|null} Datos completos del comparable o null
  */
-function obtenerDatosComparableDerivado(comparable) {
+async function obtenerDatosComparableDerivado(comparable) {
     if (comparable.clase !== 'derivado' || !comparable.tasacionOrigenId) {
         return null;
     }
     
-    const tasacion = obtenerTasacionPorID(comparable.tasacionOrigenId);
+    const tasacion = await obtenerTasacionPorID(comparable.tasacionOrigenId);
     if (!tasacion) return null;
+    
+    const datos = tasacion.datosCompletos || tasacion.datos || {};
     
     // Retornar los datos de la tasación origen
     return {
-        ubicacion: tasacion.datos.ubicacion,
-        lote: tasacion.datos.lote,
-        departamento: tasacion.datos.departamento,
-        valor: tasacion.resultado?.valor_final || 0,
+        ubicacion: datos.ubicacion,
+        lote: datos.lote,
+        departamento: datos.departamento,
+        valor: tasacion.resultado?.valor_final || datos.resultado?.valor_final || 0,
         tipoValor: 'venta'
     };
-}
-
-/* =========================
-   MIGRACIÓN DE DATOS
-========================= */
-
-const STORAGE_KEY_ANTIGUO = 'tasador_historial';
-
-/**
- * Verifica si hay datos antiguos que necesitan migración
- * @returns {boolean} True si hay datos antiguos
- */
-function hayDatosAntiguos() {
-    const datosAntiguos = localStorage.getItem(STORAGE_KEY_ANTIGUO);
-    const datosNuevos = localStorage.getItem(STORAGE_KEYS.TASACIONES);
-    return datosAntiguos && !datosNuevos;
-}
-
-/**
- * Migración de datos antiguos al nuevo formato de entidades
- * @returns {Object} Resultado de la migración
- */
-function migrarDatosAntiguos() {
-    try {
-        // Leer datos antiguos
-        const datosAntiguosStr = localStorage.getItem(STORAGE_KEY_ANTIGUO);
-        if (!datosAntiguosStr) {
-            return { exito: false, mensaje: 'No hay datos antiguos para migrar' };
-        }
-        
-        const datosAntiguos = JSON.parse(datosAntiguosStr);
-        if (!Array.isArray(datosAntiguos) || datosAntiguos.length === 0) {
-            return { exito: false, mensaje: 'Datos antiguos vacíos o inválidos' };
-        }
-        
-        // Verificar si ya se migró
-        if (localStorage.getItem(STORAGE_KEYS.TASACIONES)) {
-            return { exito: false, mensaje: 'Los datos ya fueron migrados previamente' };
-        }
-        
-        const tasacionesMigradas = [];
-        const comparablesMigrados = [];
-        const mapaComparablesAntiguos = new Map(); // Mapa de ID antiguo -> ID nuevo
-        
-        // Migrar cada tasación
-        for (const tasacionAntigua of datosAntiguos) {
-            // Migrar comparables embebidos a entidades independientes
-            const idsComparablesNuevos = [];
-            
-            if (tasacionAntigua.comparables && Array.isArray(tasacionAntigua.comparables)) {
-                for (const compAntiguo of tasacionAntigua.comparables) {
-                    // Crear comparable guardado
-                    const comparableNuevo = crearComparable({
-                        tipo: compAntiguo.tipoInmueble || tasacionAntigua.tipo,
-                        clase: 'guardado',
-                        origen: compAntiguo.fuente === 'historial' ? 'manual' : 'manual',
-                        datos: {
-                            ubicacion: compAntiguo.ubicacion || {},
-                            lote: compAntiguo.snapshot?.lote || {},
-                            departamento: compAntiguo.snapshot?.departamento || {},
-                            valor: compAntiguo.valor || 0,
-                            tipoValor: compAntiguo.tipoValor || 'venta'
-                        }
-                    });
-                    
-                    // Guardar el comparable
-                    guardarComparableEntidad(comparableNuevo);
-                    comparablesMigrados.push(comparableNuevo);
-                    
-                    // Guardar referencia
-                    idsComparablesNuevos.push(comparableNuevo.id);
-                    
-                    // Guardar en mapa para referencia futura
-                    if (compAntiguo.id) {
-                        mapaComparablesAntiguos.set(compAntiguo.id, comparableNuevo.id);
-                    }
-                }
-            }
-            
-            // Crear tasación nueva
-            const tasacionNueva = crearTasacion({
-                tipo: tasacionAntigua.tipo,
-                estado: tasacionAntigua.estado === 'completada' ? 'completada' : 'borrador',
-                origen: 'propia',
-                origenId: null,
-                datos: {
-                    tipo: tasacionAntigua.tipo,
-                    ubicacion: tasacionAntigua.ubicacion || {},
-                    lote: tasacionAntigua.lote || {},
-                    departamento: tasacionAntigua.departamento || {},
-                    comparables: [] // Los comparables ahora son referencias externas
-                },
-                resultado: tasacionAntigua.resultado || null,
-                comparables: idsComparablesNuevos // Referencias a comparables
-            });
-            
-            // Guardar la tasación
-            guardarTasacionEntidad(tasacionNueva);
-            tasacionesMigradas.push(tasacionNueva);
-        }
-        
-        // Marcar migración como completada
-        localStorage.setItem('tasador_migracion_completada', new Date().toISOString());
-        
-        return {
-            exito: true,
-            mensaje: `Migración completada: ${tasacionesMigradas.length} tasaciones y ${comparablesMigrados.length} comparables migrados`,
-            tasaciones: tasacionesMigradas.length,
-            comparables: comparablesMigrados.length
-        };
-        
-    } catch (e) {
-        console.error('Error durante migración:', e);
-        return { exito: false, mensaje: `Error durante migración: ${e.message}` };
-    }
-}
-
-/**
- * Ejecuta la migración si hay datos antiguos
- * @returns {Object} Resultado de la migración
- */
-function ejecutarMigracionSiNecesaria() {
-    if (hayDatosAntiguos()) {
-        console.log('Iniciando migración de datos antiguos...');
-        const resultado = migrarDatosAntiguos();
-        console.log(resultado.mensaje);
-        return resultado;
-    }
-    return { exito: true, mensaje: 'No se requiere migración' };
 }

@@ -1,22 +1,21 @@
-let tasaciones;
+let tasaciones = [];
 
-try {
-
-    tasaciones =
-        JSON.parse(
-            localStorage.getItem(
-                "historialTasaciones"
-            )
-        );
-
-    if (!Array.isArray(tasaciones)) {
-
+async function cargarHistorialDesdeAPI() {
+    try {
+        tasaciones = await leerTasaciones();
+        if (!Array.isArray(tasaciones)) {
+            tasaciones = [];
+        }
+    } catch (e) {
+        console.error('Error al cargar historial desde API:', e);
         tasaciones = [];
     }
+}
 
-} catch (e) {
-
-    tasaciones = [];
+function leerHistorialDesdeStorage() {
+    // Esta función está deprecada, usar cargarHistorialDesdeAPI() en su lugar
+    console.warn('leerHistorialDesdeStorage está deprecado, usar cargarHistorialDesdeAPI');
+    return [];
 }
 
 let tasacionPerfilAbiertaId = null;
@@ -32,11 +31,28 @@ let historialInicializado = false;
 let lista = null;
 
 let tabActual = "todas";
+let tipoFiltroActual = "todos";
+let busquedaActual = "";
 
 const TILE_URLS = {
     light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 };
+
+function limpiarMapaHistorial() {
+    if (mapa) {
+        if (capaMarcadores) {
+            capaMarcadores.clearLayers();
+            capaMarcadores = null;
+        }
+        if (tilesLayerHistorial) {
+            mapa.removeLayer(tilesLayerHistorial);
+            tilesLayerHistorial = null;
+        }
+        mapa.remove();
+        mapa = null;
+    }
+}
 
 /* =========================
    HELPER FUNCTIONS
@@ -295,14 +311,6 @@ function generarTablaResultadosPerfil(tasacion) {
    INICIALIZACIÓN
 ========================= */
 
-function guardarHistorial() {
-
-    localStorage.setItem(
-        "historialTasaciones",
-        JSON.stringify(tasaciones)
-    );
-}
-
 function cambiarTilesMapaHistorial() {
     if (!mapa || !tilesLayerHistorial) return;
 
@@ -316,7 +324,7 @@ function cambiarTilesMapaHistorial() {
     ).addTo(mapa);
 }
 
-function inicializarHistorial() {
+async function inicializarHistorial() {
 
     lista =
         document.querySelector(
@@ -327,6 +335,9 @@ function inicializarHistorial() {
         return;
     }
 
+    // Cargar tasaciones desde la API
+    await cargarHistorialDesdeAPI();
+
     if (!historialInicializado) {
 
         const mapEl =
@@ -335,6 +346,9 @@ function inicializarHistorial() {
         if (!mapEl) {
             return;
         }
+
+        // Limpiar mapa existente si hay uno
+        limpiarMapaHistorial();
 
         mapa = L.map("map").setView(
             [-34.6037, -58.3816],
@@ -393,7 +407,7 @@ function inicializarHistorial() {
 
     renderHistorial();
 
-    inicializarTabs();
+    inicializarFiltrosHistorial();
 
     if (mapa) {
 
@@ -411,6 +425,56 @@ window.inicializarHistorial =
    LISTA
 ========================= */
 
+function getTipoInmuebleHistorial(tasacion) {
+    const tipo = String(tasacion?.tipo || "").toLowerCase();
+
+    if (tipo === "lote") {
+        return "lote";
+    }
+
+    if (tipo === "casa") {
+        return "casa";
+    }
+
+    if (tipo === "departamento" || tipo === "ph") {
+        return "ph";
+    }
+
+    const tipoDepartamento = String(tasacion?.departamento?.tipo || "").toLowerCase();
+    if (tipoDepartamento.includes("ph")) {
+        return "ph";
+    }
+
+    return "ph";
+}
+
+function filtrarTasacionesHistorial() {
+    let resultado = [...tasaciones];
+
+    if (tabActual === "completadas") {
+        resultado = resultado.filter(t => t.estado === "completada");
+    } else if (tabActual === "borradores") {
+        resultado = resultado.filter(t => t.estado === "borrador");
+    }
+
+    if (tipoFiltroActual !== "todos") {
+        resultado = resultado.filter(t => getTipoInmuebleHistorial(t) === tipoFiltroActual);
+    }
+
+    if (busquedaActual.trim()) {
+        const termino = busquedaActual.trim().toLowerCase();
+        resultado = resultado.filter(t => {
+            const direccion = String(t.ubicacion?.direccion || "").toLowerCase();
+            const localidad = String(t.ubicacion?.localidad || "").toLowerCase();
+            const provincia = String(t.ubicacion?.provincia || "").toLowerCase();
+            const codigo = String(t.codigo || t.id || "").toLowerCase();
+            return direccion.includes(termino) || localidad.includes(termino) || provincia.includes(termino) || codigo.includes(termino);
+        });
+    }
+
+    return resultado;
+}
+
 function renderHistorial() {
 
     if (!lista) {
@@ -424,24 +488,18 @@ function renderHistorial() {
         capaMarcadores.clearLayers();
     }
 
-    let tasacionesFiltradas = tasaciones;
-
-    if (tabActual === "completadas") {
-
-        tasacionesFiltradas = tasaciones.filter(t => t.estado === "completada");
-
-    } else if (tabActual === "borradores") {
-
-        tasacionesFiltradas = tasaciones.filter(t => t.estado === "borrador");
-
-    }
+    const tasacionesFiltradas = filtrarTasacionesHistorial();
 
     if (!tasacionesFiltradas.length) {
+
+        const hayFiltrosActivos = tabActual !== "todas" || tipoFiltroActual !== "todos" || busquedaActual.trim();
 
         lista.innerHTML = `
 
             <p class="historial-vacio">
-                No hay tasaciones en esta categoría.
+                ${hayFiltrosActivos
+                    ? "No hay tasaciones que coincidan con los filtros aplicados."
+                    : "No hay tasaciones en esta categoría."}
             </p>
 
         `;
@@ -451,13 +509,6 @@ function renderHistorial() {
 
     tasacionesFiltradas.forEach(tasacion => {
 
-        const estadoBadge = tasacion.estado === "borrador"
-            ? `<span class="card-badge card-badge-borrador">Borrador</span>`
-            : `<span class="card-badge card-badge-completada">Completada</span>`;
-
-        const tipoBadge = `<span class="card-badge card-badge-tipo">${tasacion.tipo.charAt(0).toUpperCase() + tasacion.tipo.slice(1)}</span>`;
-
-        // Buscar el valor final en múltiples lugares
         let precio = "—";
         if (tasacion.resultado?.valor_final) {
             precio = `USD ${(tasacion.resultado.valor_final).toLocaleString('es-AR')}`;
@@ -465,50 +516,17 @@ function renderHistorial() {
             precio = `USD ${(tasacion.datosCompletos.resultado.valor_final).toLocaleString('es-AR')}`;
         }
 
-        lista.innerHTML += `
-
-            <div class="card-historial"
-                onclick="abrirPerfilTasacion('${tasacion.id}')">
-
-                <div class="card-grid">
-                    <div class="card-left">
-                        <div class="card-image">
-                            <i class="fa-solid fa-camera"></i>
-                        </div>
-                    </div>
-
-                    <div class="card-main">
-                        <div class="card-header">
-                            <div class="card-date-time">
-                                <i class="fa-solid fa-calendar"></i>
-                                <span>${formatearFecha(tasacion.fechaCreacion)}</span>
-                            </div>
-                            ${tipoBadge}
-                        </div>
-
-                        <div class="card-address">
-                            <i class="fa-solid fa-location-dot"></i>
-                            <span>${tasacion.ubicacion.direccion}</span>
-                        </div>
-
-                        <div class="card-location">
-                            <span>${tasacion.ubicacion.localidad}, ${tasacion.ubicacion.provincia}</span>
-                            <div class="card-state">
-                                ${estadoBadge}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-divider"></div>
-
-                <div class="card-price">
-                    <i class="fa-solid fa-dollar-sign"></i>
-                    <span>${precio}</span>
-                </div>
-
-            </div>
-        `;
+        lista.innerHTML += construirCardMinimizada({
+            item: tasacion,
+            precio,
+            fecha: formatearFecha(tasacion.fechaCreacion),
+            tipoLabel: tasacion.tipo.charAt(0).toUpperCase() + tasacion.tipo.slice(1),
+            estadoLabel: tasacion.estado === "borrador" ? "Borrador" : "Completada",
+            estadoBadgeClass: tasacion.estado === "borrador"
+                ? "card-minimizada-badge-borrador"
+                : "card-minimizada-badge-completada",
+            onClick: `abrirPerfilTasacion('${tasacion.id}')`
+        });
 
 
         const mostrarEnMapa = tabActual === "borradores"
@@ -556,12 +574,32 @@ function renderHistorial() {
 }
 
 /* =========================
-   TABS
+   FILTROS
 ========================= */
 
-function inicializarTabs() {
+function inicializarFiltrosHistorial() {
 
     const tabs = document.querySelectorAll(".btn-tab");
+    const filtrosTipo = document.querySelectorAll(".btn-filtro-tipo");
+    const inputBusqueda = document.querySelector(".input-busqueda");
+
+    const tabActivo = document.querySelector(".btn-tab.active");
+    if (tabActivo) {
+        tabActual = tabActivo.dataset.tab || "todas";
+    }
+
+    const filtroActivo = document.querySelector(".btn-filtro-tipo.active");
+    if (filtroActivo) {
+        tipoFiltroActual = filtroActivo.dataset.tipoFiltro || "todos";
+    }
+
+    if (inputBusqueda) {
+        busquedaActual = inputBusqueda.value.trim().toLowerCase();
+        inputBusqueda.addEventListener("input", (event) => {
+            busquedaActual = event.target.value.trim().toLowerCase();
+            renderHistorial();
+        });
+    }
 
     tabs.forEach(tab => {
 
@@ -576,6 +614,15 @@ function inicializarTabs() {
             renderHistorial();
         });
     });
+
+    filtrosTipo.forEach(filtro => {
+        filtro.addEventListener("click", () => {
+            filtrosTipo.forEach(item => item.classList.remove("active"));
+            filtro.classList.add("active");
+            tipoFiltroActual = filtro.dataset.tipoFiltro || "todos";
+            renderHistorial();
+        });
+    });
 }
 
 /* =========================
@@ -583,28 +630,19 @@ function inicializarTabs() {
 ========================= */
 
 function formatearFecha(fecha) {
-
-    const ahora = new Date();
+    if (!fecha) return "";
 
     const creada = new Date(fecha);
 
-    const diff =
-        Math.floor(
-            (ahora - creada) / 1000
-        );
-
-    const dias =
-        Math.floor(diff / 86400);
-
-    if (dias <= 0) {
-        return "Hoy";
+    if (Number.isNaN(creada.getTime())) {
+        return "";
     }
 
-    if (dias === 1) {
-        return "Hace 1 día";
-    }
-
-    return `Hace ${dias} días`;
+    return creada.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit'
+    });
 }
 
 /* =========================
@@ -612,15 +650,36 @@ function formatearFecha(fecha) {
 ========================= */
 
 function eliminarTasacion(id) {
-
-    tasaciones =
-        tasaciones.filter(t => t.id !== id);
-
-    guardarHistorial();
-
-    cerrarPerfil();
-
-    renderHistorial();
+    mostrarModalGenerico({
+        titulo: "¿Estás seguro de eliminar?",
+        mensaje: "¿Deseas eliminar esta tasación del historial? Esta acción no se puede deshacer.",
+        botones: [
+            {
+                texto: "Cancelar",
+                clase: "btn-confirmacion-cancelar",
+                onClick: () => {
+                    ocultarModalGenerico();
+                }
+            },
+            {
+                texto: "Eliminar",
+                clase: "btn-confirmacion-no-guardar",
+                onClick: async () => {
+                    ocultarModalGenerico();
+                    try {
+                        await eliminarTasacionEntidad(id);
+                        tasaciones = tasaciones.filter(t => t.id !== id);
+                        cerrarPerfil();
+                        renderHistorial();
+                    } catch (e) {
+                        console.error('Error al eliminar tasación:', e);
+                        alert('No se pudo eliminar la tasación. Revisá la consola o el servidor.');
+                    }
+                }
+            }
+        ],
+        cerrarAlClick: false
+    });
 }
 
 window.abrirPerfilTasacion = function(id) {
@@ -739,6 +798,9 @@ window.abrirPerfilTasacion = function(id) {
                 <div class="perfil-row">
                     <div class="perfil-card-azul">
                         <div class="perfil-card-azul-left">
+                            <div class="perfil-codigo">
+                                Código: ${tasacion.id || '—'}
+                            </div>
                             <div class="perfil-fecha">
                                 ${formatearFecha(tasacion.fechaCreacion)}
                             </div>
@@ -924,18 +986,18 @@ window.cerrarPerfil = function() {
 
 function editarTasacion(id) {
     const tasacion = tasaciones.find(t => t.id === id);
-    
+
     if (!tasacion) {
         alert("No se encontró la tasación");
         return;
     }
-    
-    // Guardar la tasación a editar en localStorage
+
+    // Guardar la tasación completa para el modo edición
     localStorage.setItem("tasacionEnEdicion", JSON.stringify(tasacion));
-    
+
     // Cerrar el modal
     cerrarPerfil();
-    
+
     // Navegar a la página de tasación
     window.location.href = "tasacion.html";
 }

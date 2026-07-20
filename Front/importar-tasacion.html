@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Tasación desde JSON</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #545b62;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+        }
+        .info {
+            color: #666;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Importar Tasación desde JSON</h1>
+        
+        <div class="section">
+            <h2>Pegar JSON de Tasación</h2>
+            <textarea id="jsonInput" placeholder='Pega aquí el JSON de la tasación...'></textarea>
+            <br><br>
+            <button onclick="importarTasacion()">Importar Tasación</button>
+            <button class="secondary" onclick="limpiarInput()">Limpiar</button>
+            <button class="secondary" onclick="cargarEjemplo()">Cargar Ejemplo</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="section">
+            <h2>Ver Datos Actuales</h2>
+            <button onclick="verTasaciones()">Ver Historial de Tasaciones</button>
+            <button onclick="verComparables()">Ver Comparables</button>
+            <button class="secondary" onclick="verTodasLasClaves()">Ver Todas las Claves</button>
+            <button class="secondary" onclick="limpiarCache()">Limpiar Caché del Sistema</button>
+            <button class="danger" onclick="limpiarHistorial()">Limpiar Historial</button>
+            <div id="datosActuales"></div>
+        </div>
+
+        <div class="section">
+            <h2>Modelo de JSON Requerido</h2>
+            <p>El JSON debe tener esta estructura mínima:</p>
+            <pre id="modeloJson"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Modelo de JSON requerido
+        const modeloJson = {
+            "id": "T-100",
+            "idNum": 100,
+            "fechaCreacion": "2026-06-27T15:00:00.000Z",
+            "estado": "completada",
+            "cantDeEdiciones": 0,
+            "tipo": "lote",
+            "ubicacion": {
+                "direccion": "Av. Libertador 1234",
+                "provincia": "Buenos Aires",
+                "localidad": "Mar del Plata",
+                "lat": -37.9977,
+                "lon": -57.5486,
+                "orientacion": "N"
+            },
+            "lote": {
+                "tipoLote": "Urbana",
+                "servicios": ["luz", "agua", "gas", "cloacas"],
+                "caracteristicas": {
+                    "fot": 2.5,
+                    "fos": 0.6,
+                    "zonificacion": "R2A"
+                },
+                "observaciones": "Lote en excelente zona"
+            },
+            "comparables": ["C-100", "C-101", "C-102"],
+            "resultado": {
+                "valor_final": 150000,
+                "valor_m2": 1500,
+                "metodo": "fitto_cervini"
+            },
+            "datosCompletos": {
+                "tipo": "lote",
+                "ubicacion": {
+                    "direccion": "Av. Libertador 1234",
+                    "provincia": "Buenos Aires",
+                    "localidad": "Mar del Plata",
+                    "lat": -37.9977,
+                    "lon": -57.5486,
+                    "orientacion": "N"
+                },
+                "lote": {
+                    "tipoLote": "Urbana",
+                    "servicios": ["luz", "agua", "gas", "cloacas"],
+                    "caracteristicas": {
+                        "fot": 2.5,
+                        "fos": 0.6,
+                        "zonificacion": "R2A"
+                    },
+                    "observaciones": "Lote en excelente zona"
+                },
+                "coeficientesPersonalizados": {}
+            }
+        };
+
+        // Mostrar modelo al cargar
+        document.getElementById('modeloJson').textContent = JSON.stringify(modeloJson, null, 2);
+
+        function importarTasacion() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const resultado = document.getElementById('resultado');
+            
+            if (!jsonInput.trim()) {
+                resultado.innerHTML = '<div class="error">Por favor, pega un JSON válido</div>';
+                return;
+            }
+
+            try {
+                const tasacion = JSON.parse(jsonInput);
+                
+                // Validar campos obligatorios
+                if (!tasacion.id || !tasacion.tipo) {
+                    resultado.innerHTML = '<div class="error">El JSON debe tener al menos los campos "id" y "tipo"</div>';
+                    return;
+                }
+
+                // Obtener historial actual
+                let historial = JSON.parse(localStorage.getItem('historialTasaciones') || '[]');
+                
+                // Verificar si ya existe
+                const existe = historial.find(t => t.id === tasacion.id);
+                if (existe) {
+                    resultado.innerHTML = '<div class="error">Ya existe una tasación con el ID: ' + tasacion.id + '</div>';
+                    return;
+                }
+
+                // Agregar al historial
+                historial.unshift(tasacion);
+                localStorage.setItem('historialTasaciones', JSON.stringify(historial));
+                
+                resultado.innerHTML = '<div class="success">Tasación importada correctamente: ' + tasacion.id + '</div>';
+                
+            } catch (e) {
+                resultado.innerHTML = '<div class="error">Error al parsear JSON: ' + e.message + '</div>';
+            }
+        }
+
+        function limpiarInput() {
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('resultado').innerHTML = '';
+        }
+
+        function cargarEjemplo() {
+            document.getElementById('jsonInput').value = JSON.stringify(modeloJson, null, 2);
+        }
+
+        function verTasaciones() {
+            const historial = JSON.parse(localStorage.getItem('historialTasaciones') || '[]');
+            const datosActuales = document.getElementById('datosActuales');
+            
+            if (historial.length === 0) {
+                datosActuales.innerHTML = '<div class="info">No hay tasaciones en el historial</div>';
+                return;
+            }
+
+            datosActuales.innerHTML = '<div class="info">Hay ' + historial.length + ' tasaciones en el historial:</div>';
+            historial.forEach((t, index) => {
+                const tieneEstado = t.estado ? '✓' : '✗';
+                const tieneUbicacion = t.ubicacion?.direccion ? '✓' : '✗';
+                const tieneResultado = t.resultado?.valor_final || t.datosCompletos?.resultado?.valor_final ? '✓' : '✗';
+                
+                datosActuales.innerHTML += `
+                    <div class="info" style="margin: 10px 0; padding: 10px; border: 1px solid #ddd;">
+                        <strong>${index + 1}. ${t.id || 'Sin ID'}</strong><br>
+                        Tipo: ${t.tipo || 'Sin tipo'}<br>
+                        Estado: ${t.estado || 'Sin estado'} ${tieneEstado}<br>
+                        Ubicación: ${t.ubicacion?.direccion || 'Sin dirección'} ${tieneUbicacion}<br>
+                        Resultado: ${tieneResultado}<br>
+                        <small>Fecha: ${t.fechaCreacion || 'Sin fecha'}</small>
+                    </div>
+                `;
+            });
+        }
+
+        function verComparables() {
+            const comparables = JSON.parse(localStorage.getItem('tasador_comparables_v2') || '[]');
+            const datosActuales = document.getElementById('datosActuales');
+            
+            if (comparables.length === 0) {
+                datosActuales.innerHTML = '<div class="info">No hay comparables</div>';
+                return;
+            }
+
+            datosActuales.innerHTML = '<div class="info">Hay ' + comparables.length + ' comparables:</div>';
+            comparables.forEach(c => {
+                datosActuales.innerHTML += '<div class="info">- ' + c.id + ' (' + c.tipoInmueble + ')</div>';
+            });
+        }
+
+        function verTodasLasClaves() {
+            const datosActuales = document.getElementById('datosActuales');
+            let html = '<div class="info"><strong>CLAVES EN LOCALSTORAGE:</strong></div>';
+            
+            // Clave principal del sistema
+            const historialTasaciones = JSON.parse(localStorage.getItem('historialTasaciones') || '[]');
+            html += `<div class="info">historialTasaciones: ${historialTasaciones.length} tasaciones</div>`;
+            
+            // Clave del sistema de entidades
+            const tasadorTasaciones = JSON.parse(localStorage.getItem('tasador_tasaciones_v2') || '[]');
+            html += `<div class="info">tasador_tasaciones_v2: ${tasadorTasaciones.length} tasaciones</div>`;
+            
+            // Clave antigua
+            const tasadorTasacionesV1 = JSON.parse(localStorage.getItem('tasador_tasaciones') || '[]');
+            html += `<div class="info">tasador_tasaciones: ${tasadorTasacionesV1.length} tasaciones</div>`;
+            
+            // Comparables
+            const comparables = JSON.parse(localStorage.getItem('tasador_comparables_v2') || '[]');
+            html += `<div class="info">tasador_comparables_v2: ${comparables.length} comparables</div>`;
+            
+            // Contadores v1
+            const contadoresV1 = localStorage.getItem('tasador_contadores_v1');
+            if (contadoresV1) {
+                const contadoresParsed = JSON.parse(contadoresV1);
+                html += `<div class="info">tasador_contadores_v1: T=${contadoresParsed.T}, C=${contadoresParsed.C}, U=${contadoresParsed.U}, S=${contadoresParsed.S}</div>`;
+            } else {
+                html += `<div class="info">tasador_contadores_v1: no existe</div>`;
+            }
+            
+            // Contadores v2
+            const contadoresV2 = localStorage.getItem('tasador_contadores_v2');
+            if (contadoresV2) {
+                const contadoresParsed = JSON.parse(contadoresV2);
+                html += `<div class="info">tasador_contadores_v2: T=${contadoresParsed.T}, C=${contadoresParsed.C}, U=${contadoresParsed.U}, S=${contadoresParsed.S}</div>`;
+            } else {
+                html += `<div class="info">tasador_contadores_v2: no existe</div>`;
+            }
+            
+            datosActuales.innerHTML = html;
+        }
+
+        function limpiarCache() {
+            // Limpiar caché del sistema principal
+            localStorage.removeItem('cache-historialTasaciones');
+            localStorage.removeItem('cache-tasador_comparables_v2');
+            localStorage.removeItem('cache-tasador_contadores_v2');
+            localStorage.removeItem('cache-tasador_tasaciones_v2');
+            localStorage.removeItem('cache-tasador_solicitudes_v2');
+            
+            document.getElementById('datosActuales').innerHTML = '<div class="success">Caché del sistema limpiado. Recarga la página del sistema principal.</div>';
+        }
+
+        function limpiarHistorial() {
+            if (confirm('¿Estás seguro de limpiar todo el historial? Esta acción no se puede deshacer.')) {
+                localStorage.removeItem('historialTasaciones');
+                document.getElementById('datosActuales').innerHTML = '<div class="success">Historial limpiado</div>';
+            }
+        }
+    </script>
+</body>
+</html>

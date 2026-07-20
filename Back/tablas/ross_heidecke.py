@@ -1,3 +1,5 @@
+import logging
+
 TABLA_ROSS_HEIDECKE = {
     0: {
         1.00: 0.000,
@@ -1101,6 +1103,8 @@ TABLA_ROSS_HEIDECKE = {
     }
 }
 
+logger = logging.getLogger(__name__)
+
 
 def coeficiente_ross_heidecke(
     porcentaje_vida,
@@ -1116,33 +1120,40 @@ def coeficiente_ross_heidecke(
     Returns:
         Coeficiente K (valor de la tabla dividido por 100)
     """
-    tabla_porcentaje = TABLA_ROSS_HEIDECKE.get(porcentaje_vida)
-    
-    if tabla_porcentaje is None:
+    try:
+        tabla_porcentaje = TABLA_ROSS_HEIDECKE.get(porcentaje_vida)
+        
+        if tabla_porcentaje is None:
+            logger.warning(f"Porcentaje de vida {porcentaje_vida} no encontrado en tabla Ross-Heidecke, usando coeficiente 1.0")
+            return 1.00
+        
+        # Mapear estado (1-9) a los valores de la tabla (1.00-5.00)
+        estado_valores = {
+            1: 1.00,   # EXCELENTE
+            2: 1.50,   # MUY BUENA
+            3: 2.00,   # BUENA
+            4: 2.50,   # NORMAL
+            5: 3.00,   # REGULAR
+            6: 3.50,   # MALO
+            7: 4.00,   # MUY MALO
+            8: 4.50,   # DEMOLICION
+            9: 5.00    # IRRECUPERABLE
+        }
+        
+        estado_valor = estado_valores.get(estado)
+        
+        if estado_valor is None:
+            logger.warning(f"Estado {estado} no válido en tabla Ross-Heidecke, usando coeficiente 1.0")
+            return 1.00
+        
+        valor_tabla = tabla_porcentaje.get(estado_valor)
+        
+        if valor_tabla is None:
+            logger.warning(f"Valor de tabla no encontrado para porcentaje {porcentaje_vida} y estado {estado}, usando coeficiente 1.0")
+            return 1.00
+        
+        # El valor obtenido en la tabla debe dividirse por cien para obtener el coeficiente K
+        return valor_tabla / 100
+    except Exception as e:
+        logger.error(f"Error al calcular coeficiente Ross-Heidecke: {e}")
         return 1.00
-    
-    # Mapear estado (1-9) a los valores de la tabla (1.00-5.00)
-    estado_valores = {
-        1: 1.00,   # EXCELENTE
-        2: 1.50,   # MUY BUENA
-        3: 2.00,   # BUENA
-        4: 2.50,   # NORMAL
-        5: 3.00,   # REGULAR
-        6: 3.50,   # MALO
-        7: 4.00,   # MUY MALO
-        8: 4.50,   # DEMOLICION
-        9: 5.00    # IRRECUPERABLE
-    }
-    
-    estado_valor = estado_valores.get(estado)
-    
-    if estado_valor is None:
-        return 1.00
-    
-    valor_tabla = tabla_porcentaje.get(estado_valor)
-    
-    if valor_tabla is None:
-        return 1.00
-    
-    # El valor obtenido en la tabla debe dividirse por cien para obtener el coeficiente K
-    return valor_tabla / 100

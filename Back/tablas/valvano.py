@@ -1,3 +1,5 @@
+import logging
+
 TABLA_VALVANO = {
     1: {
         1.00: 0.15,
@@ -48,30 +50,40 @@ TABLA_VALVANO = {
     }
 }
 
+logger = logging.getLogger(__name__)
+
 
 def coeficiente_valvano(
     relacion,
     zona
 ):
+    try:
+        tabla_zona = TABLA_VALVANO.get(
+            zona
+        )
 
-    tabla_zona = TABLA_VALVANO.get(
-        zona
-    )
+        if tabla_zona is None:
+            logger.warning(f"Zona {zona} no encontrada en tabla Valvano, usando coeficiente 1.0")
+            return 1.00
 
-    if tabla_zona is None:
+        relaciones = list(
+            tabla_zona.keys()
+        )
+
+        if not relaciones:
+            logger.warning(f"Tabla Valvano para zona {zona} está vacía, usando coeficiente 1.0")
+            return 1.00
+
+        relacion_cercana = min(
+            relaciones,
+            key=lambda x: abs(x - relacion)
+        )
+
+        porcentaje = tabla_zona[
+            relacion_cercana
+        ]
+
+        return 1 + porcentaje
+    except Exception as e:
+        logger.error(f"Error al calcular coeficiente Valvano: {e}")
         return 1.00
-
-    relaciones = list(
-        tabla_zona.keys()
-    )
-
-    relacion_cercana = min(
-        relaciones,
-        key=lambda x: abs(x - relacion)
-    )
-
-    porcentaje = tabla_zona[
-        relacion_cercana
-    ]
-
-    return 1 + porcentaje

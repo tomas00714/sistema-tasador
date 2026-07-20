@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Previa de Informe - Sistema de Tasaciones</title>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/shell.css">
+    <link rel="stylesheet" href="css/vista-previa-informe.css">
+</head>
+<body>
+
+    <div class="vista-previa-container">
+        
+        <!-- Panel Izquierdo: Configuración -->
+        <aside class="config-panel">
+            <div class="config-panel-header">
+                <h2>Configuración del Informe</h2>
+                <p>Personaliza la apariencia y contenido del informe</p>
+            </div>
+
+            <div class="config-panel-content">
+                
+                <!-- Selector de Plantilla -->
+                <div class="config-section">
+                    <label for="templateSelector">Plantilla</label>
+                    <select id="templateSelector" class="config-select" disabled>
+                        <option value="classica">Clásica</option>
+                    </select>
+                    <small class="config-hint">Más plantillas próximamente</small>
+                </div>
+
+                <!-- Toggles de visibilidad -->
+                <div class="config-section">
+                    <h3>Elementos visibles</h3>
+                    
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showLogo" checked>
+                        <span>Mostrar logo</span>
+                    </label>
+
+                    <div class="config-toggle-expandable" id="photosToggleExpandable">
+                        <div class="config-toggle-row">
+                            <label class="config-toggle config-toggle-in-row">
+                                <input type="checkbox" id="showPhotos" checked>
+                                <span>Mostrar fotografías</span>
+                            </label>
+                            <button type="button" class="config-toggle-expand-btn" id="btnExpandPhotos" aria-expanded="false" aria-controls="photosExpandPanel">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="config-toggle-panel" id="photosExpandPanel" hidden>
+                            <div class="config-photos-carousel" id="photosCarousel">
+                                <!-- Fotos renderizadas por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-toggle-expandable" id="comparablesToggleExpandable">
+                        <div class="config-toggle-row">
+                            <label class="config-toggle config-toggle-in-row">
+                                <input type="checkbox" id="showComparables" checked>
+                                <span>Mostrar comparables</span>
+                            </label>
+                            <button type="button" class="config-toggle-expand-btn" id="btnExpandComparables" aria-expanded="false" aria-controls="comparablesExpandPanel">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="config-toggle-panel" id="comparablesExpandPanel" hidden>
+                            <div class="config-comparables-list" id="comparablesList">
+                                <!-- Comparables renderizados por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showMethodology" checked>
+                        <span>Mostrar metodología</span>
+                    </label>
+                </div>
+
+                <!-- Campos de texto editables -->
+                <div class="config-section">
+                    <h3>Contenido del informe</h3>
+                    
+                    <div class="config-field">
+                        <label for="reportTitle">Título del informe</label>
+                        <input type="text" id="reportTitle" class="config-input" value="Informe de Tasación">
+                    </div>
+
+                    <div class="config-field">
+                        <label for="reportIntroduction">Introducción</label>
+                        <textarea id="reportIntroduction" class="config-textarea" rows="4">El presente informe tiene como objetivo determinar el valor de mercado del inmueble objeto de tasación, mediante el método de comparación de mercado.</textarea>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="reportObservations">Observaciones finales</label>
+                        <textarea id="reportObservations" class="config-textarea" rows="3">El valor estimado refleja las condiciones actuales del mercado y las características específicas del inmueble.</textarea>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="reportConclusion">Conclusión</label>
+                        <textarea id="reportConclusion" class="config-textarea" rows="3">Se concluye que el valor de mercado del inmueble es el resultado de la homogeneización de los comparables seleccionados.</textarea>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Vista Previa -->
+        <main class="preview-panel">
+            <div class="preview-panel-header">
+                <h2>Vista Previa</h2>
+                <div class="preview-actions">
+                    <button class="btn-preview-action" id="btnPrint" title="Imprimir">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                    <button class="btn-preview-action" id="btnExportPDF" title="Exportar PDF" disabled>
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-panel-content">
+                <div id="reportEmptyState" class="report-empty-state" hidden>
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <h3>No hay tasación cargada</h3>
+                    <p>Para crear un informe, guardá una tasación y elegí <strong>Guardar y crear informe</strong>, o accedé desde el historial.</p>
+                </div>
+                <div id="reportViewer">
+                    <!-- El informe se renderizará aquí -->
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Iconos FontAwesome -->
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Scripts del sistema de informes -->
+    <script src="js/storage-cache.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/entidades.js"></script>
+    <script src="js/report-data-adapter.js"></script>
+    <script src="js/report-components.js"></script>
+    <script src="js/vista-previa-informe.js"></script>
+
+</body>
+</html>

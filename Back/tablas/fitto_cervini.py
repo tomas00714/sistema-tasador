@@ -1,10 +1,18 @@
 import json
+import logging
 from pathlib import Path
 
 _DATA_PATH = Path(__file__).resolve().parent / "fitto_cervini_data.json"
 
-with open(_DATA_PATH, encoding="utf-8") as f:
-    _DATOS = json.load(f)["tablas"]
+try:
+    with open(_DATA_PATH, encoding="utf-8") as f:
+        _DATOS = json.load(f)["tablas"]
+except Exception as e:
+    logger = logging.getLogger(__name__)
+    logger.error(f"Error al cargar datos de Fitto-Cervini: {e}")
+    _DATOS = []
+
+logger = logging.getLogger(__name__)
 
 
 def interpolar(x, x1, x2, q1, q2):
@@ -52,46 +60,57 @@ def _elegir_tabla(frente):
 
 
 def coeficiente_fitto_cervini(frente, fondo):
-    # Asegurar que las entradas sean numéricas
-    frente = float(frente)
-    fondo = float(fondo)
-
-    tabla = _elegir_tabla(frente)
-
-    frentes = [float(f) for f in tabla["frentes"]]
-    fondos = [float(f) for f in tabla["fondos"]]
-    valores = tabla["valores"]
-
-    f1, f2 = obtener_indices(frente, frentes)
-    d1, d2 = obtener_indices(fondo, fondos)
-
-    def celda(ff, dd):
-        row = valores.get(str(int(dd)))
-        if row is None:
-            row = valores.get(str(dd))
-        if row is None:
-            raise KeyError(f"Fondo {dd} no se encuentra registrado en las tablas de datos.")
-        
-        clave = str(ff)
-        return float(row[clave])
-
     try:
-        q11 = celda(f1, d1)
-        q12 = celda(f1, d2)
-        q21 = celda(f2, d1)
-        q22 = celda(f2, d2)
-    except KeyError as e:
-        raise ValueError(f"Error en tabla Fitto-Cervini: {e}")
+        # Asegurar que las entradas sean numéricas
+        frente = float(frente)
+        fondo = float(fondo)
 
-    r1 = interpolar(fondo, d1, d2, q11, q12)
-    r2 = interpolar(fondo, d1, d2, q21, q22)
+        if not _DATOS:
+            logger.error("Datos de Fitto-Cervini no cargados correctamente")
+            raise ValueError("Datos de Fitto-Cervini no disponibles")
 
-    valor_final = interpolar(frente, f1, f2, r1, r2)
+        tabla = _elegir_tabla(frente)
 
-    # Convertir el índice de la tabla a coeficiente (dividir por 100)
-    coeficiente = valor_final / 100
+        frentes = [float(f) for f in tabla["frentes"]]
+        fondos = [float(f) for f in tabla["fondos"]]
+        valores = tabla["valores"]
 
-    return round(coeficiente, 4)
+        f1, f2 = obtener_indices(frente, frentes)
+        d1, d2 = obtener_indices(fondo, fondos)
+
+        def celda(ff, dd):
+            row = valores.get(str(int(dd)))
+            if row is None:
+                row = valores.get(str(dd))
+            if row is None:
+                raise KeyError(f"Fondo {dd} no se encuentra registrado en las tablas de datos.")
+            
+            clave = str(ff)
+            return float(row[clave])
+
+        try:
+            q11 = celda(f1, d1)
+            q12 = celda(f1, d2)
+            q21 = celda(f2, d1)
+            q22 = celda(f2, d2)
+        except KeyError as e:
+            logger.error(f"Error al buscar celda en tabla Fitto-Cervini: {e}")
+            raise ValueError(f"Error en tabla Fitto-Cervini: {e}")
+
+        r1 = interpolar(fondo, d1, d2, q11, q12)
+        r2 = interpolar(fondo, d1, d2, q21, q22)
+
+        valor_final = interpolar(frente, f1, f2, r1, r2)
+
+        # Convertir el índice de la tabla a coeficiente (dividir por 100)
+        coeficiente = valor_final / 100
+
+        return round(coeficiente, 4)
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Error inesperado al calcular coeficiente Fitto-Cervini: {e}")
+        raise ValueError(f"Error al calcular coeficiente Fitto-Cervini: {e}")
 
 
 def coeficiente_tipologia(tipologia):

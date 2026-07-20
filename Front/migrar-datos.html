@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migración de Datos - Tasador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .info {
+            color: #666;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Migración de Datos - Tasador</h1>
+        <p>Este script migra los contadores, tasaciones y comparables del localStorage al backend.</p>
+
+        <div class="section">
+            <h2>Paso 1: Exportar datos del localStorage</h2>
+            <button onclick="exportarDatos()">Exportar datos</button>
+            <div id="exportarResultado" class="info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Paso 2: Importar contadores al backend</h2>
+            <button onclick="importarContadores()" id="btnImportarContadores" disabled>Importar contadores</button>
+            <div id="importarContadoresResultado" class="info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Paso 3: Importar tasaciones al backend</h2>
+            <button onclick="importarTasaciones()" id="btnImportarTasaciones" disabled>Importar tasaciones</button>
+            <div id="importarTasacionesResultado" class="info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Paso 4: Importar comparables al backend</h2>
+            <button onclick="importarComparables()" id="btnImportarComparables" disabled>Importar comparables</button>
+            <div id="importarComparablesResultado" class="info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Datos exportados</h2>
+            <pre id="datosExportados"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8080';
+        let datosExportados = null;
+
+        function exportarDatos() {
+            const resultado = document.getElementById('exportarResultado');
+            const datosPre = document.getElementById('datosExportados');
+            
+            try {
+                // Exportar contadores
+                const contadoresRaw = localStorage.getItem('tasador_contadores_v2');
+                const contadores = contadoresRaw ? JSON.parse(contadoresRaw) : {};
+                
+                // Exportar tasaciones
+                const tasacionesRaw = localStorage.getItem('historialTasaciones');
+                const tasaciones = tasacionesRaw ? JSON.parse(tasacionesRaw) : [];
+                
+                // Exportar comparables
+                const comparablesRaw = localStorage.getItem('tasador_comparables_v2');
+                const comparables = comparablesRaw ? JSON.parse(comparablesRaw) : [];
+                
+                datosExportados = {
+                    contadores,
+                    tasaciones,
+                    comparables
+                };
+                
+                datosPre.textContent = JSON.stringify(datosExportados, null, 2);
+                resultado.innerHTML = '<span class="success">✓ Datos exportados correctamente</span>';
+                
+                // Habilitar botones de importación
+                document.getElementById('btnImportarContadores').disabled = false;
+                document.getElementById('btnImportarTasaciones').disabled = false;
+                document.getElementById('btnImportarComparables').disabled = false;
+                
+            } catch (e) {
+                resultado.innerHTML = `<span class="error">✗ Error al exportar: ${e.message}</span>`;
+            }
+        }
+
+        async function importarContadores() {
+            const resultado = document.getElementById('importarContadoresResultado');
+            
+            if (!datosExportados) {
+                resultado.innerHTML = '<span class="error">✗ Primero exporta los datos</span>';
+                return;
+            }
+            
+            try {
+                resultado.innerHTML = 'Importando contadores...';
+                
+                for (const [tipo, valor] of Object.entries(datosExportados.contadores)) {
+                    const response = await fetch(`${API_URL}/api/ids/inicializar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tipo, valor })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error al inicializar contador ${tipo}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log(`Contador ${tipo} inicializado:`, data);
+                }
+                
+                resultado.innerHTML = '<span class="success">✓ Contadores importados correctamente</span>';
+                
+            } catch (e) {
+                resultado.innerHTML = `<span class="error">✗ Error al importar contadores: ${e.message}</span>`;
+            }
+        }
+
+        async function importarTasaciones() {
+            const resultado = document.getElementById('importarTasacionesResultado');
+            
+            if (!datosExportados) {
+                resultado.innerHTML = '<span class="error">✗ Primero exporta los datos</span>';
+                return;
+            }
+            
+            try {
+                resultado.innerHTML = `Importando ${datosExportados.tasaciones.length} tasaciones...`;
+                
+                // Por ahora solo mostramos las tasaciones
+                // TODO: Crear endpoint bulk en backend para importar tasaciones
+                resultado.innerHTML = `<span class="info">ℹ Tasaciones a importar: ${datosExportados.tasaciones.length}</span>`;
+                resultado.innerHTML += '<br><span class="error">⚠ Endpoint bulk no implementado aún</span>';
+                
+            } catch (e) {
+                resultado.innerHTML = `<span class="error">✗ Error al importar tasaciones: ${e.message}</span>`;
+            }
+        }
+
+        async function importarComparables() {
+            const resultado = document.getElementById('importarComparablesResultado');
+            
+            if (!datosExportados) {
+                resultado.innerHTML = '<span class="error">✗ Primero exporta los datos</span>';
+                return;
+            }
+            
+            try {
+                resultado.innerHTML = `Importando ${datosExportados.comparables.length} comparables...`;
+                
+                // Por ahora solo mostramos los comparables
+                // TODO: Crear endpoint bulk en backend para importar comparables
+                resultado.innerHTML = `<span class="info">ℹ Comparables a importar: ${datosExportados.comparables.length}</span>`;
+                resultado.innerHTML += '<br><span class="error">⚠ Endpoint bulk no implementado aún</span>';
+                
+            } catch (e) {
+                resultado.innerHTML = `<span class="error">✗ Error al importar comparables: ${e.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

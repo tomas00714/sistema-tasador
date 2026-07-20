@@ -3,6 +3,13 @@
    Vista reutilizable para crear/editar/visualizar comparables
 ========================= */
 
+if (typeof TILE_URLS === 'undefined') {
+    var TILE_URLS = {
+        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    };
+}
+
 class ComparableEditor {
     constructor(config = {}) {
         this.modo = config.modo || 'crear';
@@ -10,39 +17,151 @@ class ComparableEditor {
         this.datos = config.datos || null;
         this.onGuardar = config.onGuardar || null;
         this.onCancelar = config.onCancelar || null;
-        
-        this.container = document.getElementById('comparableEditorContainer');
-        this.editor = document.getElementById('comparableEditor');
-        
+        this.embedded = false;
+        this.mostrarFooter = true;
+
+        this.container = document.getElementById('comparableEditorContainer') || null;
+        this.editor = document.getElementById('comparableEditor') || null;
+
         this.mapa = null;
         this.marcador = null;
         this.tilesLayer = null;
     }
-    
+
     abrir(config = {}) {
+        this.embedded = false;
         if (config.modo) this.modo = config.modo;
         if (config.tipo) this.tipo = config.tipo;
         if (config.datos) this.datos = config.datos;
-        
+        if (config.onGuardar) this.onGuardar = config.onGuardar;
+        if (config.onCancelar) this.onCancelar = config.onCancelar;
+
         this.renderizar();
+        this.container.style.display = 'flex';
+        // Force reflow
+        void this.container.offsetWidth;
         this.container.classList.add('active');
-        
-        if (this.modo === 'crear') {
+
+        if (this.modo === 'crear' || this.modo === 'solicitud') {
+            this.inicializarMapa();
+        }
+
+        if (this.datos && (this.modo === 'editar' || this.modo === 'visualizar')) {
+            this.cargarDatosEnFormulario();
+        }
+    }
+
+    abrirEn(contenedor, config = {}) {
+        this.embedded = true;
+        this.mostrarFooter = config.footer !== false;
+        this.container = null;
+        this.editor = contenedor;
+
+        if (config.modo) this.modo = config.modo;
+        if (config.tipo) this.tipo = config.tipo;
+        if (config.datos) this.datos = config.datos;
+        if (config.onGuardar) this.onGuardar = config.onGuardar;
+        if (config.onCancelar) this.onCancelar = config.onCancelar;
+
+        this.renderizar();
+
+        if (this.modo === 'crear' || this.modo === 'solicitud' || this.modo === 'editar') {
+            this.inicializarMapa();
+        }
+
+        if (this.datos && (this.modo === 'editar' || this.modo === 'visualizar')) {
+            this.cargarDatosEnFormulario();
+        }
+    }
+
+    cargarDatosEnFormulario() {
+        if (!this.datos) return;
+
+        if (this.datos.tipo) {
+            this.tipo = this.datos.tipo;
+        }
+
+        const u = this.datos.ubicacion || {};
+        const direccionInput = document.getElementById('compDireccion');
+        const provinciaInput = document.getElementById('compProvincia');
+        const localidadInput = document.getElementById('compLocalidad');
+        if (direccionInput) direccionInput.value = u.direccion || '';
+        if (provinciaInput) provinciaInput.value = u.provincia || '';
+        if (localidadInput) {
+            localidadInput.value = u.localidad || '';
+            localidadInput.disabled = !u.provincia;
+        }
+
+        const valorMontoInput = document.getElementById('compValor');
+        if (valorMontoInput) {
+            const monto = this.datos.valor?.monto ?? this.datos.valor;
+            valorMontoInput.value = monto != null ? monto : '';
+        }
+        const tipoValor = this.datos.valor?.tipo || this.datos.tipoValor || 'venta';
+        const radioTipoValor = document.querySelector(`input[name="compTipoValor"][value="${tipoValor}"]`);
+        if (radioTipoValor) radioTipoValor.checked = true;
+
+        if (this.tipo === 'lote') {
+            const lote = this.datos.lote || {};
+            const frente = document.getElementById('compFrente');
+            const fondo = document.getElementById('compFondo');
+            const superficie = document.getElementById('compSuperficie');
+            const tipoLote = document.getElementById('compTipoLote');
+            if (frente) frente.value = lote.frente != null ? lote.frente : '';
+            if (fondo) fondo.value = lote.fondo != null ? lote.fondo : '';
+            if (superficie) superficie.value = lote.superficie != null ? lote.superficie : (this.datos.superficie ?? '');
+            if (tipoLote) tipoLote.value = lote.tipoLote || '';
+        } else if (this.tipo === 'casa') {
+            const casa = this.datos.casa || {};
+            const cubierta = document.getElementById('compSuperficieCubierta');
+            const terreno = document.getElementById('compSuperficieTerreno');
+            const antiguedad = document.getElementById('compAntiguedad');
+            if (cubierta) cubierta.value = casa.superficieCubierta != null ? casa.superficieCubierta : '';
+            if (terreno) terreno.value = casa.superficieTerreno != null ? casa.superficieTerreno : '';
+            if (antiguedad) antiguedad.value = casa.antiguedad != null ? casa.antiguedad : '';
+        } else if (this.tipo === 'departamento') {
+            const depto = this.datos.departamento || {};
+            const superficieTotal = document.getElementById('compSuperficieTotal');
+            const antiguedad = document.getElementById('compAntiguedad');
+            const ascensor = document.getElementById('compTieneAscensor');
+            if (superficieTotal) superficieTotal.value = depto.superficieTotal != null ? depto.superficieTotal : (this.datos.superficie ?? '');
+            if (antiguedad) antiguedad.value = depto.antiguedad != null ? depto.antiguedad : '';
+            if (ascensor) ascensor.checked = depto.tieneAscensor === true || depto.tieneAscensor === 'true' || depto.tieneAscensor === 'si';
+        }
+
+        // Inicializar mapa centrado en la ubicación si existen coordenadas
+        if (u.lat && u.lon) {
+            this.inicializarMapa(parseFloat(u.lat), parseFloat(u.lon));
+        } else if (u.latitud && u.longitud) {
+            this.inicializarMapa(parseFloat(u.latitud), parseFloat(u.longitud));
+        } else {
             this.inicializarMapa();
         }
     }
     
     cerrar() {
-        this.container.classList.remove('active');
+        if (this.embedded) {
+            this.limpiarMapa();
+            if (this.onCancelar) this.onCancelar();
+            this.editor = null;
+            this.embedded = false;
+            return;
+        }
+
+        if (this.container) {
+            this.container.classList.remove('active');
+            this.container.style.display = 'none';
+        }
         this.limpiarMapa();
-        this.editor.innerHTML = '';
+        if (this.editor) this.editor.innerHTML = '';
+        if (this.onCancelar) this.onCancelar();
     }
     
     renderizar() {
         const titulo = this.obtenerTitulo();
         const contenido = this.obtenerContenido();
-        const footer = this.obtenerFooter();
-        
+        const footer = this.mostrarFooter ? this.obtenerFooter() : '';
+
         this.editor.innerHTML = `
             <div class="comparable-editor-header">
                 <div class="comparable-editor-title">
@@ -54,11 +173,9 @@ class ComparableEditor {
             <div class="comparable-editor-content">
                 ${contenido}
             </div>
-            <div class="comparable-editor-footer">
-                ${footer}
-            </div>
+            ${footer ? `<div class="comparable-editor-footer">${footer}</div>` : ''}
         `;
-        
+
         this.inicializarEventListeners();
     }
     
@@ -202,8 +319,10 @@ class ComparableEditor {
             <div class="input-group">
                 <label>Tiene ascensor</label>
                 <div class="switch-container">
-                    <input type="checkbox" id="compTieneAscensor" checked ${this.modo === 'visualizar' ? 'disabled' : ''}>
-                    <span class="switch-label"></span>
+                    <label class="switch">
+                        <input type="checkbox" id="compTieneAscensor" checked ${this.modo === 'visualizar' ? 'disabled' : ''}>
+                        <span class="slider"></span>
+                    </label>
                 </div>
             </div>
         `);
@@ -326,38 +445,38 @@ class ComparableEditor {
         list.style.display = 'block';
     }
     
-    inicializarMapa() {
+    inicializarMapa(lat = -34.6037, lng = -58.3816) {
         const mapContainer = document.getElementById('compMap');
         if (!mapContainer) return;
-        
+
         if (this.mapa) {
             this.mapa.remove();
             this.mapa = null;
         }
-        
-        this.mapa = L.map('compMap').setView([-34.6037, -58.3816], 13);
-        
+
+        this.mapa = L.map('compMap').setView([lat, lng], 13);
+
         const isDarkMode = document.body.classList.contains('dark-mode');
         const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
-        
+
         this.tilesLayer = L.tileLayer(tileUrl, {
             attribution: '© CartoDB, © OpenStreetMap'
         }).addTo(this.mapa);
-        
-        this.marcador = L.marker([-34.6037, -58.3816], {
+
+        this.marcador = L.marker([lat, lng], {
             draggable: true
         }).addTo(this.mapa);
-        
+
         this.marcador.on('dragend', (e) => {
             const { lat, lng } = e.target.getLatLng();
             console.log('Marcador movido a:', lat, lng);
         });
-        
+
         this.mapa.on('click', (e) => {
             const { lat, lng } = e.latlng;
             this.marcador.setLatLng([lat, lng]);
         });
-        
+
         setTimeout(() => {
             this.mapa.invalidateSize();
         }, 100);
@@ -395,6 +514,14 @@ class ComparableEditor {
     }
     
     obtenerDatosFormulario() {
+        let lat = null;
+        let lon = null;
+        if (this.marcador && this.mapa) {
+            const pos = this.marcador.getLatLng();
+            lat = pos.lat;
+            lon = pos.lng;
+        }
+
         const datos = {
             tipo: this.tipo,
             ubicacion: {
@@ -407,6 +534,11 @@ class ComparableEditor {
                 tipo: document.querySelector('input[name="compTipoValor"]:checked')?.value || 'venta'
             }
         };
+
+        if (lat != null && lon != null) {
+            datos.ubicacion.lat = lat;
+            datos.ubicacion.lon = lon;
+        }
         
         if (this.tipo === 'lote') {
             datos.lote = {

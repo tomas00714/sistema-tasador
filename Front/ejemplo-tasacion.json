@@ -1,0 +1,54 @@
+{
+  "id": "T-100",
+  "idNum": 100,
+  "fechaCreacion": "2026-06-27T15:00:00.000Z",
+  "estado": "completada",
+  "cantDeEdiciones": 0,
+  "tipo": "lote",
+  "ubicacion": {
+    "direccion": "Av. Libertador 1234",
+    "provincia": "Buenos Aires",
+    "localidad": "Mar del Plata",
+    "lat": -37.9977,
+    "lon": -57.5486,
+    "orientacion": "N"
+  },
+  "lote": {
+    "tipoLote": "Urbana",
+    "servicios": ["luz", "agua", "gas", "cloacas"],
+    "caracteristicas": {
+      "fot": 2.5,
+      "fos": 0.6,
+      "zonificacion": "R2A"
+    },
+    "observaciones": "Lote en excelente zona"
+  },
+  "comparables": ["C-100", "C-101", "C-102"],
+  "resultado": {
+    "valor_final": 150000,
+    "valor_m2": 1500,
+    "metodo": "fitto_cervini"
+  },
+  "datosCompletos": {
+    "tipo": "lote",
+    "ubicacion": {
+      "direccion": "Av. Libertador 1234",
+      "provincia": "Buenos Aires",
+      "localidad": "Mar del Plata",
+      "lat": -37.9977,
+      "lon": -57.5486,
+      "orientacion": "N"
+    },
+    "lote": {
+      "tipoLote": "Urbana",
+      "servicios": ["luz", "agua", "gas", "cloacas"],
+      "caracteristicas": {
+        "fot": 2.5,
+        "fos": 0.6,
+        "zonificacion": "R2A"
+      },
+      "observaciones": "Lote en excelente zona"
+    },
+    "coeficientesPersonalizados": {}
+  }
+}

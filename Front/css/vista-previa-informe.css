@@ -1,0 +1,715 @@
+/* =========================
+   VISTA PREVIA DE INFORME
+   Layout principal
+========================= */
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg-light);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+.vista-previa-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    gap: var(--shell-margin, 14px);
+    padding: var(--shell-margin, 14px) 0 0 var(--shell-margin, 14px);
+    box-sizing: border-box;
+}
+
+/* =========================
+   PANEL IZQUIERDO: CONFIGURACIÓN
+========================= */
+
+.config-panel {
+    width: 380px;
+    min-width: 380px;
+    margin-bottom: var(--shell-margin, 14px);
+    background: var(--color-white);
+    border: 1.5px solid var(--color-border);
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    align-self: flex-start;
+    max-height: calc(100vh - 2 * var(--shell-margin, 14px));
+}
+
+.config-panel-header {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.config-panel-header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    font-weight: 700;
+}
+
+.config-panel-header p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.config-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.config-section {
+    margin-bottom: 28px;
+}
+
+.config-section:last-child {
+    margin-bottom: 0;
+}
+
+.config-section h3 {
+    margin: 0 0 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.config-section label:not(.config-toggle) {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.config-select,
+.config-input,
+.config-textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    background: var(--color-bg-light);
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.config-select:focus,
+.config-input:focus,
+.config-textarea:focus {
+    border-color: var(--color-primary);
+}
+
+.config-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.config-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+.config-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+/* Toggles — estilo check-servicio del sistema */
+.config-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--color-bg-light);
+    border: 1.5px solid var(--color-border);
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 8px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.config-toggle:last-of-type {
+    margin-bottom: 0;
+}
+
+.config-toggle:hover {
+    background: var(--color-primary-light);
+}
+
+.config-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.config-toggle:has(input:checked) {
+    background: var(--color-primary-light);
+    border: 2px solid var(--color-primary);
+}
+
+.config-toggle span {
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+}
+
+/* Toggles expandibles (fotos / comparables) */
+.config-toggle-expandable {
+    margin-bottom: 8px;
+}
+
+.config-toggle-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.config-toggle-in-row {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.config-toggle-expand-btn {
+    width: 44px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.config-toggle-expand-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.config-toggle-expand-btn[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+.config-toggle-expand-btn i {
+    font-size: 0.85rem;
+    transition: transform 0.2s ease;
+}
+
+.config-toggle-panel {
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.config-toggle input[type="checkbox"]:disabled + span {
+    opacity: 0.5;
+}
+
+.config-toggle-disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.config-toggle-disabled:has(input:checked) {
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.config-photos-empty,
+.config-comparables-empty {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 16px 8px;
+}
+
+.config-photos-carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+}
+
+.config-photo-thumb {
+    flex: 0 0 120px;
+    height: 90px;
+    border-radius: 10px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-white);
+    overflow: hidden;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.config-photo-thumb-placeholder {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 8px;
+}
+
+.config-comparables-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.config-comparable-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-white);
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.config-comparable-item:hover {
+    background: var(--color-primary-light);
+}
+
+.config-comparable-item.selected {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.config-comparable-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-white);
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.config-comparable-item.selected .config-comparable-dot {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.config-comparable-address {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.report-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 64px 32px;
+    color: var(--color-text-secondary);
+    min-height: 300px;
+}
+
+.report-empty-state i {
+    font-size: 2.5rem;
+    color: var(--color-warning);
+    margin-bottom: 16px;
+}
+
+.report-empty-state h3 {
+    margin: 0 0 8px;
+    color: var(--color-text-primary);
+    font-size: 1.25rem;
+}
+
+.report-empty-state p {
+    margin: 0;
+    max-width: 420px;
+    line-height: 1.5;
+}
+
+.config-field {
+    margin-bottom: 18px;
+}
+
+.config-field:last-child {
+    margin-bottom: 0;
+}
+
+/* =========================
+   PANEL DERECHO: VISTA PREVIA
+========================= */
+
+.preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-light);
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+}
+
+.preview-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    margin: 0 var(--shell-margin, 14px) 0 0;
+    background: var(--color-white);
+    border: 1.5px solid var(--color-border);
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+
+.preview-panel-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    font-weight: 700;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-preview-action {
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg-light);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-preview-action:hover:not(:disabled) {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-preview-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-preview-action i {
+    font-size: 1rem;
+}
+
+.preview-panel-content {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 0;
+}
+
+#reportViewer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0 32px 32px;
+    box-sizing: border-box;
+}
+
+/* =========================
+   COMPONENTE REPORT PAGE (A4)
+========================= */
+
+.report-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--color-white);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 20mm;
+    box-sizing: border-box;
+    margin-bottom: 32px;
+    margin-top: 32px;
+}
+
+/* =========================
+   SECCIONES DEL INFORME
+========================= */
+
+.report-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.report-logo {
+    max-width: 120px;
+    max-height: 60px;
+    margin-bottom: 16px;
+}
+
+.report-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 8px;
+}
+
+.report-date {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.report-section {
+    margin-bottom: 32px;
+}
+
+.report-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.report-property-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.report-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.report-info-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-info-value {
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.report-characteristics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.report-characteristics-item {
+    padding: 12px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+}
+
+.report-characteristics-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+}
+
+.report-characteristics-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-comparables-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.report-comparables-table th,
+.report-comparables-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-comparables-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-comparables-table td {
+    color: var(--color-text-secondary);
+}
+
+.report-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.report-photo {
+    aspect-ratio: 4/3;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.report-methodology-text {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+}
+
+.report-conclusion {
+    background: var(--color-primary-light);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid var(--color-primary);
+}
+
+.report-conclusion-text {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.report-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+/* =========================
+   ESTADOS DE VISIBILIDAD
+========================= */
+
+.report-section.hidden {
+    display: none;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1200px) {
+    .config-panel {
+        width: 320px;
+        min-width: 320px;
+    }
+}
+
+@media (max-width: 900px) {
+    .vista-previa-container {
+        flex-direction: column;
+        padding: var(--shell-margin, 14px);
+        gap: var(--shell-margin, 14px);
+    }
+
+    .config-panel {
+        width: 100%;
+        min-width: 100%;
+        max-height: 40vh;
+        margin-bottom: 0;
+        align-self: stretch;
+        border-radius: 18px;
+    }
+
+    .preview-panel {
+        flex: 1;
+        min-height: 0;
+    }
+
+    .preview-panel-header {
+        margin: 0;
+        border-radius: 18px;
+        padding: 14px 18px;
+    }
+
+    .preview-panel-content {
+        padding: 0;
+    }
+
+    #reportViewer {
+        padding: 0 16px 16px;
+    }
+
+    .report-page {
+        width: 100%;
+        min-height: auto;
+        padding: 16px;
+    }
+}
+
+/* =========================
+   MODO OSCURO
+========================= */
+
+body.dark-mode .report-page {
+    background: var(--color-white);
+    color: var(--color-text-primary);
+}
+
+body.dark-mode .report-characteristics-item,
+body.dark-mode .report-comparables-table th {
+    background: var(--color-bg-light);
+}

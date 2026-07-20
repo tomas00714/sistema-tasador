@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de comparables</title>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/shell.css">
+    <link rel="stylesheet" href="css/tasacion.css">
+
+    <style>
+        /* =========================
+           Layout principal
+        ========================= */
+        .solicitud-page {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--color-bg-light);
+        }
+
+        /* Encabezado fijo */
+        .solicitud-encabezado {
+            display: none;
+            flex: 0 0 auto;
+            margin: var(--shell-margin) var(--shell-margin) 0;
+            z-index: 10;
+        }
+
+        .solicitud-encabezado-inner {
+            width: min(1200px, calc(100% - 28px));
+            margin: 0 auto;
+            background: var(--color-white);
+            border-radius: 24px;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            padding: 20px 24px;
+        }
+
+        .solicitud-encabezado-marca {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--color-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .solicitud-encabezado-marca .marca-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .solicitud-encabezado-datos {
+            margin-top: 14px;
+        }
+
+        .solicitud-encabezado-datos h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--color-text-primary);
+        }
+
+        .solicitud-encabezado-datos p {
+            margin: 6px 0 0;
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        .solicitud-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .solicitud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        /* Zona de trabajo */
+        .solicitud-main {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 var(--shell-margin);
+            position: relative;
+        }
+
+        .solicitud-scroll-area {
+            width: min(1200px, 100%);
+            height: 100%;
+            margin: 0 auto;
+            overflow-y: auto;
+            padding: var(--shell-margin) 0 calc(var(--shell-margin) + 90px);
+            box-sizing: border-box;
+        }
+
+        .solicitud-vistas {
+            position: relative;
+            width: 100%;
+            min-height: 100%;
+        }
+
+        .solicitud-vista {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            transform: translateX(40px);
+            pointer-events: none;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .solicitud-vista.vista-activa {
+            display: block;
+            position: relative;
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        .solicitud-vista.vista-entrando {
+            display: block;
+            transform: translateX(40px);
+            opacity: 0;
+            z-index: 0;
+        }
+
+        .solicitud-vista.vista-saliendo {
+            display: block;
+            transform: translateX(-40px);
+            opacity: 0;
+            z-index: 0;
+        }
+
+        /* Sección de comparables */
+        .solicitud-seccion {
+            padding: 4px 0;
+        }
+
+        .solicitud-seccion-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .solicitud-seccion-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--color-text-primary);
+        }
+
+        .solicitud-contador {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .solicitud-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .solicitud-lista .comparable-item-fila {
+            width: 100%;
+        }
+
+        .comparable-item-badge.origen-manual {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .comparable-item-badge.origen-tasacion {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .comparable-item-badge.origen-comparable {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .comparable-acciones {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-solicitud-editar,
+        .btn-solicitud-eliminar {
+            border: none;
+            border-radius: 12px;
+            padding: 8px 12px;
+            background: var(--color-bg-lighter);
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .btn-solicitud-editar:hover {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        .btn-solicitud-eliminar:hover {
+            background: var(--color-error-bg);
+            color: var(--color-error-text);
+        }
+
+        .btn-agregar-comparable {
+            margin-top: 16px;
+            padding: 14px 24px;
+            border-radius: 14px;
+            border: 1.5px dashed var(--color-primary);
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+
+        .btn-agregar-comparable:hover {
+            background: var(--color-primary-lighter);
+        }
+
+        .solicitud-mensaje-envio {
+            display: none;
+            margin-top: 24px;
+            padding: 32px;
+            border-radius: 18px;
+            background: var(--color-success-light);
+            color: var(--color-success);
+            text-align: center;
+        }
+
+        .solicitud-mensaje-envio h3 {
+            margin: 0 0 8px;
+            font-size: 1.25rem;
+        }
+
+        .solicitud-mensaje-envio p {
+            margin: 0 0 20px;
+        }
+
+        .solicitud-mensaje-envio a {
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        /* Formulario embebido */
+        .solicitud-vista-formulario {
+            padding-bottom: 20px;
+        }
+
+        .solicitud-formulario-header {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .solicitud-formulario-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--color-text-primary);
+        }
+
+        .btn-volver-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 1.5px solid var(--color-border);
+            background: var(--color-white);
+            color: var(--color-text-secondary);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+
+        .btn-volver-form:hover {
+            background: var(--color-bg-light);
+        }
+
+        #solicitudEditor.comparable-editor {
+            width: 100%;
+            max-width: 100%;
+            max-height: none;
+            height: auto;
+            border-radius: 24px;
+            display: block;
+            overflow: visible;
+            transform: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        #solicitudEditor.comparable-editor .comparable-editor-content {
+            overflow: visible;
+        }
+
+        .solicitud-vista-formulario .comparable-editor-close {
+            display: none;
+        }
+
+        .solicitud-vista-formulario .comparable-editor-footer {
+            display: none;
+        }
+
+        .solicitud-mensaje-envio {
+            display: none;
+            background: var(--color-white);
+            border: 1px solid var(--color-border);
+            border-radius: 18px;
+            padding: 32px 24px;
+            text-align: center;
+            margin: 16px 0 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .solicitud-mensaje-envio h3 {
+            margin: 0 0 8px;
+            color: var(--color-text-primary);
+            font-size: 1.25rem;
+        }
+
+        .solicitud-mensaje-envio p {
+            margin: 0 0 20px;
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Cargando / error */
+        .solicitud-estado {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
+
+        .solicitud-estado.error {
+            color: var(--color-error-text);
+        }
+
+        .solicitud-estado p {
+            margin: 12px 0 0;
+        }
+
+        /* Bottom nav específico */
+        .bottom-nav-bar.solicitud-bottom-bar {
+            left: 50%;
+        }
+
+        /* Origen badges para item-fila */
+        .comparable-item-badge.origen-manual {
+            background: var(--color-info-light);
+            color: var(--color-info);
+        }
+
+        .comparable-item-badge.origen-tasacion {
+            background: var(--color-success-light);
+            color: var(--color-success);
+        }
+
+        .comparable-item-badge.origen-comparable {
+            background: var(--color-warning-light);
+            color: var(--color-warning);
+        }
+
+        @media (max-width: 600px) {
+            .solicitud-encabezado-inner {
+                padding: 16px;
+            }
+
+            .solicitud-encabezado-datos h1 {
+                font-size: 1.25rem;
+            }
+
+            .solicitud-formulario-header h2 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="solicitud-page">
+
+    <header class="solicitud-encabezado" id="solicitudEncabezado">
+        <div class="solicitud-encabezado-inner">
+            <div class="solicitud-encabezado-marca">
+                <div class="marca-logo"><i class="fa-solid fa-home"></i></div>
+                <span class="marca-nombre">Tasador</span>
+            </div>
+            <div class="solicitud-encabezado-datos" id="solicitudHeader"></div>
+        </div>
+    </header>
+
+    <main class="solicitud-main">
+        <div class="solicitud-scroll-area">
+            <div class="solicitud-vistas" id="solicitudVistas">
+
+                <div class="solicitud-vista solicitud-vista-lista vista-activa" id="solicitudVistaLista">
+                    <section class="solicitud-seccion">
+                        <div class="solicitud-seccion-header">
+                            <h2>Comparables</h2>
+                            <span class="solicitud-contador" id="solicitudContador">0</span>
+                        </div>
+                        <div id="solicitudComparables" class="solicitud-lista"></div>
+                        <button type="button" class="btn-agregar-comparable" id="btnAgregarComparable" style="display: none;">
+                            + Agregar comparable
+                        </button>
+                    </section>
+
+                    <div class="solicitud-mensaje-envio" id="solicitudMensajeEnvio">
+                        <h3>¡Gracias por tu aporte!</h3>
+                        <p>La respuesta fue enviada correctamente.</p>
+                        <a href="TASADOR.html" class="btn-siguiente activo" style="border-radius: 32px; padding: 12px 24px;">Ir al inicio</a>
+                    </div>
+                </div>
+
+                <div class="solicitud-vista solicitud-vista-formulario" id="solicitudVistaFormulario">
+                    <div class="comparable-editor solicitud-editor" id="solicitudEditor"></div>
+                </div>
+
+            </div>
+
+            <div class="solicitud-estado" id="solicitudLoading">
+                <p>Cargando solicitud...</p>
+            </div>
+
+            <div class="solicitud-estado error" id="solicitudError">
+                <h3>Solicitud no encontrada</h3>
+                <p></p>
+            </div>
+        </div>
+    </main>
+
+    <div class="bottom-nav-bar solicitud-bottom-bar" id="solicitudBottomBar">
+        <button type="button" class="btn-volver-paso" id="btnBottomCancelar" style="display: none;">
+            Cancelar
+        </button>
+        <button type="button" class="btn-siguiente" id="btnBottomAccion" disabled>
+            Enviar comparables
+        </button>
+    </div>
+
+    <!-- Modal Genérico Reutilizable -->
+    <div class="modal-overlay" id="modalGenerico">
+        <div class="modal-confirmacion-salir">
+            <h2 class="modal-titulo"></h2>
+            <p class="modal-mensaje"></p>
+            <div class="modal-confirmacion-botones modal-botones"></div>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/storage-cache.js"></script>
+    <script src="js/event-manager.js"></script>
+    <script src="js/ubicacion-utils.js"></script>
+    <script src="js/modal-generico.js"></script>
+    <script src="js/global.js"></script>
+    <script src="js/entidades.js"></script>
+    <script src="js/tasacion-comparables.js"></script>
+    <script src="js/comparable-formulario.js"></script>
+    <script src="js/comparable-editor.js"></script>
+    <script src="js/comparable-modal.js"></script>
+    <script src="js/solicitud.js"></script>
+</body>
+</html>

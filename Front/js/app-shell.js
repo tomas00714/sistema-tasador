@@ -44,9 +44,13 @@ function setVista(vista) {
             });
 
         // Show/hide sections
-        document.getElementById("panelHistorial").style.display = "none";
-        document.getElementById("panelAjustes").style.display = "none";
-        document.getElementById("homeStage").style.display = "flex";
+        const panelHistorial = document.getElementById("panelHistorial");
+        const panelAjustes = document.getElementById("panelAjustes");
+        const homeStage = document.getElementById("homeStage");
+        
+        if (panelHistorial) panelHistorial.style.display = "none";
+        if (panelAjustes) panelAjustes.style.display = "none";
+        if (homeStage) homeStage.style.display = "flex";
 
         return;
     }
@@ -66,9 +70,13 @@ function setVista(vista) {
 
     // Show/hide sections
     if (vista === "historial") {
-        document.getElementById("panelHistorial").style.display = "block";
-        document.getElementById("panelAjustes").style.display = "none";
-        document.getElementById("homeStage").style.display = "none";
+        const panelHistorial = document.getElementById("panelHistorial");
+        const panelAjustes = document.getElementById("panelAjustes");
+        const homeStage = document.getElementById("homeStage");
+        
+        if (panelHistorial) panelHistorial.style.display = "block";
+        if (panelAjustes) panelAjustes.style.display = "none";
+        if (homeStage) homeStage.style.display = "none";
 
         if (
             typeof window.inicializarHistorial ===
@@ -78,13 +86,21 @@ function setVista(vista) {
             window.inicializarHistorial();
         }
     } else if (vista === "ajustes") {
-        document.getElementById("panelHistorial").style.display = "none";
-        document.getElementById("panelAjustes").style.display = "block";
-        document.getElementById("homeStage").style.display = "none";
+        const panelHistorial = document.getElementById("panelHistorial");
+        const panelAjustes = document.getElementById("panelAjustes");
+        const homeStage = document.getElementById("homeStage");
+        
+        if (panelHistorial) panelHistorial.style.display = "none";
+        if (panelAjustes) panelAjustes.style.display = "block";
+        if (homeStage) homeStage.style.display = "none";
     } else {
-        document.getElementById("panelHistorial").style.display = "none";
-        document.getElementById("panelAjustes").style.display = "none";
-        document.getElementById("homeStage").style.display = "flex";
+        const panelHistorial = document.getElementById("panelHistorial");
+        const panelAjustes = document.getElementById("panelAjustes");
+        const homeStage = document.getElementById("homeStage");
+        
+        if (panelHistorial) panelHistorial.style.display = "none";
+        if (panelAjustes) panelAjustes.style.display = "none";
+        if (homeStage) homeStage.style.display = "flex";
     }
 }
 

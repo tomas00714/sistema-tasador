@@ -5,79 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Tasaciones</title>
 
-    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="css/shell.css">
     <link rel="stylesheet" href="css/home.css">
     <link rel="stylesheet" href="css/tasacion.css">
+
+    <script>
+        // Aplicar estado del sidebar antes del primer render para evitar salto visual
+        (function() {
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed-initial');
+            }
+        })();
+    </script>
 </head>
 <body data-vista="inicio">
-
-    <nav class="top-nav-bar" aria-label="Menú principal">
-
-        <div class="nav-section-left">
-            <div class="logo-placeholder">
-                <!-- Logo placeholder -->
+    <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-img">
+                <i class="fa-solid fa-home"></i>
             </div>
-            <button
-                type="button"
-                class="nav-btn dark-mode-toggle"
-                id="darkModeToggle"
-                aria-label="Cambiar modo oscuro"
-                title="Cambiar modo oscuro">
-                <i class="fa-solid fa-sun"></i>
-            </button>
+            <span class="sidebar-logo-text">Tasador</span>
         </div>
 
-        <div class="nav-section-middle" id="progressSection">
-            <!-- Progress indicators will be added here dynamically -->
-        </div>
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Minimizar/expandir menú">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
 
-        <div class="nav-section-right">
-            <button
-                type="button"
-                class="nav-btn"
-                data-vista="inicio">
-                <i class="fa-solid fa-house"></i>
-            </button>
-
-            <button
-                type="button"
-                class="nav-btn"
-                onclick="window.location.href='historial.html'">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-            </button>
-
-            <button
-                type="button"
-                class="nav-btn"
-                onclick="window.location.href='tasacion.html'">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-
-            <button
-                type="button"
-                class="profile-btn"
-                aria-label="Perfil de usuario"
-                title="Perfil">
-
-                <span class="profile-avatar" aria-hidden="true">
-                    <i class="fa-solid fa-user"></i>
+        <nav class="sidebar-nav">
+            <a href="TASADOR.html" class="sidebar-nav-item active" data-page="inicio">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-house"></i>
                 </span>
+                <span class="sidebar-nav-item-text">Inicio</span>
+            </a>
 
-            </button>
-        </div>
+            <a href="historial.html" class="sidebar-nav-item" data-page="historial">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Base de datos</span>
+            </a>
 
-    </nav>
+            <a href="tasacion.html" class="sidebar-nav-item" data-page="tasacion">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-plus"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Nueva tasación</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <button type="button" class="sidebar-profile" aria-label="Perfil de usuario">
+            <div class="sidebar-profile-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="sidebar-profile-info">
+                <span class="sidebar-profile-name">Usuario</span>
+            </div>
+        </button>
+    </aside>
+
+    <div class="main-layout" id="mainLayout">
+        <div class="main-content" id="mainContent">
 
     <section
         class="ajustes-section"
@@ -117,7 +109,7 @@
 
         <div class="home-inicio-container">
 
-            <div class="home-inicio-izquierda" id="homeInicioSaludo">
+            <div class="home-inicio-contenido" id="homeInicioSaludo">
 
                 <p
                     class="home-inicio-fecha"
@@ -131,21 +123,36 @@
                     Sistema de tasacion mediante homogeneizacion de comparables. Calcula el valor de mercado de forma rapida y confiable
                 </p>
 
-                <a
-                    href="tasacion.html"
-                    class="btn-nueva-tasacion-home"
-                    role="button"
-                    aria-label="Abrir nueva tasación">
+                <div class="home-acciones">
+                    <a
+                        href="tasacion.html"
+                        class="home-action-card btn-nueva-tasacion-home-card"
+                        role="button"
+                        aria-label="Abrir nueva tasación">
 
-                    Nueva Tasación
-                    <i class="fa-solid fa-arrow-right"></i>
+                        <span class="btn-nueva-tasacion-home-icon">
+                            <i class="fa-solid fa-plus"></i>
+                        </span>
 
-                </a>
+                        <span class="btn-nueva-tasacion-home-label">Nueva Tasación</span>
 
-            </div>
+                    </a>
 
-            <div class="home-inicio-derecha">
-                <img src="ImagenInicio.png" class="home-inicio-imagen" alt="Imagen de inicio">
+                    <a
+                        href="historial.html"
+                        class="home-action-card btn-historial-home-card"
+                        role="button"
+                        aria-label="Abrir base de datos">
+
+                        <span class="btn-nueva-tasacion-home-icon">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </span>
+
+                        <span class="btn-nueva-tasacion-home-label">Base de datos</span>
+
+                    </a>
+                </div>
+
             </div>
 
         </div>
@@ -216,14 +223,51 @@
 
     </div>
 
-    <div class="top-barra-fondo"></div>
+    <!-- Modal Genérico Reutilizable -->
+    <div class="modal-overlay" id="modalGenerico">
+        <div class="modal-confirmacion-salir">
+            <h2 class="modal-titulo"></h2>
+            <p class="modal-mensaje"></p>
+            <div class="modal-confirmacion-botones modal-botones"></div>
+        </div>
+    </div>
+    </div>
+    </div>
 
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="js/sidebar.js"></script>
+    <script src="js/api-client.js"></script>
     <script src="js/entidades.js"></script>
     <script src="js/global.js"></script>
+    <script src="js/event-manager.js"></script>
+    <script src="js/storage-cache.js"></script>
+    <script src="js/html-cache.js"></script>
+    <script src="js/ubicacion-utils.js"></script>
     <script src="js/app-shell.js"></script>
     <script src="js/home-tasacion.js"></script>
-    <script src="js/tasacion.js"></script>
+    <script src="js/tasacion-core.js"></script>
+    <script src="js/tasacion-seleccion-tipo.js"></script>
+    <script src="js/tasacion-componentes.js"></script>
+    <script src="js/tasacion-ubicacion.js"></script>
+    <script src="js/tasacion-datos.js"></script>
+    <script src="js/modal-generico.js"></script>
+    <script src="js/tasacion-confirmacion.js"></script>
+    <script src="js/tasacion-lote.js"></script>
+    <script src="js/tasacion-departamento.js"></script>
+    <script src="js/tasacion-casa.js"></script>
+    <script src="js/tasacion-comparables.js"></script>
     <script src="js/comparable-editor.js"></script>
+    <script src="js/comparable-formulario.js"></script>
+    <script src="js/comparable-modal.js"></script>
+    <script src="js/tasacion-navegacion.js"></script>
     <script src="js/tasacion-resultado.js"></script>
 
 </body>

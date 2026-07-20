@@ -1,24 +1,10 @@
 :root {
 
     --shell-margin: 14px;
-
-    --top-nav-height: 64px;
-
-    --top-nav-offset: calc(var(--shell-margin) + var(--top-nav-height) + var(--shell-margin));
 }
 
 /* Escenario inicio: tarjeta sobre el fondo gris */
 .home-stage {
-
-    position: fixed;
-
-    top: var(--top-nav-offset);
-
-    right: var(--shell-margin);
-
-    bottom: var(--shell-margin);
-
-    left: var(--shell-margin);
 
     display: flex;
 
@@ -33,6 +19,10 @@
     pointer-events: auto;
 
     transition: none;
+
+    height: 100vh;
+
+    width: 100%;
 }
 
 body:not([data-vista="inicio"]) .home-stage {

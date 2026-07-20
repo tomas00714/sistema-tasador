@@ -1,3 +1,5 @@
+import logging
+from typing import Optional
 from services.homogeneizacion import (
     homogeneizar_comparable,
     obtener_superficie_lote,
@@ -10,12 +12,14 @@ from tablas.fitto_cervini import (
 from tablas.valvano import coeficiente_valvano
 from dataclasses import dataclass
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class DatosLote:
     direccion: str
     tipologia: str
-    zona: int
+    zona: Optional[int]
     frente: float
     fondo: float
     superficie: float
@@ -26,7 +30,7 @@ class DatosLote:
 
 def _tasar_parte_lote(datos_parte):
     """Función auxiliar para tasar una parte del lote (esquina o medial)"""
-    print(f"DEBUG: Tasando parte del lote - Frente: {datos_parte.frente}, Fondo: {datos_parte.fondo}, Superficie: {datos_parte.superficie}, Tipología: {datos_parte.tipologia}")
+    logger.debug(f"Tasando parte del lote - Frente: {datos_parte.frente}, Fondo: {datos_parte.fondo}, Superficie: {datos_parte.superficie}, Tipología: {datos_parte.tipologia}")
 
     superficie = datos_parte.superficie
 
@@ -53,9 +57,9 @@ def _tasar_parte_lote(datos_parte):
     if fondo_objetivo and datos_parte.frente:
         try:
             coeficiente_fitto_lote = coeficiente_fitto_cervini(datos_parte.frente, fondo_objetivo)
-            print(f"DEBUG: Coeficiente Fitto-Cervini del lote objetivo: {coeficiente_fitto_lote}")
+            logger.debug(f"Coeficiente Fitto-Cervini del lote objetivo: {coeficiente_fitto_lote}")
         except Exception as e:
-            print(f"DEBUG: Error al calcular coeficiente Fitto-Cervini del lote objetivo: {e}")
+            logger.error(f"Error al calcular coeficiente Fitto-Cervini del lote objetivo: {e}")
             coeficiente_fitto_lote = 1.0
 
     # Aplicar coeficiente Fitto del lote objetivo al valor final
@@ -64,7 +68,7 @@ def _tasar_parte_lote(datos_parte):
     # Aplicar coeficiente Valvano si es esquina
     coef_valvano, relacion_frentes = _coeficiente_esquina_valvano(datos_parte)
     if coef_valvano != 1.0:
-        print(f"DEBUG: Aplicando coeficiente Valvano: {coef_valvano}")
+        logger.debug(f"Aplicando coeficiente Valvano: {coef_valvano}")
         valor_final *= coef_valvano
 
     ajuste_final = datos_parte.ajuste_final_porcentaje or 0
@@ -127,21 +131,21 @@ def _coeficiente_esquina_valvano(datos):
 
 def tasar_lote(datos):
 
-    print("DEBUG: Iniciando tasar_lote")
+    logger.info("Iniciando tasar_lote")
 
     if not datos.comparables:
         raise ValueError(
             "Se requiere al menos un comparable"
         )
 
-    print(f"DEBUG: Cantidad de comparables: {len(datos.comparables)}")
+    logger.info(f"Cantidad de comparables: {len(datos.comparables)}")
 
     # Detectar si es esquina +30m
     tipologia = normalizar_tipologia(datos.tipologia)
     es_esquina_larga = tipologia == "esquina_larga"
 
     if es_esquina_larga:
-        print("DEBUG: Detectado esquina +30m, dividiendo tasación en 2 partes")
+        logger.info("Detectado esquina +30m, dividiendo tasación en 2 partes")
         return _tasar_esquina_larga(datos)
     else:
         return _tasar_lote_normal(datos)
@@ -149,10 +153,10 @@ def tasar_lote(datos):
 
 def _tasar_lote_normal(datos):
     """Tasación normal para lotes que no son esquina +30m"""
-    print("DEBUG: Tasación normal")
+    logger.debug("Tasación normal")
 
     superficie = obtener_superficie_lote(datos)
-    print(f"DEBUG: Superficie: {superficie}")
+    logger.debug(f"Superficie: {superficie}")
 
     if superficie <= 0:
         raise ValueError("La superficie del lote debe ser mayor a 0")
@@ -160,12 +164,12 @@ def _tasar_lote_normal(datos):
     comparables_homogeneizados = []
     suma_valores_m2 = 0
 
-    print("DEBUG: Iniciando loop de comparables")
+    logger.debug("Iniciando loop de comparables")
 
     for i, comparable in enumerate(datos.comparables):
-        print(f"DEBUG: Procesando comparable {i+1}/{len(datos.comparables)}")
+        logger.debug(f"Procesando comparable {i+1}/{len(datos.comparables)}")
         resultado = homogeneizar_comparable(comparable, datos)
-        print(f"DEBUG: Comparable {i+1} procesado")
+        logger.debug(f"Comparable {i+1} procesado")
         comparables_homogeneizados.append(resultado)
         suma_valores_m2 += resultado["valor_m2_homogeneizado"]
 
@@ -177,7 +181,7 @@ def _tasar_lote_normal(datos):
     tipologia = normalizar_tipologia(datos.tipologia)
     if tipologia == "dos_calles":
         coeficiente_fitto_lote = 1.0
-        print(f"DEBUG: Salida a dos calles - no se aplica coeficiente Fitto-Cervini")
+        logger.debug("Salida a dos calles - no se aplica coeficiente Fitto-Cervini")
     else:
         fondo_objetivo = datos.fondo
         if fondo_objetivo is None and datos.superficie and datos.frente:
@@ -187,22 +191,22 @@ def _tasar_lote_normal(datos):
         if fondo_objetivo and datos.frente:
             try:
                 coeficiente_fitto_lote = coeficiente_fitto_cervini(datos.frente, fondo_objetivo)
-                print(f"DEBUG: Coeficiente Fitto-Cervini del lote objetivo: {coeficiente_fitto_lote}")
+                logger.debug(f"Coeficiente Fitto-Cervini del lote objetivo: {coeficiente_fitto_lote}")
             except Exception as e:
-                print(f"DEBUG: Error al calcular coeficiente Fitto-Cervini del lote objetivo: {e}")
+                logger.error(f"Error al calcular coeficiente Fitto-Cervini del lote objetivo: {e}")
                 coeficiente_fitto_lote = 1.0
 
     # Aplicar coeficiente Fitto del lote objetivo al valor final (solo si no es dos_calles)
     if tipologia != "dos_calles":
-        print(f"DEBUG: Valor final antes de aplicar coeficiente Fitto: {valor_final}")
+        logger.debug(f"Valor final antes de aplicar coeficiente Fitto: {valor_final}")
         valor_final *= coeficiente_fitto_lote
-        print(f"DEBUG: Valor final después de aplicar coeficiente Fitto ({coeficiente_fitto_lote}): {valor_final}")
+        logger.debug(f"Valor final después de aplicar coeficiente Fitto ({coeficiente_fitto_lote}): {valor_final}")
 
     coef_valvano, relacion_frentes = _coeficiente_esquina_valvano(datos)
     if coef_valvano != 1.0:
-        print(f"DEBUG: Aplicando coeficiente Valvano: {coef_valvano}")
+        logger.debug(f"Aplicando coeficiente Valvano: {coef_valvano}")
         valor_final *= coef_valvano
-        print(f"DEBUG: Valor final después de aplicar Valvano: {valor_final}")
+        logger.debug(f"Valor final después de aplicar Valvano: {valor_final}")
 
     ajuste_final = datos.ajuste_final_porcentaje or 0
     if ajuste_final:
@@ -234,7 +238,7 @@ def _tasar_lote_normal(datos):
 
 def _tasar_esquina_larga(datos):
     """Tasación para esquina +30m: divide en esquina hasta 30m y medial del excedente"""
-    print("DEBUG: Tasación esquina +30m")
+    logger.debug("Tasación esquina +30m")
 
     frente = datos.frente
     fondo = datos.fondo
@@ -244,14 +248,14 @@ def _tasar_esquina_larga(datos):
     # Determinar qué lado excede 30m
     if fondo > 30:
         # El fondo excede, se tasa esquina hasta 30m de fondo
-        print(f"DEBUG: Fondo excede 30m ({fondo}m), dividiendo en esquina (30m) y medial ({fondo - 30}m)")
+        logger.debug(f"Fondo excede 30m ({fondo}m), dividiendo en esquina (30m) y medial ({fondo - 30}m)")
         frente_esquina = frente
         fondo_esquina = 30
         frente_medial = fondo - 30
         fondo_medial = frente
     elif frente > 30:
         # El frente excede, se tasa esquina hasta 30m de frente
-        print(f"DEBUG: Frente excede 30m ({frente}m), dividiendo en esquina (30m) y medial ({frente - 30}m)")
+        logger.debug(f"Frente excede 30m ({frente}m), dividiendo en esquina (30m) y medial ({frente - 30}m)")
         frente_esquina = 30
         fondo_esquina = fondo
         frente_medial = frente - 30
@@ -261,7 +265,7 @@ def _tasar_esquina_larga(datos):
         raise ValueError("Para esquina +30m, uno de los lados debe ser mayor a 30m")
 
     # HOMOGENEIZACIÓN ÚNICA con los datos originales
-    print("DEBUG: Homogeneizando comparables una sola vez")
+    logger.debug("Homogeneizando comparables una sola vez")
     comparables_homogeneizados = []
     suma_valores_m2 = 0
 
@@ -271,7 +275,7 @@ def _tasar_esquina_larga(datos):
         suma_valores_m2 += resultado["valor_m2_homogeneizado"]
 
     valor_promedio_m2 = suma_valores_m2 / len(comparables_homogeneizados)
-    print(f"DEBUG: Valor promedio m2 homogeneizado: {valor_promedio_m2}")
+    logger.debug(f"Valor promedio m2 homogeneizado: {valor_promedio_m2}")
 
     # Calcular valores para la parte de esquina
     superficie_esquina = frente_esquina * fondo_esquina
@@ -282,9 +286,9 @@ def _tasar_esquina_larga(datos):
     if fondo_esquina and frente_esquina:
         try:
             coef_fitto_esquina = coeficiente_fitto_cervini(frente_esquina, fondo_esquina)
-            print(f"DEBUG: Coeficiente Fitto-Cervini esquina: {coef_fitto_esquina}")
+            logger.debug(f"Coeficiente Fitto-Cervini esquina: {coef_fitto_esquina}")
         except Exception as e:
-            print(f"DEBUG: Error al calcular coeficiente Fitto-Cervini esquina: {e}")
+            logger.error(f"Error al calcular coeficiente Fitto-Cervini esquina: {e}")
             coef_fitto_esquina = 1.0
 
     valor_esquina = valor_inicial_esquina * coef_fitto_esquina
@@ -303,7 +307,7 @@ def _tasar_esquina_larga(datos):
     )
     coef_valvano, relacion_frentes = _coeficiente_esquina_valvano(datos_esquina_valvano)
     if coef_valvano != 1.0:
-        print(f"DEBUG: Aplicando coeficiente Valvano esquina: {coef_valvano}")
+        logger.debug(f"Aplicando coeficiente Valvano esquina: {coef_valvano}")
         valor_esquina *= coef_valvano
 
     # Ajuste final para esquina
@@ -325,9 +329,9 @@ def _tasar_esquina_larga(datos):
     if fondo_medial and frente_medial:
         try:
             coef_fitto_medial = coeficiente_fitto_cervini(frente_medial, fondo_medial)
-            print(f"DEBUG: Coeficiente Fitto-Cervini medial: {coef_fitto_medial}")
+            logger.debug(f"Coeficiente Fitto-Cervini medial: {coef_fitto_medial}")
         except Exception as e:
-            print(f"DEBUG: Error al calcular coeficiente Fitto-Cervini medial: {e}")
+            logger.error(f"Error al calcular coeficiente Fitto-Cervini medial: {e}")
             coef_fitto_medial = 1.0
 
     valor_medial = valor_inicial_medial * coef_fitto_medial
@@ -343,9 +347,9 @@ def _tasar_esquina_larga(datos):
     valor_final_total = valor_esquina + valor_medial
     valor_m2_total = valor_final_total / superficie_total if superficie_total > 0 else 0
 
-    print(f"DEBUG: Resultado esquina - Superficie: {superficie_esquina}, Valor: {valor_esquina}")
-    print(f"DEBUG: Resultado medial - Superficie: {superficie_medial}, Valor: {valor_medial}")
-    print(f"DEBUG: Total - Superficie: {superficie_total}, Valor: {valor_final_total}, Valor/m2: {valor_m2_total}")
+    logger.debug(f"Resultado esquina - Superficie: {superficie_esquina}, Valor: {valor_esquina}")
+    logger.debug(f"Resultado medial - Superficie: {superficie_medial}, Valor: {valor_medial}")
+    logger.debug(f"Total - Superficie: {superficie_total}, Valor: {valor_final_total}, Valor/m2: {valor_m2_total}")
 
     # Construir resultados parciales para el frontend
     resultado_esquina = {

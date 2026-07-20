@@ -1,7 +1,3 @@
-let provinciasData = [];
-
-let localidadesData = [];
-
 // USA ESTO PARA BUSCAR DINÁMICAMENTE:
 function getBtnSiguiente() {
     return document.getElementById("btnSiguiente");
@@ -23,8 +19,9 @@ let pasoActual = 1;
 
 let tipoSeleccionado = null;
 
-// Generar ID aleatorio para la tasación actual
-let tasacionId = Math.random().toString(36).substring(2, 10).toUpperCase();
+// Inicializar IDs para la tasación actual
+let tasacionId = 0;
+let tasacionIdReal = null;
 
 let resultadoCalculado = false;
 
@@ -106,96 +103,8 @@ const datosTasacion = {
         }
     },
 
-    comparables: []
+    comparables: [] // Array de IDs de comparables (no objetos embebidos)
 };
-
-/* =========================
-   SIGUIENTE
-========================= */
-
-function manejarBtnSiguiente() {
-    const tipo = datosTasacion.tipo || 'lote';
-    const totalSteps = typeof getTotalSteps === 'function' ? getTotalSteps(tipo) : 5;
-
-    // Check if it's the last step (save tasation)
-    if (pasoActual === totalSteps) {
-        datosTasacion.resultado = resultadoTasacion;
-        guardarTasacion();
-        alert("Tasación guardada en el historial.");
-        window.location.href = "TASADOR.html?view=historial";
-        return;
-    }
-
-    // Step 1: Selection type
-    if (pasoActual === 1) {
-        if (tipoSeleccionado === "lote") {
-            mostrarFormularioLote();
-        } else if (tipoSeleccionado === "departamento") {
-            mostrarFormularioDepartamento();
-        } else if (tipoSeleccionado === "casa") {
-            alert("El flujo de casa aún está en desarrollo.");
-        }
-        return;
-    }
-
-    // Get current step name using dynamic structure
-    const nombrePasoActual = typeof getNombrePaso === 'function' ? getNombrePaso(tipo, getIndexPaso(tipo, pasoActual)) : null;
-
-    // Validate current step criteria before proceeding
-    if (nombrePasoActual && typeof validarCriterioPaso === 'function') {
-        if (!validarCriterioPaso(tipo, nombrePasoActual)) {
-            // Show appropriate error message based on step
-            if (tipo === 'lote' && nombrePasoActual === 'datos') {
-                alert("Seleccioná el tipo de lote para continuar.");
-            } else if (tipo === 'lote' && nombrePasoActual === 'caracteristicas') {
-                alert("El frente y fondo deben ser mayores a 0 para continuar.");
-            } else if (nombrePasoActual === 'comparables') {
-                alert("Agregá al menos 1 comparable para continuar.");
-            }
-            return;
-        }
-    }
-
-    // Navigate based on step name
-    if (nombrePasoActual === 'datos') {
-        if (tipo === 'lote') {
-            guardarDatosPantalla1();
-            mostrarCaracteristicasLote();
-        } else if (tipo === 'departamento') {
-            guardarDatosPantallaDepartamento();
-            mostrarCaracteristicasDepartamento();
-        }
-    } else if (nombrePasoActual === 'caracteristicas') {
-        if (tipo === 'lote') {
-            guardarDatosPantalla3();
-            mostrarPantallaComparables();
-        } else if (tipo === 'departamento') {
-            guardarDatosCaracteristicasDepartamento();
-            mostrarHomogeneizacionSuperficie();
-        }
-    } else if (nombrePasoActual === 'superficie') {
-        if (tipo === 'departamento') {
-            guardarDatosHomogeneizacion();
-            mostrarPantallaComparables();
-        }
-    } else if (nombrePasoActual === 'comparables') {
-        // Validate comparables count
-        if (datosTasacion.comparables.length < 1) {
-            alert("Agregá al menos 1 comparable para continuar.");
-            return;
-        }
-        if (datosTasacion.comparables.length > 10) {
-            alert("Máximo 10 comparables permitidos. Quitá algunos comparables antes de continuar.");
-            return;
-        }
-        if (tipo === 'lote') {
-            console.log("Navegando desde comparables a resultado para lote");
-            calcularYMostrarResultado();
-        } else if (tipo === 'departamento') {
-            calcularYMostrarResultadoDepartamento();
-        }
-    }
-}
 
 /* =========================
    SIGUIENTE
@@ -320,6 +229,8 @@ function verificarModoEdicion() {
                     mostrarFormularioLote();
                 } else if (tipoSeleccionado === 'departamento') {
                     mostrarFormularioDepartamento();
+                } else if (tipoSeleccionado === 'casa') {
+                    mostrarFormularioCasa();
                 }
             }
         }
@@ -885,55 +796,6 @@ function generarHTMLInfraestructura(infraestructuraActuales = []) {
     `).join("");
 }
 
-function inicializarOrientacion() {
-    const input = document.getElementById("orientacionInput");
-    const list = document.getElementById("orientacionList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
-function inicializarOrientacionLote() {
-    const input = document.getElementById("orientacionLoteInput");
-    const list = document.getElementById("orientacionLoteList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            datosTasacion.ubicacion.orientacion = item.textContent;
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
 /* =========================
    FORMULARIO LOTE
 ========================= */
@@ -1301,110 +1163,11 @@ function mostrarFormularioDepartamento() {
 
 }
 
-function inicializarAmbientes() {
-    const input = document.getElementById("ambientesInput");
-    const list = document.getElementById("ambientesList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            list.style.display = "none";
-
-            // Update datosTasacion in real-time
-            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.ambientes = item.textContent;
-            }
-
-            // Si es monoambiente, desactivar dormitorios
-            const dormitoriosInput = document.getElementById("dormitoriosInput");
-            if (item.textContent === "Monoambiente" && dormitoriosInput) {
-                dormitoriosInput.disabled = true;
-                dormitoriosInput.value = "";
-                if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                    datosTasacion.departamento.dormitorios = "";
-                }
-            } else if (dormitoriosInput) {
-                dormitoriosInput.disabled = false;
-            }
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
-function inicializarDormitorios() {
-    const input = document.getElementById("dormitoriosInput");
-    const list = document.getElementById("dormitoriosList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            list.style.display = "none";
-
-            // Update datosTasacion in real-time
-            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.dormitorios = item.textContent;
-            }
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
-function inicializarBanos() {
-    const input = document.getElementById("banosInput");
-    const list = document.getElementById("banosList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            list.style.display = "none";
-
-            // Update datosTasacion in real-time
-            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.banos = item.textContent;
-            }
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
 function inicializarSwitchCochera() {
     const switchInput = document.getElementById("cocheraSwitch");
     if (!switchInput) return;
 
-    switchInput.addEventListener("change", () => {
+    agregarListenerSeguro(switchInput, "change", () => {
         datosTasacion.departamento.cochera = switchInput.checked;
     });
 }
@@ -1413,7 +1176,7 @@ function inicializarSwitchBaulera() {
     const switchInput = document.getElementById("bauleraSwitch");
     if (!switchInput) return;
 
-    switchInput.addEventListener("change", () => {
+    agregarListenerSeguro(switchInput, "change", () => {
         datosTasacion.departamento.baulera = switchInput.checked;
     });
 }
@@ -1579,17 +1342,17 @@ function mostrarCaracteristicasDepartamento() {
                                         <span>Buena económica</span>
                                         <span class="coef-display">1</span>
                                     </div>
-                                    <div class="autocomplete-item" data-coef="1.07" data-rango="1.07">
+                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05-1.10">
                                         <span>Buena sin servicios</span>
-                                        <span class="coef-display">1.07</span>
+                                        <span class="coef-display">1.05-1.10</span>
                                     </div>
-                                    <div class="autocomplete-item" data-coef="1.17" data-rango="1.17">
+                                    <div class="autocomplete-item" data-coef="1.15" data-rango="1.15-1.20">
                                         <span>Buena con servicios</span>
-                                        <span class="coef-display">1.17</span>
+                                        <span class="coef-display">1.15-1.20</span>
                                     </div>
-                                    <div class="autocomplete-item" data-coef="1.27" data-rango="1.27">
+                                    <div class="autocomplete-item" data-coef="1.25" data-rango="1.25-1.30">
                                         <span>Muy buena</span>
-                                        <span class="coef-display">1.27</span>
+                                        <span class="coef-display">1.25-1.30</span>
                                     </div>
 
                                 </div>
@@ -1809,72 +1572,23 @@ function mostrarCaracteristicasDepartamento() {
 
 }
 
-function validarRangoCoeficiente(input, valor, coeficienteSeleccionado) {
-    // El coeficiente es válido si es igual al coeficiente seleccionado
-    // Si el usuario lo modifica, se pone amarillo si es diferente
-    if (Math.abs(valor - coeficienteSeleccionado) > 0.001) {
-        input.classList.add("fuera-de-rango");
-    } else {
-        input.classList.remove("fuera-de-rango");
-    }
-}
-
-function inicializarUbicacionPlanta() {
-    const input = document.getElementById("ubicacionPlantaInput");
-    const coefInput = document.getElementById("ubicacionPlantaCoef");
-    const list = document.getElementById("ubicacionPlantaList");
-
-    if (!input || !list) return;
-
-    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPlantaCoef || 1;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const textSpan = item.querySelector('span:first-child');
-            const coefSpan = item.querySelector('.coef-display');
-            
-            input.value = textSpan ? textSpan.textContent : item.textContent;
-            if (coefInput && coefSpan) {
-                coefInput.value = coefSpan.textContent;
-            }
-            
-            datosTasacion.departamento.ubicacionPlanta = textSpan ? textSpan.textContent : item.textContent;
-            datosTasacion.departamento.ubicacionPlantaCoef = parseFloat(item.dataset.coef);
-            coeficienteSeleccionado = parseFloat(item.dataset.coef);
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
+function validarRangoCoeficiente(input, valor, coeficienteSeleccionado, rangoSeleccionado) {
+    // Si hay un rango seleccionado, validar contra el rango
+    if (rangoSeleccionado && rangoSeleccionado.includes('-')) {
+        const [min, max] = rangoSeleccionado.split('-').map(parseFloat);
+        // El coeficiente es válido si está dentro del rango (inclusive)
+        if (valor >= min && valor <= max) {
+            input.classList.remove("fuera-de-rango");
+        } else {
+            input.classList.add("fuera-de-rango");
         }
-    });
-
-    // Validación de coeficiente
-    if (coefInput) {
-        coefInput.addEventListener("input", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                datosTasacion.departamento.ubicacionPlantaCoef = valor;
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("focus", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("blur", () => {
-            coefInput.classList.remove("fuera-de-rango");
-        });
+    } else {
+        // Si no hay rango, validar contra el valor exacto
+        if (Math.abs(valor - coeficienteSeleccionado) > 0.001) {
+            input.classList.add("fuera-de-rango");
+        } else {
+            input.classList.remove("fuera-de-rango");
+        }
     }
 }
 
@@ -1882,7 +1596,7 @@ function inicializarSwitchAscensor() {
     const switchInput = document.getElementById("tieneAscensorSwitch");
     if (!switchInput) return;
 
-    switchInput.addEventListener("change", () => {
+    agregarListenerSeguro(switchInput, "change", () => {
         datosTasacion.departamento.tieneAscensor = switchInput.checked ? "si" : "no";
         actualizarListaPisos(switchInput.checked ? "si" : "no");
         
@@ -1942,149 +1656,12 @@ function actualizarListaPisos(tieneAscensor) {
     `).join("");
 }
 
-function inicializarUbicacionPiso() {
-    const input = document.getElementById("ubicacionPisoInput");
-    const coefInput = document.getElementById("ubicacionPisoCoef");
-    const list = document.getElementById("ubicacionPisoList");
-
-    if (!input || !list) return;
-
-    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPisoCoef || 1;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.addEventListener("click", (e) => {
-        if (e.target.classList.contains("autocomplete-item")) {
-            const textSpan = e.target.querySelector('span:first-child');
-            const coefSpan = e.target.querySelector('.coef-display');
-            
-            input.value = textSpan ? textSpan.textContent : e.target.textContent;
-            if (coefInput && coefSpan) {
-                coefInput.value = coefSpan.textContent;
-            }
-            
-            datosTasacion.departamento.ubicacionPiso = textSpan ? textSpan.textContent : e.target.textContent;
-            datosTasacion.departamento.ubicacionPisoCoef = parseFloat(e.target.dataset.coef);
-            coeficienteSeleccionado = parseFloat(e.target.dataset.coef);
-            list.style.display = "none";
-        }
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-
-    // Validación de coeficiente
-    if (coefInput) {
-        coefInput.addEventListener("input", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                datosTasacion.departamento.ubicacionPisoCoef = valor;
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("focus", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("blur", () => {
-            coefInput.classList.remove("fuera-de-rango");
-        });
-    }
-}
-
-function inicializarSuperficieCubierta() {
-    const input = document.getElementById("superficieCubiertaInput");
-    const coefInput = document.getElementById("superficieCubiertaCoef");
-    const list = document.getElementById("superficieCubiertaList");
-
-    if (!input || !list) return;
-
-    let coeficienteSeleccionado = datosTasacion.departamento.superficieCubiertaCoef || 1;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const textSpan = item.querySelector('span:first-child');
-            const coefSpan = item.querySelector('.coef-display');
-            
-            input.value = textSpan ? textSpan.textContent : item.textContent;
-            if (coefInput && coefSpan) {
-                coefInput.value = coefSpan.textContent;
-            }
-            
-            datosTasacion.departamento.superficieCubierta = textSpan ? textSpan.textContent : item.textContent;
-            datosTasacion.departamento.superficieCubiertaCoef = parseFloat(item.dataset.coef);
-            coeficienteSeleccionado = parseFloat(item.dataset.coef);
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-
-    // Validación de coeficiente
-    if (coefInput) {
-        coefInput.addEventListener("input", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                datosTasacion.departamento.superficieCubiertaCoef = valor;
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("focus", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("blur", () => {
-            coefInput.classList.remove("fuera-de-rango");
-        });
-    }
-}
-
 function inicializarEstadoConservacion() {
-    const input = document.getElementById("estadoConservacionInput");
-    const list = document.getElementById("estadoConservacionList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
+    inicializarAutocomplete("estadoConservacionInput", "estadoConservacionList", {
+        onSelect: (item, input) => {
             datosTasacion.departamento.estadoConservacion = item.textContent;
             datosTasacion.departamento.estadoConservacionCoef = parseInt(item.dataset.valor);
-            list.style.display = "none";
-
-            // Calcular coeficiente de antigüedad usando tabla Ross-Heidecke
             calcularCoeficienteAntiguedad();
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
         }
     });
 }
@@ -2107,378 +1684,16 @@ function calcularCoeficienteAntiguedad() {
     datosTasacion.departamento.estadoConservacionCoef = coeficiente;
 }
 
-function inicializarCaracteristicaConstructiva() {
-    const input = document.getElementById("caracteristicaConstructivaInput");
-    const coefInput = document.getElementById("caracteristicaConstructivaCoef");
-    const list = document.getElementById("caracteristicaConstructivaList");
-
-    if (!input || !list) return;
-
-    let coeficienteSeleccionado = datosTasacion.departamento.caracteristicaConstructivaCoef || 1;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const textSpan = item.querySelector('span:first-child');
-            const coefSpan = item.querySelector('.coef-display');
-            
-            input.value = textSpan ? textSpan.textContent : item.textContent;
-            if (coefInput && coefSpan) {
-                coefInput.value = coefSpan.textContent;
-            }
-            
-            datosTasacion.departamento.caracteristicaConstructiva = textSpan ? textSpan.textContent : item.textContent;
-            datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(item.dataset.coef);
-            coeficienteSeleccionado = parseFloat(item.dataset.coef);
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-
-    // Validación de coeficiente
-    if (coefInput) {
-        coefInput.addEventListener("input", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                datosTasacion.departamento.caracteristicaConstructivaCoef = valor;
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("focus", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("blur", () => {
-            coefInput.classList.remove("fuera-de-rango");
-        });
-    }
-}
-
 /* =========================
    CUARTA PANTALLA DEPARTAMENTO - HOMOGENEIZACIÓN SUPERFICIE
+   (Implementada en tasacion-departamento.js)
 ========================= */
-
-function mostrarHomogeneizacionSuperficie() {
-
-    pasoActual = 4;
-    actualizarIndicadoresProgreso();
-    actualizarTextoBotonSiguiente();
-    actualizarEstadoBotonSiguiente();
-
-    const btnVolverPaso = getBtnVolverPaso();
-    if (btnVolverPaso) {
-
-        btnVolverPaso.style.display = "block";
-    }
-
-    const contenido = getContenidoTasacion();
-    contenido.innerHTML = `
-
-        <div class="titulo-seccion">
-
-            <h1>Homogeneización de superficie</h1>
-
-        </div>
-
-        <div class="homogeneizacion-container">
-
-            <table class="tabla-homogeneizacion">
-
-                <thead>
-
-                    <tr>
-
-                        <th>Tipo de Superficie</th>
-
-                        <th>Superficie (m²)</th>
-
-                        <th>Coeficiente</th>
-
-                        <th>Superficie Homogeneizada (m²)</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    <tr>
-
-                        <td>Cubierto</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="superficieCubierto"
-                                class="input-tabla"
-                                placeholder="Ej: 60"
-                                value="${datosTasacion.departamento.homogeneizacion.cubierto.superficie || ''}"
-                            >
-                        </td>
-
-                        <td>1</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="homogeneizadaCubierto"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.cubierto.homogeneizada || 0}"
-                                disabled
-                            >
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-                        <td>Semicubierto</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="superficieSemicubierto"
-                                class="input-tabla"
-                                placeholder="Ej: 8"
-                                value="${datosTasacion.departamento.homogeneizacion.semicubierto.superficie || ''}"
-                            >
-                        </td>
-
-                        <td>0.50</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="homogeneizadaSemicubierto"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.semicubierto.homogeneizada || 0}"
-                                disabled
-                            >
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-                        <td>Balcón</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="superficieBalcon"
-                                class="input-tabla"
-                                placeholder="Ej: 8"
-                                value="${datosTasacion.departamento.homogeneizacion.balcon.superficie || ''}"
-                            >
-                        </td>
-
-                        <td>0.30</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="homogeneizadaBalcon"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.balcon.homogeneizada || 0}"
-                                disabled
-                            >
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-                        <td>Descubierta</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="superficieDescubierta"
-                                class="input-tabla"
-                                placeholder="Ej: 10"
-                                value="${datosTasacion.departamento.homogeneizacion.descubierto.superficie || ''}"
-                            >
-                        </td>
-
-                        <td>0.20</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="homogeneizadaDescubierta"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.descubierto.homogeneizada || 0}"
-                                disabled
-                            >
-                        </td>
-
-                    </tr>
-
-                    <tr class="fila-total">
-
-                        <td>Total</td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="totalSuperficie"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.totalSuperficie || 0}"
-                                disabled
-                            >
-                        </td>
-
-                        <td></td>
-
-                        <td>
-                            <input
-                                type="number"
-                                id="totalHomogeneizada"
-                                class="input-tabla"
-                                value="${datosTasacion.departamento.homogeneizacion.totalHomogeneizada || 0}"
-                                disabled
-                            >
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
-
-    // Update button state using dynamic validation
-    if (typeof actualizarEstadoBotonSiguiente === 'function') {
-        actualizarEstadoBotonSiguiente();
-    }
-
-    inicializarHomogeneizacion();
-
-    setTimeout(() => {
-        inicializarBotonesTasacion();
-    }, 100);
-
-}
-
-function inicializarHomogeneizacion() {
-
-    // Inicializar eventos para inputs editables
-    const inputs = [
-        { superficie: "superficieCubierto", homogeneizada: "homogeneizadaCubierto", tipo: "cubierto", coef: 1 },
-        { superficie: "superficieSemicubierto", homogeneizada: "homogeneizadaSemicubierto", tipo: "semicubierto", coef: 0.50 },
-        { superficie: "superficieBalcon", homogeneizada: "homogeneizadaBalcon", tipo: "balcon", coef: 0.30 },
-        { superficie: "superficieDescubierta", homogeneizada: "homogeneizadaDescubierta", tipo: "descubierto", coef: 0.20 }
-    ];
-
-    inputs.forEach(config => {
-        const inputSuperficie = document.getElementById(config.superficie);
-        const inputHomogeneizada = document.getElementById(config.homogeneizada);
-
-        if (inputSuperficie && inputHomogeneizada) {
-            inputSuperficie.addEventListener("input", () => {
-                const valor = parseFloat(inputSuperficie.value) || 0;
-                datosTasacion.departamento.homogeneizacion[config.tipo].superficie = valor;
-                datosTasacion.departamento.homogeneizacion[config.tipo].homogeneizada = valor * config.coef;
-                inputHomogeneizada.value = datosTasacion.departamento.homogeneizacion[config.tipo].homogeneizada.toFixed(2);
-                calcularTotales();
-            });
-        }
-    });
-
-    // Calcular totales iniciales
-    calcularTotales();
-}
-
-function calcularHomogeneizadaCubierto() {
-    const superficie = datosTasacion.departamento.homogeneizacion.cubierto.superficie;
-    datosTasacion.departamento.homogeneizacion.cubierto.homogeneizada = superficie * 1;
-
-    const inputHomogeneizada = document.getElementById("homogeneizadaCubierto");
-    if (inputHomogeneizada) {
-        inputHomogeneizada.value = datosTasacion.departamento.homogeneizacion.cubierto.homogeneizada.toFixed(2);
-    }
-
-    calcularTotales();
-}
-
-function calcularTotales() {
-    const hom = datosTasacion.departamento.homogeneizacion;
-
-    // Suma de superficies
-    const totalSuperficie =
-        hom.cubierto.superficie +
-        hom.semicubierto.superficie +
-        hom.balcon.superficie +
-        hom.descubierto.superficie;
-
-    // Suma de superficies homogeneizadas
-    const totalHomogeneizada =
-        hom.cubierto.homogeneizada +
-        hom.semicubierto.homogeneizada +
-        hom.balcon.homogeneizada +
-        hom.descubierto.homogeneizada;
-
-    hom.totalSuperficie = totalSuperficie;
-    hom.totalHomogeneizada = totalHomogeneizada;
-
-    const inputTotalSuperficie = document.getElementById("totalSuperficie");
-    const inputTotalHomogeneizada = document.getElementById("totalHomogeneizada");
-
-    if (inputTotalSuperficie) {
-        inputTotalSuperficie.value = totalSuperficie.toFixed(2);
-    }
-
-    if (inputTotalHomogeneizada) {
-        inputTotalHomogeneizada.value = totalHomogeneizada.toFixed(2);
-    }
-}
-
-function guardarDatosHomogeneizacion() {
-
-    const hom = datosTasacion.departamento.homogeneizacion;
-
-    hom.cubierto.superficie = parseFloat(document.getElementById("superficieCubierto").value) || 0;
-    hom.semicubierto.superficie = parseFloat(document.getElementById("superficieSemicubierto").value) || 0;
-    hom.balcon.superficie = parseFloat(document.getElementById("superficieBalcon").value) || 0;
-    hom.descubierto.superficie = parseFloat(document.getElementById("superficieDescubierta").value) || 0;
-
-    // Recalcular homogeneizadas
-    hom.cubierto.homogeneizada = hom.cubierto.superficie * 1;
-    hom.semicubierto.homogeneizada = hom.semicubierto.superficie * 0.50;
-    hom.balcon.homogeneizada = hom.balcon.superficie * 0.30;
-    hom.descubierto.homogeneizada = hom.descubierto.superficie * 0.20;
-
-    hom.totalSuperficie = parseFloat(document.getElementById("totalSuperficie").value) || 0;
-    hom.totalHomogeneizada = parseFloat(document.getElementById("totalHomogeneizada").value) || 0;
-
-    // Reset resultadoCalculado when screen 4 data changes
-    resultadoCalculado = false;
-
-    actualizarIndicadoresProgreso();
-
-    console.log(datosTasacion);
-}
 
 /* =========================
    SEXTA PANTALLA DEPARTAMENTO - RESULTADO
 ========================= */
 
-async function calcularYMostrarResultadoDepartamento() {
+function calcularYMostrarResultadoDepartamento() {
 
     // Por ahora, usamos la misma lógica que para lotes pero adaptada
     // En el futuro, esto debería llamar a un endpoint específico para departamentos
@@ -2566,218 +1781,6 @@ function armarPayloadTasacionDepartamento() {
     };
 }
 
-function mostrarPantallaResultadoDepartamento() {
-
-    // Establecer pasoActual usando estructura dinámica
-    const tipo = datosTasacion.tipo || 'departamento';
-    const pasos = pasosPorTipo[tipo] || [];
-    const resultadoIndex = pasos.indexOf('resultado');
-    
-    if (resultadoIndex !== -1) {
-        pasoActual = resultadoIndex + 2; // +2 porque array empieza en 0 y paso 1 es común
-    } else {
-        // Fallback a paso 6 para departamento
-        pasoActual = 6;
-    }
-
-    actualizarIndicadoresProgreso();
-    actualizarTextoBotonSiguiente();
-    actualizarEstadoBotonSiguiente();
-
-    const btnVolverPaso = getBtnVolverPaso();
-    if (btnVolverPaso) {
-        btnVolverPaso.style.display = "block";
-    }
-
-    cerrarModalComparables();
-
-    const contenido = getContenidoTasacion();
-    if (!contenido) {
-        return;
-    }
-
-    const r = resultadoTasacion;
-
-    if (!r) {
-        return;
-    }
-
-    // Calcular datos del departamento a tasar para mostrar como primera fila
-    const valorM2Depto = r.valor_m2 || 0;
-    const valorTotalDepto = r.valor_final || 0;
-    const superficieDepto = r.superficie_homogeneizada || 0;
-
-    const filaDeptoTasar = `
-        <tr class="fila-depto-tasar" style="color: #0066cc;">
-            <td><strong>${escapeHtml(datosTasacion.ubicacion.direccion || 'Departamento a tasar')}</strong></td>
-            <td><strong>${formatearMoneda(valorTotalDepto)}</strong></td>
-            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
-            <td><strong>${superficieDepto.toFixed(2)}</strong></td>
-            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
-            <td><strong>1.00</strong></td>
-            <td><input type="number" class="coef-ubicacion-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
-            <td><input type="number" class="coef-actividad-input" data-index="-1" value="1.00" step="0.01" min="0"></td>
-            <td><strong>${formatearMoneda(valorM2Depto)}</strong></td>
-            <td></td>
-        </tr>
-    `;
-
-    const filasComp = (r.comparables || [])
-        .map((c, index) => `
-        <tr data-comparable-index="${index}">
-            <td>${escapeHtml(c.direccion)}</td>
-            <td>${formatearMoneda(c.valor)}</td>
-            <td>${formatearMoneda(c.valor / (c.superficie || 1))}</td>
-            <td>${c.superficie || '-'}</td>
-            <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
-            <td>${c.coeficiente ? c.coeficiente.toFixed(2) : '1.00'}</td>
-            <td><input type="number" class="coef-ubicacion-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
-            <td><input type="number" class="coef-actividad-input" data-index="${index}" value="1.00" step="0.01" min="0"></td>
-            <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
-            <td>
-                <button type="button" class="btn-opciones-comparable" data-index="${index}">
-                    •••
-                </button>
-            </td>
-        </tr>
-    `)
-        .join("");
-
-    const d = "div";
-
-    contenido.innerHTML = `
-
-        <${d} class="titulo-seccion">
-
-            <h1>Resultado de la tasación</h1>
-
-            <p>
-                Valor estimado según comparables homogeneizados.
-            </p>
-
-        </${d}>
-
-        <${d} class="resultado-layout-vertical">
-
-            <${d} class="resultado-valor-card">
-
-                <${d} class="resultado-valor-top">
-                    <${d} class="resultado-valor-left">
-                        <span class="resultado-etiqueta">Valor final</span>
-                        <span class="resultado-valor">$ ${formatearMoneda(r.valor_final)}</span>
-                    </${d}>
-                </${d}>
-
-                <${d} class="resultado-separador"></${d}>
-
-                <${d} class="resultado-meta">
-                    <${d}>
-                        <span>Valor por m² homogeneizado</span>
-                        <strong>$ ${formatearMoneda(r.valor_m2)}</strong>
-                    </${d}>
-                    <${d}>
-                        <span>Superficie homogeneizada</span>
-                        <strong>${r.superficie_homogeneizada.toFixed(2)} m²</strong>
-                    </${d}>
-                </${d}>
-
-            </${d}>
-
-            <${d} class="resultado-comparables-card">
-
-                <h3>Comparables</h3>
-
-                <table class="tabla-comparables-resultado">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Dirección</th>
-
-                            <th>Valor</th>
-
-                            <th>Valor m²</th>
-
-                            <th>Superficie</th>
-
-                            <th>Valor m² homogeneizado</th>
-
-                            <th>Coeficiente</th>
-
-                            <th>Ubicacion</th>
-
-                            <th>Actividad</th>
-
-                            <th>Valor m² final</th>
-
-                            <th></th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        ${filaDeptoTasar}${filasComp}
-
-                    </tbody>
-
-                </table>
-
-                <button type="button" class="btn-recalcular" id="btnRecalcular" disabled>
-                    Recalcular
-                </button>
-
-            </${d}>
-
-        </${d}>
-
-    `;
-
-    const btnSiguiente = getBtnSiguiente();
-    if (btnSiguiente) {
-        btnSiguiente.textContent = "Guardar tasación";
-        btnSiguiente.disabled = false;
-        btnSiguiente.classList.add("activo");
-    }
-
-    // Inicializar botones de quitar comparables
-    inicializarBotonesQuitarComparable();
-
-    // Add event listeners for coeficiente inputs
-    document.querySelectorAll(".coef-ubicacion-input, .coef-actividad-input").forEach(input => {
-        input.addEventListener("input", () => {
-            const btnRecalcular = document.getElementById("btnRecalcular");
-            if (btnRecalcular) {
-                btnRecalcular.disabled = false;
-            }
-        });
-    });
-
-    // Add event listener for recalcular button
-    const btnRecalcular = document.getElementById("btnRecalcular");
-    if (btnRecalcular) {
-        btnRecalcular.addEventListener("click", () => {
-            // Aquí iría la lógica para recalcular con los nuevos coeficientes
-            alert("Función de recalcular con nuevos coeficientes - pendiente de implementar");
-            btnRecalcular.disabled = true;
-        });
-    }
-
-    // Add event listeners for opciones buttons
-    document.querySelectorAll(".btn-opciones-comparable").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            const index = parseInt(e.target.dataset.index);
-            mostrarMenuOpcionesComparable(index, e.target);
-        });
-    });
-
-    setTimeout(() => {
-        inicializarBotonesTasacion();
-    }, 100);
-}
-
 function mostrarMenuOpcionesComparable(index, buttonElement) {
     // Cerrar cualquier menú existente
     const menuExistente = document.querySelector('.menu-opciones-comparable');
@@ -2812,7 +1815,8 @@ function mostrarMenuOpcionesComparable(index, buttonElement) {
     menu.querySelectorAll('.menu-opciones-item').forEach(item => {
         item.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
-            const index = parseInt(e.target.dataset.index);
+            const indexStr = e.target.dataset.index;
+            const index = (indexStr === 'lote' || indexStr === 'esquina' || indexStr === 'medial') ? indexStr : parseInt(indexStr);
             
             if (action === 'eliminar') {
                 if (confirm('¿Estás seguro de eliminar este comparable?')) {
@@ -3175,24 +2179,6 @@ function guardarDatosCaracteristicasDepartamento() {
    CHECKS
 ========================= */
 
-async function asegurarDatasetProvincias() {
-
-    if (provinciasData.length) {
-
-        return;
-    }
-
-    const res = await fetch(
-        "https://apis.datos.gob.ar/georef/api/provincias"
-    );
-
-    const data = await res.json();
-
-    provinciasData = data.provincias.sort((a, b) =>
-        a.nombre.localeCompare(b.nombre)
-    );
-}
-
 async function cargarProvincias() {
 
     try {
@@ -3211,86 +2197,7 @@ async function cargarProvincias() {
 }
 
 
-function inicializarAutocompleteProvincia() {
-
-    const input = document.getElementById("provinciaInput");
-
-    const list = document.getElementById("provinciaList");
-
-    function renderLista(filtro = "") {
-
-        list.innerHTML = "";
-
-        const filtradas = provinciasData.filter(p =>
-            p.nombre.toLowerCase().includes(filtro.toLowerCase())
-        );
-
-        if (!filtradas.length) {
-
-            list.style.display = "none";
-
-            return;
-        }
-
-        filtradas.forEach(provincia => {
-
-            const item = document.createElement("div");
-
-            item.className = "autocomplete-item";
-
-            item.textContent = provincia.nombre;
-
-            item.addEventListener("click", () => {
-
-                input.value = provincia.nombre;
-
-                list.style.display = "none";
-
-                cargarLocalidades(provincia.nombre);
-
-                actualizarMapa();
-            });
-
-            list.appendChild(item);
-        });
-
-        list.style.display = "block";
-    }
-
-    input.addEventListener("focus", () => {
-
-        renderLista();
-    });
-
-    input.addEventListener("input", () => {
-
-        renderLista(input.value);
-
-        // Auto-select if there's an exact match (case-insensitive)
-        const valorInput = input.value.trim().toLowerCase();
-        if (valorInput) {
-            const match = provinciasData.find(p =>
-                p.nombre.toLowerCase() === valorInput
-            );
-            if (match) {
-                input.value = match.nombre;
-                list.style.display = "none";
-                cargarLocalidades(match.nombre);
-                actualizarMapa();
-            }
-        }
-    });
-
-    document.addEventListener("click", (e) => {
-
-        if (!input.parentElement.contains(e.target)) {
-
-            list.style.display = "none";
-        }
-    });
-}
-
-async function cargarLocalidades(provincia) {
+async function cargarLocalidadesUI(provincia) {
 
     const inputLocalidad =
         document.getElementById("localidadInput");
@@ -3302,15 +2209,7 @@ async function cargarLocalidades(provincia) {
 
     inputLocalidad.placeholder = "Cargando localidades...";
 
-    const res = await fetch(
-        `https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(provincia)}&max=5000`
-    );
-
-    const data = await res.json();
-
-    localidadesData = data.localidades.sort((a, b) =>
-        a.nombre.localeCompare(b.nombre)
-    );
+    await cargarLocalidades(provincia);
 
     inputLocalidad.disabled = false;
 
@@ -3319,84 +2218,6 @@ async function cargarLocalidades(provincia) {
     inputLocalidad.value = "";
 
     inicializarAutocompleteLocalidad();
-}
-
-function inicializarAutocompleteLocalidad() {
-
-    const input = document.getElementById("localidadInput");
-
-    const list = document.getElementById("localidadList");
-
-    function renderLista(filtro = "") {
-
-        list.innerHTML = "";
-
-        const filtradas = localidadesData
-            .filter(l =>
-                l.nombre.toLowerCase().includes(filtro.toLowerCase())
-            )
-            .slice(0, 30);
-
-        if (!filtradas.length) {
-
-            list.style.display = "none";
-
-            return;
-        }
-
-        filtradas.forEach(localidad => {
-
-            const item = document.createElement("div");
-
-            item.className = "autocomplete-item";
-
-            item.textContent = localidad.nombre;
-
-            item.addEventListener("click", () => {
-
-                input.value = localidad.nombre;
-
-                list.style.display = "none";
-
-                actualizarMapa();
-            });
-
-            list.appendChild(item);
-        });
-
-        list.style.display = "block";
-    }
-
-    input.addEventListener("focus", () => {
-
-        renderLista();
-    });
-
-    input.addEventListener("input", () => {
-
-        renderLista(input.value);
-
-        // Auto-select if there's an exact match (case-insensitive)
-        const valorInput = input.value.trim().toLowerCase();
-        if (valorInput) {
-            const match = localidadesData.find(l =>
-                l.nombre.toLowerCase() === valorInput
-            );
-            if (match) {
-                input.value = match.nombre;
-                list.style.display = "none";
-                actualizarMapa();
-            }
-        }
-    });
-
-    document.addEventListener("click", (e) => {
-
-        if (!input.parentElement.contains(e.target)) {
-
-            list.style.display = "none";
-        }
-    });
 }
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -3422,12 +2243,30 @@ const TILE_URLS = {
     dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 };
 
+function limpiarMapa() {
+    if (mapa) {
+        if (marcador) {
+            mapa.removeLayer(marcador);
+            marcador = null;
+        }
+        if (tilesLayer) {
+            mapa.removeLayer(tilesLayer);
+            tilesLayer = null;
+        }
+        mapa.remove();
+        mapa = null;
+    }
+}
+
 function inicializarMapa() {
 
     const contenedorMapa =
         document.getElementById("mapaTasacion");
 
     if (!contenedorMapa) return;
+
+    // Limpiar mapa existente si hay uno
+    limpiarMapa();
 
     // Cargar posición guardada si existe
     const latGuardado = datosTasacion.ubicacion.lat || -34.6037;
@@ -3484,33 +2323,15 @@ function configurarBusquedaMapa() {
     const localidadInput =
         document.getElementById("localidadInput");
 
-    let timeoutBusqueda;
+    const buscarConDelay = debounce(() => {
+        actualizarMapa();
+    }, 1200);
 
-    function buscarConDelay() {
+    agregarListenerSeguro(direccionInput, "input", buscarConDelay);
 
-        clearTimeout(timeoutBusqueda);
+    agregarListenerSeguro(provinciaInput, "change", buscarConDelay);
 
-        timeoutBusqueda = setTimeout(() => {
-
-            actualizarMapa();
-
-        }, 1200);
-    }
-
-    direccionInput.addEventListener(
-        "input",
-        buscarConDelay
-    );
-
-    provinciaInput.addEventListener(
-        "change",
-        buscarConDelay
-    );
-
-    localidadInput.addEventListener(
-        "change",
-        buscarConDelay
-    );
+    agregarListenerSeguro(localidadInput, "change", buscarConDelay);
 }
 
 async function actualizarMapa() {
@@ -3548,65 +2369,6 @@ async function actualizarMapa() {
     mapa.setView([lat, lon], 17);
 
     marcador.setLatLng([lat, lon]);
-}
-
-function inicializarTipoLote() {
-
-    const input =
-        document.getElementById("tipoLoteInput");
-
-    const list =
-        document.getElementById("tipoLoteList");
-
-    const items =
-        list.querySelectorAll(".autocomplete-item");
-
-    input.addEventListener("click", () => {
-
-        list.style.display = "block";
-    });
-
-    items.forEach(item => {
-
-        item.addEventListener("click", () => {
-
-            const nuevoTipo =
-                item.textContent.trim();
-
-            /* =====================
-            SI CAMBIO EL TIPO
-            RESETEA PASO 3
-            ===================== */
-
-            if (
-                datosTasacion.lote.tipoLote &&
-                datosTasacion.lote.tipoLote !== nuevoTipo
-            ) {
-
-                datosTasacion.lote.caracteristicas = {};
-            }
-
-            input.value = nuevoTipo;
-
-            datosTasacion.lote.tipoLote =
-                nuevoTipo;
-
-            list.style.display = "none";
-
-            // Update button state using dynamic validation
-            if (typeof actualizarEstadoBotonSiguiente === 'function') {
-                actualizarEstadoBotonSiguiente();
-            }
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-
-        if (!input.parentElement.contains(e.target)) {
-
-            list.style.display = "none";
-        }
-    });
 }
 
 
@@ -4271,24 +3033,20 @@ function etiquetaTipoInmueble(tipo) {
     return mapa[t] || tipo;
 }
 
-function leerHistorialDesdeStorage() {
-
+async function leerHistorialDesdeAPI() {
     try {
-
-        const raw =
-            localStorage.getItem("historialTasaciones");
-
-        if (!raw) {
-
-            return [];
-        }
-
-        const arr = JSON.parse(raw);
-
-        return Array.isArray(arr) ? arr : [];
-
+        const tasaciones = await listarTasacionesAPI(1);
+        return tasaciones.map(t => ({
+            id: t.id,
+            idNum: parseInt(t.id.split('-')[1]),
+            tipo: t.tipo,
+            estado: t.estado,
+            ...t.datos,
+            comparables: t.comparables_ids || [],
+            datosCompletos: t.datos
+        }));
     } catch (e) {
-
+        console.error('Error al leer historial desde API:', e);
         return [];
     }
 }
@@ -4725,16 +3483,7 @@ async function cargarLocalidadesComparableManual(provinciaNombre) {
     listLoc.style.display = "none";
 
     try {
-
-        const res = await fetch(
-            `https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(provinciaNombre)}&max=5000`
-        );
-
-        const data = await res.json();
-
-        localidadesData = data.localidades.sort((a, b) =>
-            a.nombre.localeCompare(b.nombre)
-        );
+        await cargarLocalidades(provinciaNombre);
 
         inputLoc.disabled = false;
 
@@ -4795,7 +3544,7 @@ function inicializarTipoLoteComparableManual() {
     registrarComparableManualDocListener(cerrar);
 }
 
-async function abrirPanelComparableManual() {
+function abrirPanelComparableManual() {
 
     const tipoActual = datosTasacion.tipo;
 
@@ -4856,7 +3605,7 @@ function agregarComparableManualDesdeComparableEditor(datos) {
     actualizarEstadoBotonSiguiente();
 }
 
-function abrirPanelComparableHistorial() {
+async function abrirPanelComparableHistorial() {
 
     const cont =
         document.getElementById("comparablesModalContenido");
@@ -4873,8 +3622,7 @@ function abrirPanelComparableHistorial() {
 
     comparablePanelModo = "historial";
 
-    const tasaciones =
-        leerHistorialDesdeStorage();
+    const tasaciones = await leerHistorialDesdeAPI();
 
     // Filtrar por estado completada y por tipo de inmueble (si ya está seleccionado)
     const tipoActual = datosTasacion.tipo;
@@ -4896,49 +3644,18 @@ function abrirPanelComparableHistorial() {
                         precio = `USD ${(t.datosCompletos.resultado.valor_final).toLocaleString('es-AR')}`;
                     }
 
-                    return `
-                    <div
-                        class="card-historial"
-                        data-historial-id="${t.id}"
-                        role="button"
-                        tabindex="0">
-
-                        <div class="card-grid">
-                            <div class="card-left">
-                                <div class="card-image">
-                                    <i class="fa-solid fa-camera"></i>
-                                </div>
-                            </div>
-
-                            <div class="card-main">
-                                <div class="card-header">
-                                    <div class="card-date-time">
-                                        <i class="fa-solid fa-calendar"></i>
-                                        <span>${formatearFechaRelativa(t.fechaCreacion)}</span>
-                                    </div>
-                                    <span class="card-badge card-badge-tipo">${t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1)}</span>
-                                </div>
-
-                                <div class="card-address">
-                                    <i class="fa-solid fa-location-dot"></i>
-                                    <span>${escapeHtml(t.ubicacion?.direccion || "Sin dirección")}</span>
-                                </div>
-
-                                <div class="card-location">
-                                    <span>${escapeHtml(t.ubicacion?.localidad || "")}, ${escapeHtml(t.ubicacion?.provincia || "")}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-divider"></div>
-
-                        <div class="card-price">
-                            <i class="fa-solid fa-dollar-sign"></i>
-                            <span>${precio}</span>
-                        </div>
-
-                    </div>
-                `})
+                    return construirCardMinimizada({
+                        item: t,
+                        precio,
+                        fecha: formatearFechaRelativa(t.fechaCreacion),
+                        tipoLabel: t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1),
+                        estadoLabel: "Completada",
+                        estadoBadgeClass: "card-minimizada-badge-completada",
+                        dataAttributes: {
+                            "data-historial-id": t.id
+                        }
+                    });
+                })
 
                 .join("")
             : `
@@ -4980,7 +3697,7 @@ function abrirPanelComparableHistorial() {
     overlay.classList.add("active");
 }
 
-function agregarComparableManualDesdeFormulario() {
+async function agregarComparableManualDesdeFormulario() {
 
     const direccion =
         document.getElementById("compManualDireccionInput")
@@ -5082,35 +3799,25 @@ function agregarComparableManualDesdeFormulario() {
         return;
     }
 
-    datosTasacion.comparables.push({
-
-        id: Date.now(),
-
+    // Crear comparable como entidad independiente
+    const comparable = await crearComparable({
         fuente: "manual",
-
         tipoInmueble: datosTasacion.tipo,
-
         tipoLote: esLote ? tipoLote : null,
-
         ubicacion: {
-
             direccion: formatearDireccion(direccion),
-
             provincia,
-
             localidad
         },
-
         frente: frenteComp,
-
         fondo: fondoComp || null,
-
         superficie: superficieComp,
-
         valor: Number(valorRaw),
-
         tipoValor
     });
+    
+    // Agregar el comparable completo a la tasación
+    datosTasacion.comparables.push(comparable);
 
     // Reset resultadoCalculado when comparables change
     resultadoCalculado = false;
@@ -5122,10 +3829,9 @@ function agregarComparableManualDesdeFormulario() {
     renderComparablesDerecha();
 }
 
-function agregarComparableDesdeHistorial(id) {
+async function agregarComparableDesdeHistorial(id) {
 
-    const tasaciones =
-        leerHistorialDesdeStorage();
+    const tasaciones = await leerHistorialDesdeAPI();
 
     const t =
         tasaciones.find(x => String(x.id) === String(id));
@@ -5177,33 +3883,24 @@ function agregarComparableDesdeHistorial(id) {
         valor = Number(ingresado);
     }
 
-    datosTasacion.comparables.push({
-
-        id: Date.now(),
-
-        fuente: "historial",
-
-        historialId: id,
-
-        snapshot: snap,
-
-        valor,
-
-        tipoValor: "venta",
-
-        tipoLote: snap.lote?.tipoLote || null,
-
-        // Extract fields to top level for consistent rendering
-        ubicacion: snap.ubicacion || {},
-
+    // Crear comparable como entidad independiente
+    const comparable = await crearComparable({
+        fuente: "deTasacion",
         tipoInmueble: snap.tipo || null,
-
+        tipoLote: snap.lote?.tipoLote || null,
+        ubicacion: snap.ubicacion || {},
         frente: snap.lote?.caracteristicas?.frente || null,
-
         fondo: snap.lote?.caracteristicas?.fondo || null,
-
-        superficie: snap.lote?.caracteristicas?.superficie || null
+        superficie: snap.lote?.caracteristicas?.superficie || null,
+        valor,
+        tipoValor: "venta",
+        lote: snap.lote || null,
+        departamento: snap.departamento || null,
+        casa: snap.casa || null
     });
+    
+    // Agregar el comparable completo a la tasación
+    datosTasacion.comparables.push(comparable);
 
     // Reset resultadoCalculado when comparables change
     resultadoCalculado = false;
@@ -5215,7 +3912,7 @@ function agregarComparableDesdeHistorial(id) {
     renderComparablesDerecha();
 }
 
-function alternarPanelComparables(modo) {
+async function alternarPanelComparables(modo) {
 
     const overlay =
         document.getElementById("comparablesModalOverlay");
@@ -5241,26 +3938,17 @@ function alternarPanelComparables(modo) {
 
     else {
 
-        abrirPanelComparableHistorial();
+        await abrirPanelComparableHistorial();
     }
 }
 
 function onComparablesContenidoClick(e) {
+    const tipo = datosTasacion.tipo || 'lote';
+    const pasos = pasosPorTipo[tipo] || [];
+    const comparablesIndex = pasos.indexOf('comparables');
+    const pasoComparables = comparablesIndex !== -1 ? comparablesIndex + 2 : (tipo === 'departamento' ? 5 : 4);
 
-    if (pasoActual !== 4) {
-
-        return;
-    }
-
-    const accion =
-        e.target.closest("[data-accion-comparable]");
-
-    if (accion) {
-
-        alternarPanelComparables(
-            accion.dataset.accionComparable
-        );
-
+    if (pasoActual !== pasoComparables) {
         return;
     }
 
@@ -5454,7 +4142,7 @@ function inicializarComparablesModalListenersOnce() {
 
     overlay.dataset.initedComparablesModal = "1";
 
-    overlay.addEventListener("click", e => {
+    overlay.addEventListener("click", async e => {
 
         if (!overlay.classList.contains("active")) {
 
@@ -5491,14 +4179,14 @@ function inicializarComparablesModalListenersOnce() {
             e.target.closest("#btnAgregarComparableManual")
         ) {
 
-            agregarComparableManualDesdeFormulario();
+            await agregarComparableManualDesdeFormulario();
 
             return;
         }
 
         const cardHist =
             e.target.closest(
-                ".card-historial[data-historial-id]"
+                ".card-minimizada[data-historial-id]"
             );
 
         if (cardHist) {
@@ -5539,7 +4227,7 @@ function capturarDatosCompletos() {
         tipo: datosTasacion.tipo,
         ubicacion: { ...datosTasacion.ubicacion },
         comparables: JSON.parse(JSON.stringify(datosTasacion.comparables)),
-        resultado: resultadoTasacion ? { ...resultadoTasacion } : null
+        resultado: resultadoTasacion ? JSON.parse(JSON.stringify(resultadoTasacion)) : null
     };
     
     // Guardar datos según el tipo
@@ -5558,12 +4246,12 @@ function capturarDatosCompletos() {
     if (typeof coeficientesPersonalizados !== 'undefined' && Object.keys(coeficientesPersonalizados).length > 0) {
         datos.coeficientesPersonalizados = JSON.parse(JSON.stringify(coeficientesPersonalizados));
     }
-    
+
     return datos;
 }
 
 function limpiarDatosTasacion() {
-    // Resetear todos los datos
+    // Resetear todos los datos a valores iniciales
     datosTasacion.tipo = null;
     datosTasacion.ubicacion = {
         direccion: "",
@@ -5577,16 +4265,50 @@ function limpiarDatosTasacion() {
         servicios: [],
         caracteristicas: {}
     };
+    datosTasacion.departamento = {
+        ambientes: "",
+        dormitorios: "",
+        banos: "",
+        cochera: false,
+        baulera: false,
+        servicios: [],
+        amenities: [],
+        infraestructura: [],
+        observaciones: "",
+        ubicacionPlanta: "",
+        ubicacionPlantaCoef: 0,
+        tieneAscensor: "",
+        ubicacionPiso: "",
+        ubicacionPisoCoef: 0,
+        superficieCubierta: "",
+        superficieCubiertaCoef: 0,
+        antiguedad: "",
+        estadoConservacion: "",
+        estadoConservacionCoef: 0,
+        caracteristicaConstructiva: "",
+        caracteristicaConstructivaCoef: 0,
+        ubicacionEdificio: ""
+    };
+    datosTasacion.casa = {};
     datosTasacion.comparables = [];
     datosTasacion.resultado = null;
-    
-    // Generar nuevo ID para la próxima tasación
-    tasacionId = Math.random().toString(36).substring(2, 10).toUpperCase();
-    
+
+    // Resetear ID a estado inicial (nueva tasación)
+    tasacionId = 0;
+    tasacionIdReal = null;
+
     // Resetear paso actual
     pasoActual = 1;
     tipoSeleccionado = null;
     resultadoTasacion = null;
+
+    // Resetear coeficientes personalizados
+    if (typeof coeficientesPersonalizados !== 'undefined') {
+        coeficientesPersonalizados = {};
+    }
+    if (typeof coeficienteIdCounter !== 'undefined') {
+        coeficienteIdCounter = 0;
+    }
 }
 
 function cargarDatosCompletos(datosCompletos) {
@@ -5606,10 +4328,25 @@ function cargarDatosCompletos(datosCompletos) {
         };
     } else if (datosCompletos.tipo === 'departamento') {
         datosTasacion.departamento = { ...datosCompletos.departamento };
+    } else if (datosCompletos.tipo === 'casa') {
+        datosTasacion.casa = { ...datosCompletos.casa };
     }
     
-    datosTasacion.comparables = JSON.parse(JSON.stringify(datosCompletos.comparables));
-    resultadoTasacion = datosCompletos.resultado ? { ...datosCompletos.resultado } : null;
+    // Cargar comparables - si son IDs, mantener como IDs; si son objetos completos (datos antiguos), extraer solo los IDs
+    if (datosCompletos.comparables && datosCompletos.comparables.length > 0) {
+        // Verificar si son IDs (strings) u objetos completos
+        const primerComparable = datosCompletos.comparables[0];
+        if (typeof primerComparable === 'string') {
+            // Ya son IDs, cargar directamente
+            datosTasacion.comparables = [...datosCompletos.comparables];
+        } else {
+            // Son objetos completos (datos antiguos), extraer solo los IDs
+            datosTasacion.comparables = datosCompletos.comparables.map(c => c.id).filter(id => id);
+        }
+    } else {
+        datosTasacion.comparables = [];
+    }
+    resultadoTasacion = datosCompletos.resultado ? JSON.parse(JSON.stringify(datosCompletos.resultado)) : null;
     
     // Cargar coeficientes personalizados si existen
     if (datosCompletos.coeficientesPersonalizados) {
@@ -5618,73 +4355,60 @@ function cargarDatosCompletos(datosCompletos) {
         }
         coeficientesPersonalizados = JSON.parse(JSON.stringify(datosCompletos.coeficientesPersonalizados));
     }
-    
-    // Establecer el paso actual
-    pasoActual = datosCompletos.pasoActual || 2;
+
+    // Establecer el paso actual - siempre ir a pantalla 2 al editar
+    pasoActual = 2;
     tipoSeleccionado = datosCompletos.tipo;
 }
 
-function guardarTasacion() {
+async function guardarTasacion() {
+    try {
+        // Guardar todos los datos actuales de los inputs
+        guardarTodosLosDatos();
 
-    // Guardar todos los datos actuales de los inputs
-    guardarTodosLosDatos();
+        // Formatear dirección antes de guardar
+        if (datosTasacion.ubicacion && datosTasacion.ubicacion.direccion) {
+            datosTasacion.ubicacion.direccion = formatearDireccion(
+                datosTasacion.ubicacion.direccion
+            );
+        }
 
-    // Formatear dirección antes de guardar
-    if (datosTasacion.ubicacion && datosTasacion.ubicacion.direccion) {
-        datosTasacion.ubicacion.direccion = formatearDireccion(
-            datosTasacion.ubicacion.direccion
-        );
+        // Capturar datos completos
+        const datosCompletos = capturarDatosCompletos();
+
+        // Determinar si es nueva o edición
+        if (tasacionId === 0) {
+            // Nueva tasación
+            const tasacionCreada = await crearTasacionAPI({
+                usuario_id: 1,
+                tipo: datosTasacion.tipo || 'lote',
+                estado: 'completada',
+                datos: datosCompletos,
+                comparables_ids: datosTasacion.comparables?.map(c => c.id || c) || []
+            });
+            
+            // Actualizar ID de la tasación actual
+            tasacionId = tasacionCreada.id;
+            tasacionIdReal = tasacionCreada.id;
+        } else if (tasacionId === 1) {
+            // Edición
+            await actualizarTasacionAPI(tasacionIdReal, {
+                estado: 'completada',
+                datos: datosCompletos,
+                comparables_ids: datosTasacion.comparables?.map(c => c.id || c) || []
+            });
+        } else {
+            // Fallback: usar ID actual
+            await actualizarTasacionAPI(tasacionId, {
+                estado: 'completada',
+                datos: datosCompletos,
+                comparables_ids: datosTasacion.comparables?.map(c => c.id || c) || []
+            });
+        }
+    } catch (error) {
+        console.error("Error al guardar tasación:", error);
+        alert("Hubo un error al guardar la tasación. Por favor intenta nuevamente.");
     }
-
-    let historial =
-        (() => {
-
-            try {
-
-                return (
-                    JSON.parse(
-                        localStorage.getItem(
-                            "historialTasaciones"
-                        )
-                    ) || []
-                );
-
-            } catch (e) {
-
-                return [];
-            }
-
-        })();
-
-    if (!Array.isArray(historial)) {
-
-        historial = [];
-    }
-
-    // Verificar si ya existe una tasación con este ID (edición)
-    const indiceExistente = historial.findIndex(t => t.id === tasacionId);
-    
-    const tasacionParaGuardar = {
-        id: tasacionId,
-        fechaCreacion: new Date(),
-        estado: "completada",
-        ...datosTasacion,
-        // Guardar datos completos de todos los inputs
-        datosCompletos: capturarDatosCompletos()
-    };
-
-    if (indiceExistente !== -1) {
-        // Reemplazar la existente
-        historial[indiceExistente] = tasacionParaGuardar;
-    } else {
-        // Agregar nueva
-        historial.unshift(tasacionParaGuardar);
-    }
-
-    localStorage.setItem(
-        "historialTasaciones",
-        JSON.stringify(historial)
-    );
 }
 
 inicializarComparablesModalListenersOnce();
@@ -5696,31 +4420,6 @@ inicializarDelegacionSeleccionTipo();
 ========================= */
 
 let navegacionPendiente = null;
-
-/* =========================
-   CONFIRMACIÓN CAMBIAR TIPO
-========================= */
-
-let tipoPendiente = null;
-let cardPendiente = null;
-let hostPendiente = null;
-
-function mostrarConfirmacionCambiarTipo() {
-    const modal = document.getElementById("confirmacionCambiarTipoModal");
-    if (modal) {
-        modal.classList.add("active");
-    }
-}
-
-function ocultarConfirmacionCambiarTipo() {
-    const modal = document.getElementById("confirmacionCambiarTipoModal");
-    if (modal) {
-        modal.classList.remove("active");
-    }
-    tipoPendiente = null;
-    cardPendiente = null;
-    hostPendiente = null;
-}
 
 function mostrarConfirmacionSalir() {
 
@@ -5748,72 +4447,39 @@ function ocultarConfirmacionSalir() {
 
 }
 
-function guardarBorrador() {
+async function guardarBorrador() {
 
     // Guardar todos los datos actuales de los inputs
     guardarTodosLosDatos();
 
-    let historial =
+    const datosCompletos = capturarDatosCompletos();
 
-        (() => {
-
-            try {
-
-                return (
-
-                    JSON.parse(
-
-                        localStorage.getItem(
-
-                            "historialTasaciones"
-
-                        )
-
-                    ) || []
-
-                );
-
-            } catch (e) {
-
-                return [];
-
-            }
-
-        })();
-
-    if (!Array.isArray(historial)) {
-
-        historial = [];
-
+    try {
+        if (tasacionId === 0) {
+            // Nueva tasación borrador
+            const tasacionCreada = await crearTasacionAPI({
+                usuario_id: 1,
+                tipo: datosTasacion.tipo || 'lote',
+                estado: 'borrador',
+                datos: datosCompletos,
+                comparables_ids: datosTasacion.comparables?.map(c => c.id || c) || []
+            });
+            tasacionId = tasacionCreada.id;
+            tasacionIdReal = tasacionCreada.id;
+        } else {
+            // Actualizar borrador existente
+            const idActual = tasacionId === 1 ? tasacionIdReal : tasacionId;
+            await actualizarTasacionAPI(idActual, {
+                estado: 'borrador',
+                datos: datosCompletos,
+                comparables_ids: datosTasacion.comparables?.map(c => c.id || c) || []
+            });
+        }
+    } catch (error) {
+        console.error("Error al guardar borrador:", error);
+        alert("Hubo un error al guardar el borrador. Por favor intenta nuevamente.");
+        return;
     }
-
-    // Verificar si ya existe una tasación con este ID (edición)
-    const indiceExistente = historial.findIndex(t => t.id === tasacionId);
-    
-    const tasacionParaGuardar = {
-        id: tasacionId,
-        fechaCreacion: new Date(),
-        estado: "borrador",
-        ...datosTasacion,
-        // Guardar datos completos de todos los inputs
-        datosCompletos: capturarDatosCompletos()
-    };
-
-    if (indiceExistente !== -1) {
-        // Reemplazar la existente
-        historial[indiceExistente] = tasacionParaGuardar;
-    } else {
-        // Agregar nueva
-        historial.unshift(tasacionParaGuardar);
-    }
-
-    localStorage.setItem(
-
-        "historialTasaciones",
-
-        JSON.stringify(historial)
-
-    );
 
     ocultarConfirmacionSalir();
 
@@ -5990,32 +4656,6 @@ function inicializarConfirmacionSalir() {
 
 }
 
-function inicializarConfirmacionCambiarTipo() {
-    const btnCancelar = document.getElementById("btnCancelarCambiarTipo");
-    const btnConfirmar = document.getElementById("btnConfirmarCambiarTipo");
-
-    if (btnCancelar) {
-        btnCancelar.addEventListener("click", (e) => {
-            e.preventDefault();
-            ocultarConfirmacionCambiarTipo();
-        });
-    }
-
-    if (btnConfirmar) {
-        btnConfirmar.addEventListener("click", (e) => {
-            e.preventDefault();
-            // Limpiar datos de pantallas posteriores
-            limpiarDatosPantallasPosterioresSinVolver();
-            // Aplicar el cambio de tipo
-            if (cardPendiente && hostPendiente && tipoPendiente) {
-                aplicarCambioTipo(cardPendiente, hostPendiente, tipoPendiente);
-            }
-            ocultarConfirmacionCambiarTipo();
-        });
-    }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     inicializarConfirmacionSalir();
-    inicializarConfirmacionCambiarTipo();
 });

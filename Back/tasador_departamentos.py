@@ -1,4 +1,7 @@
+import logging
 from tablas.ross_heidecke import coeficiente_ross_heidecke
+
+logger = logging.getLogger(__name__)
 
 
 def tasar_departamento(datos):
@@ -19,51 +22,84 @@ def tasar_departamento(datos):
     Returns:
         dict con el resultado de la tasación
     """
-    print(f"DEBUG: Iniciando tasar_departamento - Dirección: {datos.direccion}")
-    print(f"DEBUG: Superficie: {datos.superficie_cubierta}, Antigüedad: {datos.antiguedad}, Estado: {datos.estado_conservacion}")
-    
+    logger.info(f"Iniciando tasar_departamento - Dirección: {datos.direccion}")
+    logger.debug(f"Superficie: {datos.superficie_cubierta}, Antigüedad: {datos.antiguedad}, Estado: {datos.estado_conservacion}")
+
+    # Si no viene valor_m2_referencia pero hay comparables, calcularlo como promedio
+    if getattr(datos, "valor_m2_referencia", None) is None or datos.valor_m2_referencia is None:
+        if not datos.comparables:
+            raise ValueError("Se requiere valor_m2_referencia o al menos un comparable")
+
+        valores_m2 = []
+        for comp in datos.comparables:
+            superficie = getattr(comp, "superficie", None) or datos.superficie_cubierta
+            valor = getattr(comp, "valor_total", None) or getattr(comp, "valor", 0)
+            if superficie and valor:
+                valores_m2.append(valor / superficie)
+
+        if not valores_m2:
+            raise ValueError("Los comparables deben tener superficie y valor")
+
+        datos.valor_m2_referencia = sum(valores_m2) / len(valores_m2)
+        logger.debug(f"valor_m2_referencia calculado desde comparables: {datos.valor_m2_referencia}")
+
     # Validar antigüedad máxima
     antiguedad = min(datos.antiguedad, 80)
     if antiguedad != datos.antiguedad:
-        print(f"DEBUG: Antigüedad limitada a 80 años (era {datos.antiguedad})")
+        logger.warning(f"Antigüedad limitada a 80 años (era {datos.antiguedad})")
     
     # Calcular porcentaje de vida transcurrida usando regla de tres simple
     # 80 años = 100% de vida
     porcentaje_vida = round((antiguedad / 80) * 100)
-    print(f"DEBUG: Porcentaje de vida transcurrida: {porcentaje_vida}%")
+    logger.debug(f"Porcentaje de vida transcurrida: {porcentaje_vida}%")
     
     # Obtener coeficiente K de la tabla Ross y Heidecke
     coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, datos.estado_conservacion)
-    print(f"DEBUG: Coeficiente K: {coeficiente_k}")
+    logger.debug(f"Coeficiente K: {coeficiente_k}")
     
     # Calcular coeficiente de depreciación C = 1 - k/2
     coeficiente_depreciacion = 1 - (coeficiente_k / 2)
-    print(f"DEBUG: Coeficiente de depreciación C: {coeficiente_depreciacion}")
+    logger.debug(f"Coeficiente de depreciación C: {coeficiente_depreciacion}")
     
     # Calcular valor inicial
     valor_inicial = datos.superficie_cubierta * datos.valor_m2_referencia
-    print(f"DEBUG: Valor inicial: {valor_inicial}")
+    logger.debug(f"Valor inicial: {valor_inicial}")
     
     # Aplicar coeficiente de depreciación
     valor_depreciado = valor_inicial * coeficiente_depreciacion
-    print(f"DEBUG: Valor depreciado: {valor_depreciado}")
+    logger.debug(f"Valor depreciado: {valor_depreciado}")
     
     # Aplicar ajuste final si existe
     valor_final = valor_depreciado
     ajuste_final = datos.ajuste_final_porcentaje or 0
     if ajuste_final:
         valor_final *= (1 + ajuste_final / 100)
-        print(f"DEBUG: Valor después de ajuste final ({ajuste_final}%): {valor_final}")
+        logger.debug(f"Valor después de ajuste final ({ajuste_final}%): {valor_final}")
     
     # Usar valor manual si se proporciona
     if datos.valor_final_manual is not None:
         valor_final = datos.valor_final_manual
-        print(f"DEBUG: Valor manual aplicado: {valor_final}")
+        logger.debug(f"Valor manual aplicado: {valor_final}")
     
+    # Construir comparables normalizados para el frontend
+    comparables_salida = []
+    for comp in datos.comparables:
+        superficie_comp = getattr(comp, "superficie", None) or datos.superficie_cubierta
+        valor_comp = getattr(comp, "valor_total", None) or getattr(comp, "valor", 0)
+        comparables_salida.append({
+            "direccion": getattr(comp, "direccion", ""),
+            "valor": valor_comp,
+            "valor_m2": round(valor_comp / superficie_comp, 2) if superficie_comp and valor_comp else 0,
+            "superficie": superficie_comp,
+            "valor_total": valor_comp,
+            **comp.model_dump(exclude={"direccion", "valor_total", "superficie"})
+        })
+
     return {
         "direccion": datos.direccion,
         "tipo": datos.tipo,
         "superficie_cubierta": datos.superficie_cubierta,
+        "superficie": datos.superficie_cubierta,
         "antiguedad": datos.antiguedad,
         "estado_conservacion": datos.estado_conservacion,
         "valor_m2_referencia": datos.valor_m2_referencia,
@@ -75,4 +111,6 @@ def tasar_departamento(datos):
         "valor_final": round(valor_final, 2),
         "valor_m2": round(valor_final / datos.superficie_cubierta, 2) if datos.superficie_cubierta > 0 else 0,
         "ajuste_final_porcentaje": ajuste_final,
+        "rossHeidecke": round(coeficiente_k, 4),
+        "comparables": comparables_salida,
     }
