@@ -179,7 +179,7 @@ def main():
 
     # 12. Frontend estatico sirviendo
     try:
-        for page in ['/historial.html', '/TASADOR.html', '/tasacion.html']:
+        for page in ['/historial.html', '/index.html', '/tasacion.html']:
             url = 'http://127.0.0.1:8000' + page
             with urllib.request.urlopen(url) as resp:
                 html = resp.read().decode('utf-8')

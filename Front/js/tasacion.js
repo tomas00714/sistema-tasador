@@ -8,7 +8,7 @@ function getBtnVolverPaso() {
 }
 
 function getContenidoTasacion() {
-    // Esto asegura que busque dentro de la tarjeta expandida de TASADOR.html
+    // Esto asegura que busque dentro de la tarjeta expandida de index.html
     const contenido = document.querySelector("#tarjetaNuevaTasacion .tasacion-contenido") ||
                      document.querySelector(".tasacion-contenido"); // Fallback para tasacion.html
     console.log("getContenidoTasacion() devolvió:", contenido);
@@ -4502,7 +4502,7 @@ function ejecutarNavegacionPendiente() {
     
     if (navegacionPendiente === "BROWSER_BACK") {
         navegacionPendiente = null;
-        window.location.href = "TASADOR.html";
+        window.location.href = "index.html";
         return;
     }
 
@@ -4517,8 +4517,8 @@ function ejecutarNavegacionPendiente() {
 
     } else {
 
-        console.log("No hay navegación pendiente, yendo a TASADOR.html");
-        window.location.href = "TASADOR.html";
+        console.log("No hay navegación pendiente, yendo a index.html");
+        window.location.href = "index.html";
 
     }
 

@@ -33,7 +33,7 @@ function abrirTasacionHome(opciones = {}) {
     history.replaceState(
         { vista: "inicio", tasacion: true },
         "",
-        "TASADOR.html?tasacion=1"
+        "index.html?tasacion=1"
     );
 }
 
@@ -79,7 +79,7 @@ function cerrarTasacionHome(opciones = {}) {
         history.replaceState(
             { vista: "inicio" },
             "",
-            "TASADOR.html"
+            "index.html"
         );
     }
 }

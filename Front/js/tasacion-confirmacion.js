@@ -64,7 +64,7 @@ function mostrarModalConfirmacionGuardarTasacion() {
                     datosTasacion.resultado = resultadoTasacion;
                     await guardarTasacion();
                     limpiarDatosTasacion();
-                    window.location.href = "TASADOR.html";
+                    window.location.href = "index.html";
                 }
             },
             {
@@ -114,7 +114,7 @@ function ejecutarNavegacionPendiente() {
     
     if (navegacionPendiente === "BROWSER_BACK") {
         navegacionPendiente = null;
-        window.location.href = "TASADOR.html";
+        window.location.href = "index.html";
         return;
     }
 
@@ -124,8 +124,8 @@ function ejecutarNavegacionPendiente() {
         console.log("Ejecutando navegación pendiente a:", url);
         window.location.href = url;
     } else {
-        console.log("No hay navegación pendiente, yendo a TASADOR.html");
-        window.location.href = "TASADOR.html";
+        console.log("No hay navegación pendiente, yendo a index.html");
+        window.location.href = "index.html";
     }
 }
 

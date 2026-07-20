@@ -33,7 +33,7 @@ function inyectarNavbar(paginaActual) {
                 <button
                     type="button"
                     class="nav-btn ${paginaActual === 'inicio' ? 'active' : ''}"
-                    onclick="window.location.href='TASADOR.html'"
+                    onclick="window.location.href='index.html'"
                     title="Inicio">
                     <i class="fa-solid fa-house"></i>
                 </button>

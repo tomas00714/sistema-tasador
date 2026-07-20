@@ -125,8 +125,8 @@ function initAppShell() {
 
                 const url =
                     vista === "inicio"
-                        ? "TASADOR.html"
-                        : `TASADOR.html?view=${vista}`;
+                        ? "index.html"
+                        : `index.html?view=${vista}`;
 
                 history.replaceState(
                     { vista },
