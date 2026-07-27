@@ -61,17 +61,27 @@ function limpiarMapa() {
     }
 }
 
-function inicializarMapa() {
+async function inicializarMapa() {
     const contenedorMapa = document.getElementById("mapaTasacion");
     if (!contenedorMapa) return;
 
     // Limpiar mapa existente si hay uno
     limpiarMapa();
 
-    const latGuardado = datosTasacion.ubicacion.lat || -34.6037;
-    const lonGuardado = datosTasacion.ubicacion.lon || -58.3816;
+    let latInicial = datosTasacion.ubicacion.lat || -34.6037;
+    let lonInicial = datosTasacion.ubicacion.lon || -58.3816;
+    let desdeUsuario = false;
 
-    mapa = L.map(contenedorMapa).setView([latGuardado, lonGuardado], 13);
+    if (!datosTasacion.ubicacion.lat || !datosTasacion.ubicacion.lon) {
+        const ubicacionUsuario = await obtenerUbicacionUsuario();
+        if (ubicacionUsuario) {
+            latInicial = ubicacionUsuario.lat;
+            lonInicial = ubicacionUsuario.lon;
+            desdeUsuario = true;
+        }
+    }
+
+    mapa = L.map(contenedorMapa).setView([latInicial, lonInicial], desdeUsuario ? 12 : 13);
 
     const isDarkMode = document.body.classList.contains('dark-mode');
     const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
@@ -80,9 +90,13 @@ function inicializarMapa() {
         attribution: '© CartoDB, © OpenStreetMap'
     }).addTo(mapa);
 
-    marcador = L.marker([latGuardado, lonGuardado], {
+    marcador = L.marker([latInicial, lonInicial], {
         draggable: true
     }).addTo(mapa);
+
+    mapa.on('click', (e) => {
+        marcador.setLatLng(e.latlng);
+    });
 
     setTimeout(() => {
         mapa.invalidateSize();
@@ -117,22 +131,23 @@ async function actualizarMapa() {
     const direccion = document.querySelector('.form-left input[type="text"]').value;
     const provincia = document.getElementById("provinciaInput").value;
     const localidad = document.getElementById("localidadInput").value;
+    const contenedorMapa = document.getElementById("mapaTasacion");
 
     if (!direccion || !provincia || !localidad) return;
 
-    const textoBusqueda = `${direccion}, ${localidad}, ${provincia}, Argentina`;
+    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina');
 
-    const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(textoBusqueda)}`
-    );
+    if (!resultado) {
+        mostrarMensajeMapa(contenedorMapa, 'No se pudo ubicar la dirección en el mapa.');
+        return;
+    }
 
-    const data = await res.json();
+    const { lat, lon, exacto, query } = resultado;
 
-    if (!data.length) return;
+    if (!exacto) {
+        mostrarMensajeMapa(contenedorMapa, `No se encontró la dirección exacta. Mostrando: ${query}`);
+    }
 
-    const lat = parseFloat(data[0].lat);
-    const lon = parseFloat(data[0].lon);
-
-    mapa.setView([lat, lon], 17);
+    mapa.setView([lat, lon], exacto ? 17 : 12);
     marcador.setLatLng([lat, lon]);
 }

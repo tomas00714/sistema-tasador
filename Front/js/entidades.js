@@ -140,6 +140,7 @@ async function crearComparable(datos) {
             idEnviador: datos.idEnviador || null,
             idCreador: datos.idCreador || null,
             nombreCreador: datos.nombreCreador || null,
+            fuenteInformacion: datos.fuenteInformacion || null,
             lote: datos.lote || null,
             departamento: datos.departamento || null,
             casa: datos.casa || null,

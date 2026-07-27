@@ -781,7 +781,7 @@ html.modal-open {
 
 .modal-imagen {
 
-    width: 200x;
+    width: 200px;
 
     min-width: 200px;
 
@@ -979,4 +979,186 @@ html.modal-open {
     background: var(--color-bg-light);
 
     border-top: 2px solid var(--color-border);
+}
+
+/* =========================
+   POLISH: historial
+   Unificación visual con el flujo de tasación
+========================= */
+
+/* Panel principal del historial */
+.historial-section {
+    margin: 20px;
+    padding: 24px;
+    gap: 20px;
+}
+
+.historial-container {
+    gap: 20px;
+}
+
+/* Encabezado */
+.historial-header {
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.input-busqueda {
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+/* Tabs y filtros */
+.tabs-container,
+.filtros-tipo {
+    gap: 10px;
+}
+
+.btn-tab,
+.btn-filtro-tipo {
+    padding: 10px 18px;
+    border-radius: 32px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-tab:hover,
+.btn-filtro-tipo:hover {
+    background: var(--color-bg-light);
+}
+
+.btn-tab.active {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+}
+
+.btn-filtro-tipo.active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* Contenido principal */
+.historial-content {
+    gap: 20px;
+    min-height: 0;
+}
+
+@media (max-width: 900px) {
+    .historial-content {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+    }
+
+    .historial-panel-derecho {
+        min-height: 300px;
+    }
+}
+
+/* Lista */
+.lista-propiedades {
+    gap: 12px;
+    padding: 16px;
+    border-radius: 18px;
+    background: var(--color-bg-light);
+    border: 1.5px solid var(--color-border);
+}
+
+/* Modal */
+.modal-tasacion {
+    border-radius: 24px;
+    padding: 24px;
+}
+
+.modal-footer {
+    gap: 12px;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.btn-modal {
+    border-radius: 32px;
+    padding: 12px 24px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s ease;
+}
+
+.btn-editar {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.btn-editar:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-eliminar {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+}
+
+.btn-eliminar:hover {
+    background: var(--color-bg-lighter);
+}
+
+/* Perfil */
+.perfil-btn-accion {
+    border-radius: 32px;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.perfil-btn-volver {
+    border-radius: 32px;
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+}
+
+/* Fila del lote a tasar */
+.fila-lote-tasar {
+    color: var(--color-primary);
+}
+
+/* Cards del historial */
+.lista-propiedades .card-minimizada {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 18px;
+}
+
+.lista-propiedades .card-minimizada-seleccionado {
+    border: 1.5px solid var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+/* Botones de modales consistentes con el flujo */
+.btn-confirmacion-cancelar,
+.btn-confirmacion-guardar,
+.btn-confirmacion-no-guardar,
+.btn-confirmacion-crear-informe {
+    border-radius: 32px;
+    padding: 12px 24px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    min-width: 120px;
 }

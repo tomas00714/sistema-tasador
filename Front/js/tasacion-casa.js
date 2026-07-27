@@ -28,7 +28,7 @@ function mostrarFormularioCasa() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top: 32px;">
+        <div class="seccion-campos">
             <h3>Características</h3>
             <div class="form-grid-departamento">
                 <div class="input-group">
@@ -101,7 +101,7 @@ function mostrarFormularioCasa() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top: 32px;">
+        <div class="seccion-campos">
             <h3>Servicios</h3>
             <div class="servicios-grid">
                 ${generarHTMLServicios(datosTasacion.casa.servicios)}
@@ -110,7 +110,7 @@ function mostrarFormularioCasa() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top: 32px;">
+        <div class="seccion-campos">
             <h3>Infraestructura</h3>
             <div class="servicios-grid">
                 ${generarHTMLInfraestructura(datosTasacion.casa.infraestructura)}
@@ -119,7 +119,7 @@ function mostrarFormularioCasa() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top: 32px;">
+        <div class="seccion-campos">
             <h3>Observaciones</h3>
             <div class="input-group">
                 <textarea id="observacionesInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.casa.observaciones || ""}</textarea>

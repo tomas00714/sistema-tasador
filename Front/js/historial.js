@@ -255,7 +255,7 @@ function generarTablaResultadosPerfil(tasacion) {
         const coefActividadLote = r.coeficiente_actividad || 1.0;
 
         const filaLoteTasar = `
-            <tr class="fila-lote-tasar" style="color: #0066cc;">
+            <tr class="fila-lote-tasar">
                 <td><strong>${formatearDireccion(tasacion.ubicacion?.direccion || 'Lote a tasar')}</strong></td>
                 <td><strong>${frente}</strong></td>
                 <td><strong>${fondo || '-'}</strong></td>

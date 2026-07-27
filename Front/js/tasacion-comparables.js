@@ -88,7 +88,10 @@ function renderComparablesDerecha() {
                     </div>
                     <span class="comparable-item-badge">${badge}</span>
                 </div>
-                <button type="button" class="btn-quitar-comparable" data-quitar-comparable="${idx}">Quitar</button>
+                <div class="comparable-item-acciones">
+                    <button type="button" class="btn-editar-comparable" data-editar-comparable="${idx}" onclick="event.stopPropagation(); editarComparableDesdeLista(${idx});">Editar</button>
+                    <button type="button" class="btn-quitar-comparable" data-quitar-comparable="${idx}">Quitar</button>
+                </div>
             </div>
         `;
     }).join('');
@@ -515,6 +518,72 @@ function onComparablesContenidoClick(e) {
             actualizarEstadoBotonSiguiente();
         }
         return;
+    }
+
+    const btnEditar = e.target.closest("[data-editar-comparable]");
+    if (btnEditar) {
+        const idx = Number(btnEditar.dataset.editarComparable);
+        if (!Number.isNaN(idx)) {
+            editarComparableDesdeLista(idx);
+        }
+        return;
+    }
+}
+
+async function editarComparableDesdeLista(idx) {
+    try {
+        const original = datosTasacion.comparables[idx];
+        console.log('[editarComparableDesdeLista] idx:', idx, 'original:', original);
+        if (!original) {
+            console.warn('[editarComparableDesdeLista] No existe comparable en índice', idx);
+            return;
+        }
+        if (!window.comparableEditor || typeof window.comparableEditor.abrir !== 'function') {
+            console.error('[editarComparableDesdeLista] window.comparableEditor no está disponible o no tiene abrir', window.comparableEditor);
+            alert('El editor de comparables no se cargó correctamente. Revisá la consola.');
+            return;
+        }
+
+        const tipo = original.tipoInmueble || datosTasacion.tipo || 'lote';
+        const datosEditor = normalizarComparableParaEditor(original);
+        console.log('[editarComparableDesdeLista] datosEditor:', datosEditor);
+
+        window.comparableEditor.abrir({
+            modo: 'editar',
+            tipo: tipo,
+            datos: datosEditor,
+            onGuardar: async (datosNuevos) => {
+                const actualizado = aplicarDatosEditorAComparable(datosNuevos, original);
+                datosTasacion.comparables[idx] = actualizado;
+
+                if (actualizado.id) {
+                    try {
+                        await actualizarComparable(actualizado.id, actualizado);
+                    } catch (e) {
+                        console.error('Error actualizando comparable:', e);
+                        alert('No se pudo guardar el comparable. Revisá la consola.');
+                        return;
+                    }
+                }
+
+                resultadoCalculado = false;
+                renderComparablesDerecha();
+                actualizarEstadoBotonSiguiente();
+
+                const tipoActual = datosTasacion.tipo || 'lote';
+                let pasoResultado = 5;
+                if (typeof configuracionFlujos !== 'undefined' && configuracionFlujos[tipoActual]?.pasos) {
+                    const idxResultado = configuracionFlujos[tipoActual].pasos.findIndex(p => p.nombre === 'resultado');
+                    if (idxResultado !== -1) pasoResultado = idxResultado + 2;
+                }
+                if (pasoActual === pasoResultado && typeof calcularYMostrarResultado === 'function') {
+                    await calcularYMostrarResultado();
+                }
+            }
+        });
+    } catch (e) {
+        console.error('[editarComparableDesdeLista] Error inesperado:', e);
+        alert('No se pudo abrir el editor del comparable. Revisá la consola.');
     }
 }
 

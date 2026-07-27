@@ -135,6 +135,17 @@ function interceptarNavegacion(event) {
     }
 
     const target = event.target;
+    
+    // Ignorar interacciones dentro de mapas Leaflet (zoom, controles, tiles, etc.)
+    if (
+        target.closest(".leaflet-container") ||
+        target.closest("#mapaTasacion") ||
+        target.closest("#compFormMapa") ||
+        target.closest(".comparable-map")
+    ) {
+        return;
+    }
+
     const linkElement = target.closest("a");
     const buttonElement = target.closest("[data-href]");
 

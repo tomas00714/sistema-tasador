@@ -21,7 +21,7 @@ class ComparableEditor {
         this.mostrarFooter = true;
 
         this.container = document.getElementById('comparableEditorContainer') || null;
-        this.editor = document.getElementById('comparableEditor') || null;
+        this.editor = document.getElementById('comparableEditorContent') || null;
 
         this.mapa = null;
         this.marcador = null;
@@ -29,12 +29,22 @@ class ComparableEditor {
     }
 
     abrir(config = {}) {
+        console.log('[ComparableEditor.abrir] config:', config);
         this.embedded = false;
         if (config.modo) this.modo = config.modo;
         if (config.tipo) this.tipo = config.tipo;
         if (config.datos) this.datos = config.datos;
         if (config.onGuardar) this.onGuardar = config.onGuardar;
         if (config.onCancelar) this.onCancelar = config.onCancelar;
+
+        // Re-obtener referencias al DOM por si el script se cargó antes del HTML (SPA)
+        this.container = document.getElementById('comparableEditorContainer') || this.container;
+        this.editor = document.getElementById('comparableEditorContent') || this.editor;
+
+        if (!this.container || !this.editor) {
+            console.error('[ComparableEditor.abrir] No se encontró el contenedor o editor del DOM');
+            throw new Error('El editor de comparables no está disponible en el DOM');
+        }
 
         this.renderizar();
         this.container.style.display = 'flex';
@@ -75,6 +85,7 @@ class ComparableEditor {
     }
 
     cargarDatosEnFormulario() {
+        console.log('[ComparableEditor.cargarDatosEnFormulario] datos:', this.datos);
         if (!this.datos) return;
 
         if (this.datos.tipo) {
@@ -127,6 +138,16 @@ class ComparableEditor {
             if (superficieTotal) superficieTotal.value = depto.superficieTotal != null ? depto.superficieTotal : (this.datos.superficie ?? '');
             if (antiguedad) antiguedad.value = depto.antiguedad != null ? depto.antiguedad : '';
             if (ascensor) ascensor.checked = depto.tieneAscensor === true || depto.tieneAscensor === 'true' || depto.tieneAscensor === 'si';
+        }
+
+        const fuente = this.datos.fuente || {};
+        const fuenteSelect = document.getElementById('compFuente');
+        const fuenteDetalle = document.getElementById('compFuenteDetalle');
+        const fuenteDetalleGroup = document.getElementById('compFuenteDetalleGroup');
+        if (fuenteSelect) fuenteSelect.value = fuente.tipo || '';
+        if (fuenteDetalle) fuenteDetalle.value = fuente.detalle || '';
+        if (fuenteDetalleGroup && fuenteSelect) {
+            fuenteDetalleGroup.style.display = fuenteSelect.value === 'inmobiliaria' ? 'block' : 'none';
         }
 
         // Inicializar mapa centrado en la ubicación si existen coordenadas
@@ -203,6 +224,7 @@ class ComparableEditor {
         return `
             ${this.renderizarSeccion('Ubicación', this.renderizarUbicacion())}
             ${this.renderizarDatosEspecificos()}
+            ${this.renderizarSeccion('Fuente', this.renderizarFuente())}
             ${this.renderizarSeccion('Valor', this.renderizarValor())}
         `;
     }
@@ -277,7 +299,7 @@ class ComparableEditor {
                 <label>Tipo de lote</label>
                 <div class="autocomplete-container">
                     <input type="text" id="compTipoLote" placeholder="Seleccionar tipo" autocomplete="off" readonly ${this.modo === 'visualizar' ? 'readonly' : ''}>
-                    <div class="autocomplete-list" id="compTipoLoteList" style="display:none">
+                    <div class="autocomplete-list" id="compTipoLoteList">
                         <div class="autocomplete-item">Medial</div>
                         <div class="autocomplete-item">Esquina</div>
                         <div class="autocomplete-item">Esquina larga (+30m)</div>
@@ -350,6 +372,26 @@ class ComparableEditor {
         `;
     }
     
+    renderizarFuente() {
+        const readOnlyAttr = this.modo === 'visualizar' ? 'disabled' : '';
+        return `
+            <div class="input-group">
+                <label>Fuente</label>
+                <select id="compFuente" class="comparable-select" ${readOnlyAttr}>
+                    <option value="">Seleccionar fuente</option>
+                    <option value="propia">Propia</option>
+                    <option value="inmobiliaria">Inmobiliaria</option>
+                    <option value="particular">Particular</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+            <div class="input-group" id="compFuenteDetalleGroup" style="display: none;">
+                <label>Nombre de la inmobiliaria</label>
+                <input type="text" id="compFuenteDetalle" placeholder="Nombre de la inmobiliaria" autocomplete="off" ${this.modo === 'visualizar' ? 'readonly' : ''}>
+            </div>
+        `;
+    }
+    
     obtenerFooter() {
         if (this.modo === 'visualizar') {
             return `
@@ -369,6 +411,7 @@ class ComparableEditor {
     
     inicializarEventListeners() {
         this.inicializarAutocompleteProvincia();
+        this.inicializarEventListenersFuente();
         
         if (this.tipo === 'lote') {
             this.inicializarAutocompleteTipoLote();
@@ -445,7 +488,24 @@ class ComparableEditor {
         list.style.display = 'block';
     }
     
-    inicializarMapa(lat = -34.6037, lng = -58.3816) {
+    inicializarEventListenersFuente() {
+        const select = document.getElementById('compFuente');
+        const detalleGroup = document.getElementById('compFuenteDetalleGroup');
+        const detalleInput = document.getElementById('compFuenteDetalle');
+        
+        if (!select || !detalleGroup || !detalleInput) return;
+        
+        const actualizarVisibilidad = () => {
+            const esInmobiliaria = select.value === 'inmobiliaria';
+            detalleGroup.style.display = esInmobiliaria ? 'block' : 'none';
+            if (!esInmobiliaria) detalleInput.value = '';
+        };
+        
+        select.addEventListener('change', actualizarVisibilidad);
+        actualizarVisibilidad();
+    }
+    
+    async inicializarMapa(lat = -34.6037, lng = -58.3816) {
         const mapContainer = document.getElementById('compMap');
         if (!mapContainer) return;
 
@@ -454,7 +514,17 @@ class ComparableEditor {
             this.mapa = null;
         }
 
-        this.mapa = L.map('compMap').setView([lat, lng], 13);
+        let zoom = 13;
+        if (lat === -34.6037 && lng === -58.3816) {
+            const ubicacionUsuario = await obtenerUbicacionUsuario();
+            if (ubicacionUsuario) {
+                lat = ubicacionUsuario.lat;
+                lng = ubicacionUsuario.lon;
+                zoom = 12;
+            }
+        }
+
+        this.mapa = L.map('compMap').setView([lat, lng], zoom);
 
         const isDarkMode = document.body.classList.contains('dark-mode');
         const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
@@ -529,6 +599,12 @@ class ComparableEditor {
                 provincia: document.getElementById('compProvincia')?.value?.trim() || '',
                 localidad: document.getElementById('compLocalidad')?.value?.trim() || ''
             },
+            fuente: {
+                tipo: document.getElementById('compFuente')?.value || '',
+                detalle: document.getElementById('compFuente')?.value === 'inmobiliaria'
+                    ? document.getElementById('compFuenteDetalle')?.value?.trim() || ''
+                    : ''
+            },
             valor: {
                 monto: parseFloat(document.getElementById('compValor')?.value) || 0,
                 tipo: document.querySelector('input[name="compTipoValor"]:checked')?.value || 'venta'
@@ -565,22 +641,22 @@ class ComparableEditor {
     }
     
     validarDatos(datos) {
-        if (!datos.ubicacion.direccion || !datos.ubicacion.provincia || !datos.ubicacion.localidad) {
+        if (!datos.ubicacion?.direccion || !datos.ubicacion?.provincia || !datos.ubicacion?.localidad) {
             alert('Completá dirección, provincia y localidad.');
             return false;
         }
         
-        if (!datos.valor.monto || datos.valor.monto <= 0) {
+        if (!datos.valor?.monto || datos.valor.monto <= 0) {
             alert('Ingresá un valor válido.');
             return false;
         }
         
         if (this.tipo === 'lote') {
-            if (!datos.lote.frente || datos.lote.frente <= 0) {
+            if (!datos.lote?.frente || datos.lote.frente <= 0) {
                 alert('Completá el frente del lote.');
                 return false;
             }
-            if (!datos.lote.superficie || datos.lote.superficie <= 0) {
+            if (!datos.lote?.superficie || datos.lote.superficie <= 0) {
                 alert('Completá la superficie del lote.');
                 return false;
             }
@@ -588,6 +664,134 @@ class ComparableEditor {
         
         return true;
     }
+}
+
+function normalizarComparableParaEditor(comparable) {
+    if (!comparable) return null;
+    
+    const tipo = comparable.tipoInmueble || comparable.tipo || 'lote';
+    const ubicacion = comparable.ubicacion || {};
+    
+    let valorMonto = 0;
+    let valorTipo = 'venta';
+    if (comparable.valor != null) {
+        if (typeof comparable.valor === 'object') {
+            valorMonto = comparable.valor.monto ?? 0;
+            valorTipo = comparable.valor.tipo || comparable.tipoValor || 'venta';
+        } else {
+            valorMonto = comparable.valor;
+            valorTipo = comparable.tipoValor || 'venta';
+        }
+    }
+    
+    const datosEditor = {
+        tipo,
+        ubicacion: {
+            direccion: ubicacion.direccion || '',
+            provincia: ubicacion.provincia || '',
+            localidad: ubicacion.localidad || '',
+            lat: ubicacion.lat ?? ubicacion.latitud ?? null,
+            lon: ubicacion.lon ?? ubicacion.longitud ?? ubicacion.lng ?? null
+        },
+        valor: {
+            monto: valorMonto,
+            tipo: valorTipo
+        },
+        fuente: comparable.fuenteInformacion
+            ? { tipo: comparable.fuenteInformacion.tipo || comparable.fuenteInformacion, detalle: comparable.fuenteInformacion.detalle || '' }
+            : (comparable.fuente ? { tipo: comparable.fuente, detalle: comparable.fuenteDetalle || '' } : { tipo: '', detalle: '' })
+    };
+    
+    if (tipo === 'lote') {
+        const lote = comparable.lote || {};
+        const car = lote.caracteristicas || {};
+        datosEditor.lote = {
+            frente: comparable.frente ?? lote.frente ?? car.frente ?? null,
+            fondo: comparable.fondo ?? lote.fondo ?? car.fondo ?? null,
+            superficie: comparable.superficie ?? lote.superficie ?? car.superficie ?? null,
+            tipoLote: comparable.tipoLote ?? lote.tipoLote ?? ''
+        };
+    } else if (tipo === 'casa') {
+        const casa = comparable.casa || {};
+        datosEditor.casa = {
+            superficieCubierta: comparable.superficieCubierta ?? casa.superficieCubierta ?? casa.superficie ?? comparable.superficie ?? null,
+            superficieTerreno: comparable.superficieTerreno ?? casa.superficieTerreno ?? null,
+            antiguedad: comparable.antiguedad ?? casa.antiguedad ?? null
+        };
+    } else if (tipo === 'departamento') {
+        const depto = comparable.departamento || {};
+        datosEditor.departamento = {
+            superficieTotal: comparable.superficieTotal ?? depto.superficieTotal ?? depto.superficie ?? comparable.superficie ?? null,
+            antiguedad: comparable.antiguedad ?? depto.antiguedad ?? null,
+            tieneAscensor: comparable.tieneAscensor ?? depto.tieneAscensor ?? false
+        };
+    }
+    
+    return datosEditor;
+}
+
+function aplicarDatosEditorAComparable(datosEditor, original = {}) {
+    const tipo = datosEditor.tipo || original.tipoInmueble || original.tipo || 'lote';
+    const actualizado = {
+        ...original,
+        tipoInmueble: tipo,
+        tipo: tipo,
+        ubicacion: datosEditor.ubicacion || original.ubicacion || {},
+        valor: datosEditor.valor?.monto ?? original.valor ?? 0,
+        tipoValor: datosEditor.valor?.tipo ?? original.tipoValor ?? 'venta'
+    };
+    
+    // Normalizar fuente sin pisar la columna de sistema 'fuente'
+    actualizado.fuenteInformacion = {
+        tipo: datosEditor.fuente?.tipo || '',
+        detalle: (datosEditor.fuente?.tipo === 'inmobiliaria') ? (datosEditor.fuente?.detalle || '') : ''
+    };
+    
+    if (tipo === 'lote') {
+        const lote = datosEditor.lote || {};
+        actualizado.frente = lote.frente ?? original.frente ?? null;
+        actualizado.fondo = lote.fondo ?? original.fondo ?? null;
+        actualizado.superficie = lote.superficie ?? original.superficie ?? null;
+        actualizado.tipoLote = lote.tipoLote || original.tipoLote || '';
+        actualizado.lote = {
+            ...(original.lote || {}),
+            tipoLote: actualizado.tipoLote,
+            caracteristicas: {
+                ...((original.lote || {}).caracteristicas || {}),
+                frente: actualizado.frente,
+                fondo: actualizado.fondo,
+                superficie: actualizado.superficie
+            }
+        };
+    } else if (tipo === 'casa') {
+        const casa = datosEditor.casa || {};
+        actualizado.superficieCubierta = casa.superficieCubierta ?? original.superficieCubierta ?? null;
+        actualizado.superficie = actualizado.superficieCubierta ?? original.superficie ?? null;
+        actualizado.superficieTerreno = casa.superficieTerreno ?? original.superficieTerreno ?? null;
+        actualizado.antiguedad = casa.antiguedad ?? original.antiguedad ?? null;
+        actualizado.casa = {
+            ...(original.casa || {}),
+            superficie: actualizado.superficieCubierta,
+            superficieCubierta: actualizado.superficieCubierta,
+            superficieTerreno: actualizado.superficieTerreno,
+            antiguedad: actualizado.antiguedad
+        };
+    } else if (tipo === 'departamento') {
+        const depto = datosEditor.departamento || {};
+        actualizado.superficieTotal = depto.superficieTotal ?? original.superficieTotal ?? null;
+        actualizado.superficie = actualizado.superficieTotal ?? original.superficie ?? null;
+        actualizado.antiguedad = depto.antiguedad ?? original.antiguedad ?? null;
+        actualizado.tieneAscensor = depto.tieneAscensor ?? original.tieneAscensor ?? false;
+        actualizado.departamento = {
+            ...(original.departamento || {}),
+            superficieTotal: actualizado.superficieTotal,
+            superficie: actualizado.superficieTotal,
+            antiguedad: actualizado.antiguedad,
+            tieneAscensor: actualizado.tieneAscensor
+        };
+    }
+    
+    return actualizado;
 }
 
 window.comparableEditor = new ComparableEditor();

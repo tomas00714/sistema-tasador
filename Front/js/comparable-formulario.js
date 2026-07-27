@@ -36,11 +36,15 @@ function generarFormularioComparable(tipoInmueble) {
         seccionCaracteristicas = generarSeccionCaracteristicasCasa();
     }
     
+    // Sección de fuente (común a todos)
+    const seccionFuente = generarSeccionFuente();
+    
     // Sección de valor (común a todos)
     const seccionValor = generarSeccionValor();
     
     secciones += seccionUbicacion;
     secciones += seccionCaracteristicas;
+    secciones += seccionFuente;
     secciones += seccionValor;
     
     return secciones;
@@ -501,6 +505,36 @@ function generarSeccionValor() {
 }
 
 /**
+ * Genera la secci\u00f3n de fuente (com\u00fan a todos los tipos)
+ * @returns {string} HTML de la secci\u00f3n
+ */
+function generarSeccionFuente() {
+    return `
+        <div class="comparable-form-seccion">
+            <div class="comparable-form-seccion-titulo">
+                <h3>Fuente</h3>
+            </div>
+            <div class="comparable-form-grid-valor">
+                <div class="input-group">
+                    <label>Origen de la informaci\u00f3n</label>
+                    <select id="compFormFuenteInput">
+                        <option value="">Seleccionar fuente</option>
+                        <option value="propia">Propia</option>
+                        <option value="inmobiliaria">Inmobiliaria</option>
+                        <option value="particular">Particular</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="input-group" id="compFormFuenteDetalleGroup" style="display: none;">
+                    <label>Nombre de la inmobiliaria</label>
+                    <input type="text" id="compFormFuenteDetalleInput" placeholder="Nombre de la inmobiliaria" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Inicializa el formulario de comparable
  * @param {string} tipoInmueble - Tipo de inmueble
  * @param {Object} opciones - Opciones de configuración
@@ -526,6 +560,29 @@ function inicializarFormularioComparable(tipoInmueble, opciones = {}) {
     } else if (tipoInmueble === 'casa') {
         inicializarCaracteristicasCasa();
     }
+    
+    // Inicializar campo fuente
+    inicializarFuenteComparable();
+}
+
+/**
+ * Inicializa el campo fuente y su detalle condicional
+ */
+function inicializarFuenteComparable() {
+    const select = document.getElementById("compFormFuenteInput");
+    const detalleGroup = document.getElementById("compFormFuenteDetalleGroup");
+    const detalleInput = document.getElementById("compFormFuenteDetalleInput");
+    
+    if (!select || !detalleGroup || !detalleInput) return;
+    
+    const actualizarVisibilidad = () => {
+        const esInmobiliaria = select.value === 'inmobiliaria';
+        detalleGroup.style.display = esInmobiliaria ? 'block' : 'none';
+        if (!esInmobiliaria) detalleInput.value = '';
+    };
+    
+    select.addEventListener("change", actualizarVisibilidad);
+    actualizarVisibilidad();
 }
 
 /**
@@ -703,13 +760,24 @@ function inicializarTipoLoteComparable() {
 /**
  * Inicializa el mapa para el formulario de comparable
  */
-function inicializarMapaComparable() {
+async function inicializarMapaComparable() {
     const mapaContainer = document.getElementById("compFormMapa");
     if (!mapaContainer) return;
     
+    let latInicial = -34.6037;
+    let lonInicial = -58.3816;
+    let zoomInicial = 13;
+
+    const ubicacionUsuario = await obtenerUbicacionUsuario();
+    if (ubicacionUsuario) {
+        latInicial = ubicacionUsuario.lat;
+        lonInicial = ubicacionUsuario.lon;
+        zoomInicial = 12;
+    }
+
     // Inicializar mapa Leaflet
     if (typeof L !== 'undefined') {
-        comparableMapa = L.map('compFormMapa').setView([-34.6037, -58.3816], 13);
+        comparableMapa = L.map('compFormMapa').setView([latInicial, lonInicial], zoomInicial);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -718,9 +786,13 @@ function inicializarMapaComparable() {
         }).addTo(comparableMapa);
         
         // Agregar marcador draggable
-        comparableMarcador = L.marker([-34.6037, -58.3816], {
+        comparableMarcador = L.marker([latInicial, lonInicial], {
             draggable: true
         }).addTo(comparableMapa);
+
+        comparableMapa.on('click', (e) => {
+            comparableMarcador.setLatLng(e.latlng);
+        });
         
         // Event listener cuando se mueve el marcador
         comparableMarcador.on('dragend', function(e) {
@@ -760,28 +832,26 @@ async function actualizarMapaComparable() {
     const direccion = document.getElementById("compFormDireccionInput")?.value;
     const provincia = document.getElementById("compFormProvinciaInput")?.value;
     const localidad = document.getElementById("compFormLocalidadInput")?.value;
+    const mapaContainer = document.getElementById("compFormMapa");
     
     if (!direccion || !provincia || !localidad) return;
     
-    const textoBusqueda = `${direccion}, ${localidad}, ${provincia}, Argentina`;
+    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina');
     
-    try {
-        const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(textoBusqueda)}`
-        );
-        const data = await res.json();
-        
-        if (data && data.length > 0) {
-            const lat = parseFloat(data[0].lat);
-            const lon = parseFloat(data[0].lon);
-            
-            if (comparableMapa && comparableMarcador) {
-                comparableMapa.setView([lat, lon], 15);
-                comparableMarcador.setLatLng([lat, lon]);
-            }
-        }
-    } catch (e) {
-        console.error('Error al actualizar el mapa:', e);
+    if (!resultado) {
+        mostrarMensajeMapa(mapaContainer, 'No se pudo ubicar la dirección en el mapa.');
+        return;
+    }
+    
+    const { lat, lon, exacto, query } = resultado;
+    
+    if (!exacto) {
+        mostrarMensajeMapa(mapaContainer, `No se encontró la dirección exacta. Mostrando: ${query}`);
+    }
+    
+    if (comparableMapa && comparableMarcador) {
+        comparableMapa.setView([lat, lon], exacto ? 15 : 12);
+        comparableMarcador.setLatLng([lat, lon]);
     }
 }
 
@@ -820,6 +890,10 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
     const localidad = document.getElementById("compFormLocalidadInput")?.value.trim() || "";
     const valor = parseFloat(document.getElementById("compFormValorInput")?.value) || 0;
     const tipoValor = document.querySelector('input[name="compFormTipoValor"]:checked')?.value || "venta";
+    const fuenteTipo = document.getElementById("compFormFuenteInput")?.value || "";
+    const fuenteDetalle = fuenteTipo === 'inmobiliaria'
+        ? (document.getElementById("compFormFuenteDetalleInput")?.value.trim() || "")
+        : "";
     
     // Coordenadas del marcador o valores por defecto
     let lat = 0;
@@ -840,7 +914,10 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
             lon
         },
         valor,
-        tipoValor
+        tipoValor,
+        fuenteInformacion: fuenteTipo
+            ? { tipo: fuenteTipo, detalle: fuenteDetalle }
+            : null
     };
     
     if (tipoInmueble === 'lote') {

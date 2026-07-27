@@ -762,7 +762,7 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="fila-lote-tasar" style="color: #0066cc;">
+                            <tr class="fila-lote-tasar">
                                 <td><strong>${formatearDireccion(datosTasacion.ubicacion.direccion || 'Lote a tasar')}</strong></td>
                                 <td><strong>${resultado.frente || '-'}</strong></td>
                                 <td><strong>${fondoValor}</strong></td>

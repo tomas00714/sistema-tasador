@@ -156,6 +156,91 @@ function getLocalidadesData() {
 }
 
 /**
+ * Geocodifica una ubicación intentando con dirección completa, luego localidad+provincia y finalmente provincia sola.
+ * @param {string} direccion - Dirección (opcional)
+ * @param {string} localidad - Localidad (opcional)
+ * @param {string} provincia - Provincia (opcional)
+ * @param {string} pais - País (default Argentina)
+ * @returns {Promise<Object|null>} { lat, lon, exacto, query } o null
+ */
+async function geocodificarConFallback(direccion = '', localidad = '', provincia = '', pais = 'Argentina') {
+    const intentos = [];
+    const d = direccion.trim();
+    const l = localidad.trim();
+    const p = provincia.trim();
+
+    if (d && l && p) intentos.push(`${d}, ${l}, ${p}, ${pais}`);
+    if (l && p) intentos.push(`${l}, ${p}, ${pais}`);
+    if (p) intentos.push(`${p}, ${pais}`);
+    if (pais && !intentos.length) intentos.push(pais);
+
+    for (let i = 0; i < intentos.length; i++) {
+        const query = intentos[i];
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const data = await res.json();
+            if (data && data.length) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon),
+                    exacto: i === 0,
+                    query
+                };
+            }
+        } catch (e) {
+            console.warn('Error geocodificando:', query, e);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Obtiene la ubicación aproximada del usuario si concede permisos.
+ * @returns {Promise<Object|null>} { lat, lon } o null
+ */
+function obtenerUbicacionUsuario() {
+    return new Promise((resolve) => {
+        if (!navigator || !navigator.geolocation) {
+            return resolve(null);
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude
+            }),
+            () => resolve(null),
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+        );
+    });
+}
+
+/**
+ * Muestra un mensaje discreto dentro o sobre un contenedor del mapa.
+ * @param {HTMLElement} contenedor - Contenedor del mapa
+ * @param {string} mensaje - Texto a mostrar
+ * @param {number} duracion - Duración en ms (default 3000)
+ */
+function mostrarMensajeMapa(contenedor, mensaje, duracion = 3000) {
+    if (!contenedor) return;
+
+    const existente = contenedor.querySelector('.mapa-mensaje-discreto');
+    if (existente) existente.remove();
+
+    const div = document.createElement('div');
+    div.className = 'mapa-mensaje-discreto';
+    div.textContent = mensaje;
+    div.style.cssText = 'position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.65); color:#fff; padding:6px 12px; border-radius:6px; font-size:13px; z-index:1000; pointer-events:none;';
+    contenedor.style.position = 'relative';
+    contenedor.appendChild(div);
+
+    setTimeout(() => {
+        div.remove();
+    }, duracion);
+}
+
+/**
  * Limpia el caché de provincias y localidades en localStorage
  */
 function limpiarCacheUbicacion() {

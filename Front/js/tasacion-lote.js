@@ -30,7 +30,7 @@ function mostrarFormularioLote() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top:32px;">
+        <div class="seccion-campos">
             <h3>Servicios</h3>
             <div class="servicios-grid">
                 ${generarHTMLServicios(datosTasacion.lote.servicios)}
@@ -39,7 +39,7 @@ function mostrarFormularioLote() {
 
         <div class="separador-formulario"></div>
 
-        <div style="margin-top: 32px;">
+        <div class="seccion-campos">
             <h3>Observaciones</h3>
             <div class="input-group">
                 <textarea id="observacionesLoteInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.lote.observaciones || ""}</textarea>
