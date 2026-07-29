@@ -45,6 +45,13 @@ function mostrarFormularioLote() {
                 <textarea id="observacionesLoteInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.lote.observaciones || ""}</textarea>
             </div>
         </div>
+
+        <div class="seccion-campos">
+            <h3>Mejoras</h3>
+            <div class="input-group">
+                <textarea id="mejorasLoteInput" placeholder="Describe las mejoras del lote..." rows="4">${datosTasacion.lote.mejoras || ""}</textarea>
+            </div>
+        </div>
     `;
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {

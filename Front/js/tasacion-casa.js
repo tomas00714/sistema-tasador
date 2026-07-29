@@ -217,30 +217,6 @@ function mostrarCaracteristicasCasa() {
 
             <div class="columna-departamento">
                 <div class="input-group input-2-3">
-                    <label>Superficie total</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="superficieTotalInput" placeholder="Seleccionar rango" autocomplete="off" readonly value="${datosTasacion.casa.superficieTotal || ""}">
-                                <div class="autocomplete-list" id="superficieTotalList">
-                                    <div class="autocomplete-item" data-coef="1.10" data-rango="1.10"><span>Hasta 50 m²</span><span class="coef-display">1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05"><span>51-70 m²</span><span class="coef-display">1.05</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>71-90 m²</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95"><span>91-110 m²</span><span class="coef-display">0.95</span></div>
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>111-130 m²</span><span class="coef-display">0.90</span></div>
-                                    <div class="autocomplete-item" data-coef="0.85" data-rango="0.85"><span>131-150 m²</span><span class="coef-display">0.85</span></div>
-                                    <div class="autocomplete-item" data-coef="0.80" data-rango="0.80"><span>151-200 m²</span><span class="coef-display">0.80</span></div>
-                                    <div class="autocomplete-item" data-coef="0.75" data-rango="0.75"><span>Más de 200 m²</span><span class="coef-display">0.75</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="superficieTotalCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.casa.superficieTotalCoef || ""}">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="input-group input-2-3">
                     <label>Característica constructiva</label>
                     <div class="input-dividido-container">
                         <div class="input-dividido-principal">
@@ -271,7 +247,6 @@ function mostrarCaracteristicasCasa() {
 
     requestAnimationFrame(() => {
         inicializarSuperficieCubierta('casa');
-        inicializarSuperficieTotal();
         inicializarEstadoConservacion('casa');
         inicializarAntiguedad('casa');
         inicializarCalidadConstruccion();
@@ -600,8 +575,6 @@ function guardarDatosPantallaCasa() {
 function guardarDatosCaracteristicasCasa() {
     const superficieCubiertaInput = document.getElementById("superficieCubiertaInput");
     const superficieCubiertaCoef = document.getElementById("superficieCubiertaCoef");
-    const superficieTotalInput = document.getElementById("superficieTotalInput");
-    const superficieTotalCoef = document.getElementById("superficieTotalCoef");
     const estadoConservacionInput = document.getElementById("estadoConservacionInput");
     const antiguedadInput = document.getElementById("antiguedadInput");
     const calidadConstruccionInput = document.getElementById("calidadConstruccionInput");
@@ -612,12 +585,6 @@ function guardarDatosCaracteristicasCasa() {
     }
     if (superficieCubiertaCoef) {
         datosTasacion.casa.superficieCubiertaCoef = parseFloat(superficieCubiertaCoef.value) || 1;
-    }
-    if (superficieTotalInput) {
-        datosTasacion.casa.superficieTotal = superficieTotalInput.value;
-    }
-    if (superficieTotalCoef) {
-        datosTasacion.casa.superficieTotalCoef = parseFloat(superficieTotalCoef.value) || 1;
     }
     if (estadoConservacionInput) {
         datosTasacion.casa.estadoConservacion = estadoConservacionInput.value;

@@ -79,6 +79,13 @@ const DepartamentoValidator = {
             if (!depto.antiguedad || depto.antiguedad === '' || depto.antiguedad === '0') {
                 console.log('[DepartamentoValidator.caracteristicas.validar] antiguedad missing');
                 errores.push({ campo: 'antiguedadInput', mensaje: 'Ingresá la antigüedad' });
+            } else {
+                const antiguedad = parseFloat(depto.antiguedad) || 0;
+                const vidaUtil = parseFloat(depto.vidaUtil) || 80;
+                
+                if (antiguedad > vidaUtil) {
+                    errores.push({ campo: 'antiguedadInput', mensaje: `La antigüedad (${antiguedad} años) no puede superar la vida útil (${vidaUtil} años)` });
+                }
             }
 
             console.log('[DepartamentoValidator.caracteristicas.validar] superficieCubierta:', depto.superficieCubierta);

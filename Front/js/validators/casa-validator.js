@@ -44,9 +44,36 @@ const CasaValidator = {
             const errores = [];
             const casa = datos.casa || {};
 
+            // Validate superficie cubierta
+            if (!casa.superficieCubierta || casa.superficieCubierta === '') {
+                errores.push({ campo: 'superficieCubiertaInput', mensaje: 'Seleccioná la superficie cubierta' });
+            }
+
+            // Validate estado de conservación
+            if (!casa.estadoConservacion || casa.estadoConservacion === '') {
+                errores.push({ campo: 'estadoConservacionInput', mensaje: 'Seleccioná el estado de conservación' });
+            }
+
             // Validate antiguedad
             if (!casa.antiguedad || casa.antiguedad === '' || casa.antiguedad === '0') {
                 errores.push({ campo: 'antiguedadInput', mensaje: 'Ingresá la antigüedad' });
+            } else {
+                const antiguedad = parseFloat(casa.antiguedad) || 0;
+                const vidaUtil = parseFloat(casa.vidaUtil) || 80;
+                
+                if (antiguedad > vidaUtil) {
+                    errores.push({ campo: 'antiguedadInput', mensaje: `La antigüedad (${antiguedad} años) no puede superar la vida útil (${vidaUtil} años)` });
+                }
+            }
+
+            // Validate vida útil
+            if (!casa.vidaUtil || casa.vidaUtil === '' || casa.vidaUtil === '0') {
+                errores.push({ campo: 'vidaUtilInput', mensaje: 'Ingresá la vida útil' });
+            }
+
+            // Validate característica constructiva
+            if (!casa.calidadConstruccion || casa.calidadConstruccion === '') {
+                errores.push({ campo: 'calidadConstruccionInput', mensaje: 'Seleccioná la característica constructiva' });
             }
 
             return ValidatorBase.crearResultado(errores.length === 0, errores);

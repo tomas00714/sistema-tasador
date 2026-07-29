@@ -334,6 +334,7 @@ function guardarDatosPantalla1() {
     });
     datosTasacion.lote.servicios = serviciosSeleccionados;
     datosTasacion.lote.observaciones = document.getElementById("observacionesLoteInput").value;
+    datosTasacion.lote.mejoras = document.getElementById("mejorasLoteInput").value;
 
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
