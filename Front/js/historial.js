@@ -488,7 +488,11 @@ function renderHistorial() {
         capaMarcadores.clearLayers();
     }
 
-    const tasacionesFiltradas = filtrarTasacionesHistorial();
+    const tasacionesFiltradas = filtrarTasacionesHistorial().sort((a, b) => {
+        const fechaA = a.fechaCreacion ? new Date(a.fechaCreacion) : new Date(0);
+        const fechaB = b.fechaCreacion ? new Date(b.fechaCreacion) : new Date(0);
+        return fechaB - fechaA;
+    });
 
     if (!tasacionesFiltradas.length) {
 

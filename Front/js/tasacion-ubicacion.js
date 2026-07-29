@@ -16,6 +16,9 @@ async function cargarLocalidadesUI(provincia) {
     const inputLocalidad = document.getElementById("localidadInput");
     const listLocalidad = document.getElementById("localidadList");
 
+    // Preservar el valor existente si hay uno
+    const valorExistente = inputLocalidad.value || "";
+
     inputLocalidad.disabled = true;
     inputLocalidad.placeholder = "Cargando localidades...";
 
@@ -23,7 +26,13 @@ async function cargarLocalidadesUI(provincia) {
 
     inputLocalidad.disabled = false;
     inputLocalidad.placeholder = "Escribí una localidad";
-    inputLocalidad.value = "";
+
+    // Solo limpiar si no había un valor previo válido
+    if (!valorExistente) {
+        inputLocalidad.value = "";
+    } else {
+        inputLocalidad.value = valorExistente;
+    }
 
     inicializarAutocompleteLocalidad();
 }
@@ -128,10 +137,17 @@ function configurarBusquedaMapa() {
 }
 
 async function actualizarMapa() {
-    const direccion = document.querySelector('.form-left input[type="text"]').value;
-    const provincia = document.getElementById("provinciaInput").value;
-    const localidad = document.getElementById("localidadInput").value;
+    const direccionInput = document.querySelector('.form-left input[type="text"]');
+    const provinciaInput = document.getElementById("provinciaInput");
+    const localidadInput = document.getElementById("localidadInput");
     const contenedorMapa = document.getElementById("mapaTasacion");
+
+    // Verificar que los elementos existan antes de leer sus valores
+    if (!direccionInput || !provinciaInput || !localidadInput) return;
+
+    const direccion = direccionInput.value;
+    const provincia = provinciaInput.value;
+    const localidad = localidadInput.value;
 
     if (!direccion || !provincia || !localidad) return;
 

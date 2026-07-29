@@ -1,5 +1,9 @@
 import logging
-from tablas.ross_heidecke import coeficiente_ross_heidecke
+from tablas.ross_heidecke import (
+    coeficiente_ross_heidecke,
+    coeficiente_depreciacion_ross_heidecke,
+    MAPEO_ESTADOS_CINCO_A_NUEVE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,18 +47,29 @@ def tasar_departamento(datos):
         datos.valor_m2_referencia = sum(valores_m2) / len(valores_m2)
         logger.debug(f"valor_m2_referencia calculado desde comparables: {datos.valor_m2_referencia}")
 
-    # Validar antigüedad máxima
-    antiguedad = min(datos.antiguedad, 80)
-    if antiguedad != datos.antiguedad:
-        logger.warning(f"Antigüedad limitada a 80 años (era {datos.antiguedad})")
+    # Vida útil configurable (default 80)
+    vida_util = getattr(datos, "vida_util", 80) or 80
+    antiguedad = max(datos.antiguedad, 0)
     
-    # Calcular porcentaje de vida transcurrida usando regla de tres simple
-    # 80 años = 100% de vida
-    porcentaje_vida = round((antiguedad / 80) * 100)
+    # Calcular porcentaje de vida transcurrida usando la vida útil real
+    porcentaje_vida = round((antiguedad / vida_util) * 100)
+    porcentaje_vida = min(max(porcentaje_vida, 0), 99)
+
+    # Avisar si la antigüedad supera la vida útil configurada
+    advertencias = []
+    if datos.antiguedad > vida_util:
+        advertencias.append(
+            f"La antigüedad ingresada ({datos.antiguedad} años) supera la vida útil "
+            f"establecida ({vida_util} años). El inmueble alcanzaría el 100% de depreciación "
+            "según Ross-Heidecke. Podés revisar o modificar la vida útil para recalcular."
+        )
     logger.debug(f"Porcentaje de vida transcurrida: {porcentaje_vida}%")
     
+    # Mapear los 5 estados de la interfaz a los 9 estados de la tabla
+    estado_tabla = MAPEO_ESTADOS_CINCO_A_NUEVE.get(datos.estado_conservacion, 7)
+    
     # Obtener coeficiente K de la tabla Ross y Heidecke
-    coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, datos.estado_conservacion)
+    coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, estado_tabla)
     logger.debug(f"Coeficiente K: {coeficiente_k}")
     
     # Calcular coeficiente de depreciación C = 1 - k/2
@@ -86,12 +101,18 @@ def tasar_departamento(datos):
     for comp in datos.comparables:
         superficie_comp = getattr(comp, "superficie", None) or datos.superficie_cubierta
         valor_comp = getattr(comp, "valor_total", None) or getattr(comp, "valor", 0)
+        ross_heidecke_comp = coeficiente_depreciacion_ross_heidecke(
+            getattr(comp, "antiguedad", 0),
+            getattr(comp, "estado_conservacion", "") or getattr(comp, "estadoConservacion", ""),
+            getattr(comp, "vida_util", vida_util) or vida_util
+        )
         comparables_salida.append({
             "direccion": getattr(comp, "direccion", ""),
             "valor": valor_comp,
             "valor_m2": round(valor_comp / superficie_comp, 2) if superficie_comp and valor_comp else 0,
             "superficie": superficie_comp,
             "valor_total": valor_comp,
+            "rossHeidecke": round(ross_heidecke_comp, 4),
             **comp.model_dump(exclude={"direccion", "valor_total", "superficie"})
         })
 
@@ -111,6 +132,7 @@ def tasar_departamento(datos):
         "valor_final": round(valor_final, 2),
         "valor_m2": round(valor_final / datos.superficie_cubierta, 2) if datos.superficie_cubierta > 0 else 0,
         "ajuste_final_porcentaje": ajuste_final,
-        "rossHeidecke": round(coeficiente_k, 4),
+        "rossHeidecke": round(coeficiente_depreciacion, 4),
+        "advertencias": advertencias,
         "comparables": comparables_salida,
     }

@@ -4,25 +4,6 @@
    por tipo de inmueble
 ========================= */
 
-/**
- * Calcula el coeficiente de estado/ross-heidecke para casa a partir del estado y antigüedad.
- */
-function _coeficienteEstadoCasa(estadoConservacion, antiguedad) {
-    const match = String(estadoConservacion || '').match(/\d+/);
-    const nivel = match ? parseInt(match[0]) : 0;
-
-    if (nivel >= 1 && nivel <= 5) {
-        const ant = parseInt(antiguedad) || 0;
-        if (ant > 0) {
-            const factor = [0.01, 0.015, 0.02, 0.025, 0.03][nivel - 1] || 0.015;
-            return Math.max(0.3, 1 - (ant * factor));
-        }
-        const mapeo = { 1: 1.0, 2: 0.9, 3: 0.8, 4: 0.7, 5: 0.7 };
-        return mapeo[nivel];
-    }
-    return 1.0;
-}
-
 var configuracionResultados = {
     lote: {
         metodo: "Fitto y Cervini",
@@ -32,8 +13,6 @@ var configuracionResultados = {
             { id: "valor_m2", label: "Valor por m²", tipo: "moneda" },
             { id: "frente", label: "Frente", tipo: "numero" },
             { id: "fondo", label: "Fondo", tipo: "numero" },
-            { id: "fos", label: "FOS", tipo: "texto" },
-            { id: "fot", label: "FOT", tipo: "texto" },
             { id: "fitto_cervini", label: "F&C", tipo: "coeficiente", fuente: "coef_fitto_comparable" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
@@ -43,8 +22,6 @@ var configuracionResultados = {
             { id: "direccion", label: "Dirección", tipo: "texto" },
             { id: "frente", label: "Frente", tipo: "numero" },
             { id: "fondo", label: "Fondo", tipo: "numero" },
-            { id: "fos", label: "FOS", tipo: "texto" },
-            { id: "fot", label: "FOT", tipo: "texto" },
             { id: "valor_promedio", label: "Valor promedio de comp.", tipo: "moneda" },
             { id: "fitto_cervini", label: "F&C", tipo: "coeficiente", fuente: "coeficiente_fitto_lote" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
@@ -162,22 +139,25 @@ var configuracionResultados = {
             { id: "valor", label: "Valor", tipo: "moneda" },
             { id: "valor_m2", label: "Valor m²", tipo: "moneda" },
             { id: "superficie", label: "Superficie", tipo: "numero" },
-            { id: "ubicacion_planta", label: "Ubic. Planta", tipo: "coeficiente", fuente: "ubicacionPlanta" },
-            { id: "ubicacion_piso", label: "Ubic. Piso", tipo: "coeficiente", fuente: "ubicacionPiso" },
-            { id: "caracteristica_constructiva", label: "Const. Constructiva", tipo: "coeficiente", fuente: "caracteristicaConstructiva" },
-            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubierta" },
+            { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
+            { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
+            { id: "ubicacion_planta", label: "Ubic. Planta", tipo: "coeficiente", fuente: "ubicacionPlantaCoef" },
+            { id: "ubicacion_piso", label: "Ubic. Piso", tipo: "coeficiente", fuente: "ubicacionPisoCoef" },
+            { id: "caracteristica_constructiva", label: "Caract. Constructiva", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
+            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actividad", label: "Actividad", tipo: "coeficiente_editable", es_fijo: true },
-            { id: "valor_m2_final", label: "Valor m² ajustado", tipo: "moneda", fuente: "valor_m2_homogeneizado", destacado: true }
+            { id: "valor_m2_final", label: "Valor m² homogeneizado", tipo: "moneda", fuente: "valor_m2_homogeneizado", destacado: true }
         ],
         columnas_objetivo: [
             { id: "direccion", label: "Dirección", tipo: "texto" },
-            { id: "superficie", label: "Superficie", tipo: "numero" },
+            { id: "superficie", label: "Superficie", tipo: "numero", fuente: "superficie" },
+            { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
-            { id: "ubicacion_planta", label: "Ubic. Planta", tipo: "coeficiente", fuente: "ubicacionPlanta" },
-            { id: "ubicacion_piso", label: "Ubic. Piso", tipo: "coeficiente", fuente: "ubicacionPiso" },
-            { id: "caracteristica_constructiva", label: "Const. Constructiva", tipo: "coeficiente", fuente: "caracteristicaConstructiva" },
-            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubierta" },
+            { id: "ubicacion_planta", label: "Ubic. Planta", tipo: "coeficiente", fuente: "ubicacionPlantaCoef" },
+            { id: "ubicacion_piso", label: "Ubic. Piso", tipo: "coeficiente", fuente: "ubicacionPisoCoef" },
+            { id: "caracteristica_constructiva", label: "Caract. Constructiva", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
+            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actividad", label: "Actividad", tipo: "coeficiente_editable", es_fijo: true },
             { id: "valor", label: "Valor", tipo: "moneda", destacado: true },
@@ -193,6 +173,10 @@ var configuracionResultados = {
                                   datosTasacion.ubicacion?.direccion_completa ||
                                   'Sin dirección';
 
+                const rossHeidecke = resultado.rossHeidecke ?? 1;
+                const superficieOriginal = resultado.superficie ?? depto.homogeneizacion?.totalSuperficie ?? resultado.superficie_homogeneizada ?? 0;
+                const superficieHomogeneizada = resultado.superficie_homogeneizada ?? depto.homogeneizacion?.totalHomogeneizada ?? superficieOriginal;
+
                 return {
                     ...resultado,
                     _datosTasacion: datosTasacion,
@@ -200,10 +184,11 @@ var configuracionResultados = {
                     direccion: direccion,
                     valor: resultado.valor_final || 0,
                     valor_m2: resultado.valor_m2 || 0,
-                    superficie: resultado.superficie || resultado.superficie_homogeneizada || 0,
+                    superficie: superficieOriginal,
+                    superficie_homogeneizada: superficieHomogeneizada,
                     valor_m2_final: resultado.valor_m2 || 0,
                     // Agregar coeficientes numéricos específicos de departamento
-                    rossHeidecke: resultado.rossHeidecke || depto.rossHeidecke || depto.coeficientes?.rossHeidecke || null,
+                    rossHeidecke,
                     ubicacionPlanta: depto.ubicacionPlantaCoef || depto.ubicacionPlanta || null,
                     ubicacionPiso: depto.ubicacionPisoCoef || depto.ubicacionPiso || null,
                     caracteristicaConstructiva: depto.caracteristicaConstructivaCoef || depto.caracteristicaConstructiva || depto.coeficientes?.caracteristicaConstructiva || null,
@@ -220,21 +205,23 @@ var configuracionResultados = {
             { id: "valor", label: "Valor", tipo: "moneda" },
             { id: "valor_m2", label: "Valor m²", tipo: "moneda" },
             { id: "superficie", label: "Superficie", tipo: "numero" },
-            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
-            { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
-            { id: "calidad_construccion", label: "Calidad Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
-            { id: "estado_conservacion", label: "Estado Cons.", tipo: "coeficiente", fuente: "estadoConservacionCoef" },
-            { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
-            { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
-            { id: "valor_m2_final", label: "Valor m² final", tipo: "moneda", fuente: "valor_m2_homogeneizado", destacado: true }
-        ],
-        columnas_objetivo: [
-            { id: "direccion", label: "Dirección", tipo: "texto" },
-            { id: "superficie", label: "Superficie", tipo: "numero" },
+            { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
             { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
             { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
-            { id: "calidad_construccion", label: "Calidad Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
+            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
+            { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
+            { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
+            { id: "valor_m2_final", label: "Valor m² homogeneizado", tipo: "moneda", fuente: "valor_m2_homogeneizado", destacado: true }
+        ],
+        columnas_objetivo: [
+            { id: "direccion", label: "Dirección", tipo: "texto" },
+            { id: "superficie", label: "Superficie", tipo: "numero", fuente: "superficie" },
+            { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
+            { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
+            { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
+            { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
+            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
             { id: "valor", label: "Valor", tipo: "moneda", destacado: true },
@@ -244,12 +231,16 @@ var configuracionResultados = {
         renderizadores_objetivo: {
             obtenerDatosFila: (resultado, datosTasacion) => {
                 const casa = datosTasacion.casa || {};
-                const rossHeidecke = _coeficienteEstadoCasa(casa.estadoConservacion, casa.antiguedad);
+                const rossHeidecke = resultado.rossHeidecke ?? 1;
+                const superficieOriginal = resultado.superficie ?? casa.homogeneizacion?.totalSuperficie ?? resultado.superficie_homogeneizada ?? 0;
+                const superficieHomogeneizada = resultado.superficie_homogeneizada ?? casa.homogeneizacion?.totalHomogeneizada ?? superficieOriginal;
+
                 return {
                     direccion: datosTasacion.ubicacion?.calle_principal || datosTasacion.ubicacion?.direccion || 'Casa a tasar',
                     valor: resultado.valor_final || 0,
                     valor_m2: resultado.valor_m2 || 0,
-                    superficie: resultado.superficie || 0,
+                    superficie: superficieOriginal,
+                    superficie_homogeneizada: superficieHomogeneizada,
                     rossHeidecke,
                     superficieCubiertaCoef: parseFloat(casa.superficieCubiertaCoef) || 1,
                     superficieTotalCoef: parseFloat(casa.superficieTotalCoef) || 1,

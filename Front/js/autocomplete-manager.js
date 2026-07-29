@@ -313,7 +313,6 @@ function inicializarEstadoConservacion(tipo = 'departamento') {
             datos.estadoConservacion = item.textContent;
             if (tipo === 'departamento') {
                 datos.estadoConservacionCoef = parseInt(item.dataset.valor);
-                calcularCoeficienteAntiguedad();
             }
         }
     });

@@ -53,6 +53,11 @@ function mostrarFormularioLote() {
 
     cargarProvincias();
 
+    // Si ya hay provincia seleccionada, cargar sus localidades
+    if (datosTasacion.ubicacion.provincia) {
+        cargarLocalidadesUI(datosTasacion.ubicacion.provincia);
+    }
+
     requestAnimationFrame(() => {
         inicializarMapa();
         configurarBusquedaMapa();

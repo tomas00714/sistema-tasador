@@ -3,12 +3,10 @@
    Vista reutilizable para crear/editar/visualizar comparables
 ========================= */
 
-if (typeof TILE_URLS === 'undefined') {
-    var TILE_URLS = {
-        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-    };
-}
+window.TILE_URLS = window.TILE_URLS || {
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+};
 
 class ComparableEditor {
     constructor(config = {}) {
@@ -127,16 +125,20 @@ class ComparableEditor {
             const cubierta = document.getElementById('compSuperficieCubierta');
             const terreno = document.getElementById('compSuperficieTerreno');
             const antiguedad = document.getElementById('compAntiguedad');
+            const estadoConservacion = document.getElementById('compEstadoConservacion');
             if (cubierta) cubierta.value = casa.superficieCubierta != null ? casa.superficieCubierta : '';
             if (terreno) terreno.value = casa.superficieTerreno != null ? casa.superficieTerreno : '';
             if (antiguedad) antiguedad.value = casa.antiguedad != null ? casa.antiguedad : '';
+            if (estadoConservacion) estadoConservacion.value = casa.estadoConservacion || this.datos.estadoConservacion || '';
         } else if (this.tipo === 'departamento') {
             const depto = this.datos.departamento || {};
             const superficieTotal = document.getElementById('compSuperficieTotal');
             const antiguedad = document.getElementById('compAntiguedad');
+            const estadoConservacion = document.getElementById('compEstadoConservacion');
             const ascensor = document.getElementById('compTieneAscensor');
             if (superficieTotal) superficieTotal.value = depto.superficieTotal != null ? depto.superficieTotal : (this.datos.superficie ?? '');
             if (antiguedad) antiguedad.value = depto.antiguedad != null ? depto.antiguedad : '';
+            if (estadoConservacion) estadoConservacion.value = depto.estadoConservacion || this.datos.estadoConservacion || '';
             if (ascensor) ascensor.checked = depto.tieneAscensor === true || depto.tieneAscensor === 'true' || depto.tieneAscensor === 'si';
         }
 
@@ -325,6 +327,17 @@ class ComparableEditor {
                 <label>Antigüedad (años)</label>
                 <input type="number" id="compAntiguedad" min="0" step="1" ${this.modo === 'visualizar' ? 'readonly' : ''}>
             </div>
+            <div class="input-group">
+                <label>Estado de conservación</label>
+                <select id="compEstadoConservacion" ${this.modo === 'visualizar' ? 'disabled' : ''}>
+                    <option value="">Seleccionar</option>
+                    <option value="1 - Excelente">1 - Excelente</option>
+                    <option value="2 - Bueno">2 - Bueno</option>
+                    <option value="3 - Regular">3 - Regular</option>
+                    <option value="4 - Malo">4 - Malo</option>
+                    <option value="5 - Muy malo">5 - Muy malo</option>
+                </select>
+            </div>
         `);
     }
     
@@ -337,6 +350,17 @@ class ComparableEditor {
             <div class="input-group">
                 <label>Antigüedad (años)</label>
                 <input type="number" id="compAntiguedad" min="0" step="1" ${this.modo === 'visualizar' ? 'readonly' : ''}>
+            </div>
+            <div class="input-group">
+                <label>Estado de conservación</label>
+                <select id="compEstadoConservacion" ${this.modo === 'visualizar' ? 'disabled' : ''}>
+                    <option value="">Seleccionar</option>
+                    <option value="1 - Excelente">1 - Excelente</option>
+                    <option value="2 - Bueno">2 - Bueno</option>
+                    <option value="3 - Regular">3 - Regular</option>
+                    <option value="4 - Malo">4 - Malo</option>
+                    <option value="5 - Muy malo">5 - Muy malo</option>
+                </select>
             </div>
             <div class="input-group">
                 <label>Tiene ascensor</label>
@@ -527,7 +551,7 @@ class ComparableEditor {
         this.mapa = L.map('compMap').setView([lat, lng], zoom);
 
         const isDarkMode = document.body.classList.contains('dark-mode');
-        const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
+        const tileUrl = isDarkMode ? window.TILE_URLS.dark : window.TILE_URLS.light;
 
         this.tilesLayer = L.tileLayer(tileUrl, {
             attribution: '© CartoDB, © OpenStreetMap'
@@ -627,12 +651,14 @@ class ComparableEditor {
             datos.casa = {
                 superficieCubierta: parseFloat(document.getElementById('compSuperficieCubierta')?.value) || 0,
                 superficieTerreno: parseFloat(document.getElementById('compSuperficieTerreno')?.value) || 0,
-                antiguedad: parseInt(document.getElementById('compAntiguedad')?.value) || 0
+                antiguedad: parseInt(document.getElementById('compAntiguedad')?.value) || 0,
+                estadoConservacion: document.getElementById('compEstadoConservacion')?.value || ''
             };
         } else if (this.tipo === 'departamento') {
             datos.departamento = {
                 superficieTotal: parseFloat(document.getElementById('compSuperficieTotal')?.value) || 0,
                 antiguedad: parseInt(document.getElementById('compAntiguedad')?.value) || 0,
+                estadoConservacion: document.getElementById('compEstadoConservacion')?.value || '',
                 tieneAscensor: document.getElementById('compTieneAscensor')?.checked || false
             };
         }
@@ -715,14 +741,16 @@ function normalizarComparableParaEditor(comparable) {
         const casa = comparable.casa || {};
         datosEditor.casa = {
             superficieCubierta: comparable.superficieCubierta ?? casa.superficieCubierta ?? casa.superficie ?? comparable.superficie ?? null,
-            superficieTerreno: comparable.superficieTerreno ?? casa.superficieTerreno ?? null,
-            antiguedad: comparable.antiguedad ?? casa.antiguedad ?? null
+            superficieTerreno: comparable.superficieTerreno ?? null,
+            antiguedad: comparable.antiguedad ?? casa.antiguedad ?? null,
+            estadoConservacion: comparable.estadoConservacion ?? casa.estadoConservacion ?? null
         };
     } else if (tipo === 'departamento') {
         const depto = comparable.departamento || {};
         datosEditor.departamento = {
             superficieTotal: comparable.superficieTotal ?? depto.superficieTotal ?? depto.superficie ?? comparable.superficie ?? null,
             antiguedad: comparable.antiguedad ?? depto.antiguedad ?? null,
+            estadoConservacion: comparable.estadoConservacion ?? depto.estadoConservacion ?? null,
             tieneAscensor: comparable.tieneAscensor ?? depto.tieneAscensor ?? false
         };
     }
@@ -769,24 +797,28 @@ function aplicarDatosEditorAComparable(datosEditor, original = {}) {
         actualizado.superficie = actualizado.superficieCubierta ?? original.superficie ?? null;
         actualizado.superficieTerreno = casa.superficieTerreno ?? original.superficieTerreno ?? null;
         actualizado.antiguedad = casa.antiguedad ?? original.antiguedad ?? null;
+        actualizado.estadoConservacion = casa.estadoConservacion ?? original.estadoConservacion ?? null;
         actualizado.casa = {
             ...(original.casa || {}),
             superficie: actualizado.superficieCubierta,
             superficieCubierta: actualizado.superficieCubierta,
             superficieTerreno: actualizado.superficieTerreno,
-            antiguedad: actualizado.antiguedad
+            antiguedad: actualizado.antiguedad,
+            estadoConservacion: actualizado.estadoConservacion
         };
     } else if (tipo === 'departamento') {
         const depto = datosEditor.departamento || {};
         actualizado.superficieTotal = depto.superficieTotal ?? original.superficieTotal ?? null;
         actualizado.superficie = actualizado.superficieTotal ?? original.superficie ?? null;
         actualizado.antiguedad = depto.antiguedad ?? original.antiguedad ?? null;
+        actualizado.estadoConservacion = depto.estadoConservacion ?? original.estadoConservacion ?? null;
         actualizado.tieneAscensor = depto.tieneAscensor ?? original.tieneAscensor ?? false;
         actualizado.departamento = {
             ...(original.departamento || {}),
             superficieTotal: actualizado.superficieTotal,
             superficie: actualizado.superficieTotal,
             antiguedad: actualizado.antiguedad,
+            estadoConservacion: actualizado.estadoConservacion,
             tieneAscensor: actualizado.tieneAscensor
         };
     }
@@ -794,4 +826,10 @@ function aplicarDatosEditorAComparable(datosEditor, original = {}) {
     return actualizado;
 }
 
-window.comparableEditor = new ComparableEditor();
+try {
+    window.ComparableEditor = ComparableEditor;
+    window.comparableEditor = new window.ComparableEditor();
+    console.log('[comparable-editor] window.comparableEditor inicializado');
+} catch (e) {
+    console.error('[comparable-editor] Error al instanciar ComparableEditor:', e);
+}

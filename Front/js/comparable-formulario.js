@@ -232,11 +232,11 @@ function generarSeccionCaracteristicasDepartamento() {
                     <div class="autocomplete-container">
                         <input type="text" id="compFormEstadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly>
                         <div class="autocomplete-list" id="compFormEstadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Nuevo o muy bueno</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Conservación normal</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Necesitado de reparaciones sencillas</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Necesitado de reparaciones importantes</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Estado de demolición</div>
+                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
+                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
+                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
+                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
+                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
                         </div>
                     </div>
                 </div>
@@ -363,11 +363,11 @@ function generarSeccionCaracteristicasCasa() {
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Calidad de construcción</label>
+                    <label>Característica constructiva</label>
                     <div class="input-dividido-container">
                         <div class="input-dividido-principal">
                             <div class="autocomplete-container">
-                                <input type="text" id="compFormCalidadConstruccionInput" placeholder="Seleccionar calidad" autocomplete="off" readonly>
+                                <input type="text" id="compFormCalidadConstruccionInput" placeholder="Seleccionar característica" autocomplete="off" readonly>
                                 <div class="autocomplete-list" id="compFormCalidadConstruccionList">
                                     <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Económica</span><span class="coef-display">0.90</span></div>
                                     <div class="autocomplete-item" data-coef="1" data-rango="1"><span>Buena económica</span><span class="coef-display">1</span></div>
@@ -391,11 +391,11 @@ function generarSeccionCaracteristicasCasa() {
                     <div class="autocomplete-container">
                         <input type="text" id="compFormEstadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly>
                         <div class="autocomplete-list" id="compFormEstadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Nuevo o muy bueno</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Conservación normal</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Necesitado de reparaciones sencillas</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Necesitado de reparaciones importantes</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Estado de demolición</div>
+                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
+                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
+                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
+                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
+                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
                         </div>
                     </div>
                 </div>
@@ -517,13 +517,15 @@ function generarSeccionFuente() {
             <div class="comparable-form-grid-valor">
                 <div class="input-group">
                     <label>Origen de la informaci\u00f3n</label>
-                    <select id="compFormFuenteInput">
-                        <option value="">Seleccionar fuente</option>
-                        <option value="propia">Propia</option>
-                        <option value="inmobiliaria">Inmobiliaria</option>
-                        <option value="particular">Particular</option>
-                        <option value="otro">Otro</option>
-                    </select>
+                    <div class="autocomplete-container">
+                        <input type="text" id="compFormFuenteInput" placeholder="Seleccionar fuente" autocomplete="off" readonly>
+                        <div id="compFormFuenteList" class="autocomplete-list">
+                            <div class="autocomplete-item">Propia</div>
+                            <div class="autocomplete-item">Inmobiliaria</div>
+                            <div class="autocomplete-item">Particular</div>
+                            <div class="autocomplete-item">Otro</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="input-group" id="compFormFuenteDetalleGroup" style="display: none;">
                     <label>Nombre de la inmobiliaria</label>
@@ -539,19 +541,23 @@ function generarSeccionFuente() {
  * @param {string} tipoInmueble - Tipo de inmueble
  * @param {Object} opciones - Opciones de configuración
  */
-function inicializarFormularioComparable(tipoInmueble, opciones = {}) {
+async function inicializarFormularioComparable(tipoInmueble, opciones = {}) {
+    const datos = opciones.datos || null;
+    const latInicial = datos?.ubicacion?.lat ?? null;
+    const lonInicial = datos?.ubicacion?.lon ?? null;
+
     // Inicializar autocomplete de provincia
     inicializarAutocompleteProvinciaComparable();
-    
+
     // Inicializar autocomplete de localidad
     inicializarAutocompleteLocalidadComparable();
-    
-    // Inicializar mapa
-    inicializarMapaComparable();
-    
+
+    // Inicializar mapa centrado en la ubicación del comparable, si la hay
+    await inicializarMapaComparable(latInicial, lonInicial);
+
     // Configurar búsqueda del mapa
     configurarBusquedaMapaComparable();
-    
+
     // Inicializar características específicas por tipo
     if (tipoInmueble === 'lote') {
         inicializarCaracteristicasLote();
@@ -560,28 +566,148 @@ function inicializarFormularioComparable(tipoInmueble, opciones = {}) {
     } else if (tipoInmueble === 'casa') {
         inicializarCaracteristicasCasa();
     }
-    
+
     // Inicializar campo fuente
     inicializarFuenteComparable();
+
+    // Rellenar datos si es edición
+    if (datos) {
+        await cargarDatosEnFormularioComparable(datos);
+    }
+}
+
+async function cargarDatosEnFormularioComparable(datos) {
+    if (!datos) return;
+
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+    };
+    const setChecked = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!val;
+    };
+
+    const ubicacion = datos.ubicacion || {};
+    setVal('compFormDireccionInput', ubicacion.direccion);
+    setVal('compFormProvinciaInput', ubicacion.provincia);
+
+    if (ubicacion.provincia) {
+        await cargarLocalidadesComparable(ubicacion.provincia);
+    }
+    setVal('compFormLocalidadInput', ubicacion.localidad);
+
+    const valor = (typeof datos.valor === 'object' && datos.valor !== null) ? datos.valor.monto : datos.valor;
+    setVal('compFormValorInput', valor);
+
+    const tipoValor = datos.tipoValor || (typeof datos.valor === 'object' ? datos.valor?.tipo : null) || 'venta';
+    const radioTipoValor = document.querySelector(`input[name="compFormTipoValor"][value="${tipoValor}"]`);
+    if (radioTipoValor) radioTipoValor.checked = true;
+
+    const fuenteTipo = datos.fuenteInformacion?.tipo ?? datos.fuente ?? '';
+    // Convertir a título para mostrar en el autocomplete (primera letra mayúscula)
+    const fuenteTipoDisplay = fuenteTipo.charAt(0).toUpperCase() + fuenteTipo.slice(1).toLowerCase();
+    setVal('compFormFuenteInput', fuenteTipoDisplay);
+    setVal('compFormFuenteDetalleInput', datos.fuenteInformacion?.detalle ?? datos.fuenteDetalle ?? '');
+    document.getElementById('compFormFuenteInput')?.dispatchEvent(new Event('change'));
+
+    const tipo = datos.tipoInmueble || datos.tipo;
+
+    if (tipo === 'lote') {
+        const lote = datos.lote || {};
+        const car = lote.caracteristicas || {};
+        setVal('compFormTipoLoteInput', datos.tipoLote ?? lote.tipoLote);
+        setVal('compFormFrenteInput', datos.frente ?? car.frente);
+        setVal('compFormFondoInput', datos.fondo ?? car.fondo);
+        setVal('compFormSuperficieInput', datos.superficie ?? car.superficie);
+    } else if (tipo === 'departamento') {
+        const depto = datos.departamento || {};
+        setVal('compFormSuperficieInput', datos.superficie ?? depto.superficie ?? depto.superficieTotal);
+        setVal('compFormAntiguedadInput', datos.antiguedad ?? depto.antiguedad);
+        setVal('compFormEstadoConservacionInput', datos.estadoConservacion ?? depto.estadoConservacion);
+        setVal('compFormAmbientesInput', datos.ambientes ?? depto.ambientes);
+        setVal('compFormDormitoriosInput', datos.dormitorios ?? depto.dormitorios);
+        setVal('compFormBanosInput', datos.banos ?? depto.banos);
+        setChecked('compFormCocheraInput', datos.cochera ?? depto.cochera ?? false);
+        setVal('compFormSuperficieTotalInput', datos.superficieTotal ?? depto.superficieTotal);
+        setVal('compFormSuperficieTotalCoef', datos.superficieTotalCoef ?? depto.superficieTotalCoef ?? 1);
+        setVal('compFormSuperficieCubiertaInput', datos.superficieCubierta ?? depto.superficieCubierta);
+        setVal('compFormSuperficieCubiertaCoef', datos.superficieCubiertaCoef ?? depto.superficieCubiertaCoef ?? 1);
+        setVal('compFormUbicacionPlantaInput', datos.ubicacionPlanta ?? depto.ubicacionPlanta);
+        setVal('compFormUbicacionPlantaCoef', datos.ubicacionPlantaCoef ?? depto.ubicacionPlantaCoef ?? 1);
+        setVal('compFormUbicacionPisoInput', datos.ubicacionPiso ?? depto.ubicacionPiso);
+        setVal('compFormUbicacionPisoCoef', datos.ubicacionPisoCoef ?? depto.ubicacionPisoCoef ?? 1);
+        setVal('compFormCaracteristicaConstructivaInput', datos.caracteristicaConstructiva ?? depto.caracteristicaConstructiva);
+        setVal('compFormCaracteristicaConstructivaCoef', datos.caracteristicaConstructivaCoef ?? depto.caracteristicaConstructivaCoef ?? 1);
+        setChecked('compFormTieneAscensorInput', datos.tieneAscensor ?? depto.tieneAscensor ?? false);
+    } else if (tipo === 'casa') {
+        const casa = datos.casa || {};
+        setVal('compFormSuperficieInput', datos.superficie ?? casa.superficie);
+        setVal('compFormSuperficieTerrenoInput', datos.superficieTerreno ?? casa.superficieTerreno);
+        setVal('compFormAntiguedadInput', datos.antiguedad ?? casa.antiguedad);
+        setVal('compFormEstadoConservacionInput', datos.estadoConservacion ?? casa.estadoConservacion);
+        setVal('compFormAmbientesInput', datos.ambientes ?? casa.ambientes);
+        setVal('compFormDormitoriosInput', datos.dormitorios ?? casa.dormitorios);
+        setVal('compFormBanosInput', datos.banos ?? casa.banos);
+        setChecked('compFormCocheraInput', datos.cochera ?? casa.cochera ?? false);
+        setVal('compFormSuperficieCubiertaInput', datos.superficieCubierta ?? casa.superficieCubiertaTexto ?? casa.superficieCubierta);
+        setVal('compFormSuperficieCubiertaCoef', datos.superficieCubiertaCoef ?? casa.superficieCubiertaCoef ?? 1);
+        setVal('compFormSuperficieTotalInput', datos.superficieTotal ?? casa.superficieTotalTexto ?? casa.superficieTotal);
+        setVal('compFormSuperficieTotalCoef', datos.superficieTotalCoef ?? casa.superficieTotalCoef ?? 1);
+        setVal('compFormCalidadConstruccionInput', datos.calidadConstruccion ?? casa.calidadConstruccion);
+        setVal('compFormCalidadConstruccionCoef', datos.calidadConstruccionCoef ?? casa.calidadConstruccionCoef ?? 1);
+        setChecked('compFormTienePiletaInput', datos.tienePileta ?? casa.tienePileta ?? false);
+        setChecked('compFormTieneJardinInput', datos.tieneJardin ?? casa.tieneJardin ?? false);
+    }
+
+    if (comparableMarcador && comparableMapa && ubicacion.lat != null && ubicacion.lon != null) {
+        comparableMarcador.setLatLng([ubicacion.lat, ubicacion.lon]);
+        comparableMapa.setView([ubicacion.lat, ubicacion.lon], 15);
+    }
 }
 
 /**
  * Inicializa el campo fuente y su detalle condicional
  */
 function inicializarFuenteComparable() {
-    const select = document.getElementById("compFormFuenteInput");
+    const input = document.getElementById("compFormFuenteInput");
+    const list = document.getElementById("compFormFuenteList");
     const detalleGroup = document.getElementById("compFormFuenteDetalleGroup");
     const detalleInput = document.getElementById("compFormFuenteDetalleInput");
-    
-    if (!select || !detalleGroup || !detalleInput) return;
-    
+
+    if (!input || !list || !detalleGroup || !detalleInput) return;
+
+    const items = list.querySelectorAll(".autocomplete-item");
+
+    input.addEventListener("click", () => {
+        list.style.display = "block";
+    });
+
+    items.forEach(item => {
+        item.addEventListener("click", () => {
+            input.value = item.textContent.trim();
+            list.style.display = "none";
+            input.dispatchEvent(new Event("input"));
+            input.dispatchEvent(new Event("change"));
+        });
+    });
+
+    const cerrar = e => {
+        if (!input.parentElement.contains(e.target)) {
+            list.style.display = "none";
+        }
+    };
+
+    document.addEventListener("click", cerrar);
+
     const actualizarVisibilidad = () => {
-        const esInmobiliaria = select.value === 'inmobiliaria';
+        const valor = input.value.toLowerCase();
+        const esInmobiliaria = valor === 'inmobiliaria';
         detalleGroup.style.display = esInmobiliaria ? 'block' : 'none';
         if (!esInmobiliaria) detalleInput.value = '';
     };
-    
-    select.addEventListener("change", actualizarVisibilidad);
+
+    input.addEventListener("change", actualizarVisibilidad);
     actualizarVisibilidad();
 }
 
@@ -760,19 +886,23 @@ function inicializarTipoLoteComparable() {
 /**
  * Inicializa el mapa para el formulario de comparable
  */
-async function inicializarMapaComparable() {
+async function inicializarMapaComparable(latInicial = null, lonInicial = null) {
     const mapaContainer = document.getElementById("compFormMapa");
     if (!mapaContainer) return;
-    
-    let latInicial = -34.6037;
-    let lonInicial = -58.3816;
-    let zoomInicial = 13;
 
-    const ubicacionUsuario = await obtenerUbicacionUsuario();
-    if (ubicacionUsuario) {
-        latInicial = ubicacionUsuario.lat;
-        lonInicial = ubicacionUsuario.lon;
-        zoomInicial = 12;
+    let zoomInicial = 15;
+
+    if (latInicial == null || lonInicial == null) {
+        latInicial = -34.6037;
+        lonInicial = -58.3816;
+        zoomInicial = 13;
+
+        const ubicacionUsuario = await obtenerUbicacionUsuario();
+        if (ubicacionUsuario) {
+            latInicial = ubicacionUsuario.lat;
+            lonInicial = ubicacionUsuario.lon;
+            zoomInicial = 12;
+        }
     }
 
     // Inicializar mapa Leaflet
@@ -890,7 +1020,7 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
     const localidad = document.getElementById("compFormLocalidadInput")?.value.trim() || "";
     const valor = parseFloat(document.getElementById("compFormValorInput")?.value) || 0;
     const tipoValor = document.querySelector('input[name="compFormTipoValor"]:checked')?.value || "venta";
-    const fuenteTipo = document.getElementById("compFormFuenteInput")?.value || "";
+    const fuenteTipo = document.getElementById("compFormFuenteInput")?.value.toLowerCase() || "";
     const fuenteDetalle = fuenteTipo === 'inmobiliaria'
         ? (document.getElementById("compFormFuenteDetalleInput")?.value.trim() || "")
         : "";
@@ -949,6 +1079,17 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
         datos.dormitorios = dormitorios;
         datos.banos = banos;
         datos.cochera = cochera;
+
+        // Crear estructura departamento para consistencia con lotes
+        datos.departamento = {
+            superficie: superficie,
+            antiguedad: antiguedad,
+            estadoConservacion: estadoConservacion,
+            ambientes: ambientes,
+            dormitorios: dormitorios,
+            banos: banos,
+            cochera: cochera
+        };
 
         if (tipoInmueble === 'departamento') {
             datos.superficieTotal = superficie;
@@ -1014,6 +1155,9 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
         }
     }
 
+    // El formulario devuelve la estructura original.
+    // La normalización a { inmueble: ... } se realiza únicamente
+    // en los flujos de renderizado y reporte.
     return datos;
 }
 
@@ -1025,7 +1169,7 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
 function validarFormularioComparable(tipoInmueble) {
     const errores = [];
     const datos = obtenerDatosFormularioComparable(tipoInmueble);
-    
+
     // Validaciones comunes
     if (!datos.ubicacion.direccion) {
         errores.push("La dirección es requerida");
@@ -1039,7 +1183,7 @@ function validarFormularioComparable(tipoInmueble) {
     if (datos.valor <= 0) {
         errores.push("El valor debe ser mayor a 0");
     }
-    
+
     // Validaciones específicas por tipo
     if (tipoInmueble === 'lote') {
         if (!datos.tipoLote) {

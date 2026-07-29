@@ -90,7 +90,6 @@ const datosTasacion = {
         estadoConservacionCoef: 0,
         caracteristicaConstructiva: "",
         caracteristicaConstructivaCoef: 0,
-        ubicacionEdificio: "",
 
         // Cuarta pantalla - Homogeneización de superficie
         homogeneizacion: {
@@ -695,9 +694,9 @@ function generarHTMLUbicacionConMapa(opciones = {}) {
                         <input
                             type="text"
                             id="localidadInput"
-                            placeholder="Seleccionar provincia primero"
+                            placeholder="${datosTasacion.ubicacion.provincia ? 'Escribí una localidad' : 'Seleccionar provincia primero'}"
                             autocomplete="off"
-                            disabled
+                            ${datosTasacion.ubicacion.provincia ? '' : 'disabled'}
                             value="${datosTasacion.ubicacion.localidad || ""}"
                         >
 
@@ -1375,20 +1374,6 @@ function mostrarCaracteristicasDepartamento() {
 
                 </div>
 
-                <!-- Ubicación del edificio -->
-                <div class="input-group input-2-3">
-
-                    <label>Ubicación del edificio</label>
-
-                    <input
-                        type="text"
-                        id="ubicacionEdificioInput"
-                        placeholder="Ingresar ubicación del edificio"
-                        value="${datosTasacion.departamento.ubicacionEdificio || ""}"
-                    >
-
-                </div>
-
             </div>
 
             <!-- COLUMNA 2 (switch de ascensor) -->
@@ -1498,6 +1483,21 @@ function mostrarCaracteristicasDepartamento() {
 
                 </div>
 
+                <!-- Vida útil -->
+                <div class="input-group input-2-3">
+
+                    <label>Vida útil (años)</label>
+
+                    <input
+                        type="number"
+                        id="vidaUtilInput"
+                        placeholder="80"
+                        min="1"
+                        value="${datosTasacion.departamento.vidaUtil || 80}"
+                    >
+
+                </div>
+
                 <!-- Estado de conservación -->
                 <div class="input-group input-2-3">
 
@@ -1516,11 +1516,11 @@ function mostrarCaracteristicasDepartamento() {
 
                         <div class="autocomplete-list" id="estadoConservacionList">
 
-                            <div class="autocomplete-item" data-valor="1">1 - Nuevo o muy bueno</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Conservación normal</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Necesitado de reparaciones sencillas</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Necesitado de reparaciones importantes</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Estado de demolición</div>
+                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
+                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
+                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
+                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
+                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
 
                         </div>
 
@@ -1546,22 +1546,20 @@ function mostrarCaracteristicasDepartamento() {
     inicializarEstadoConservacion();
     inicializarCaracteristicaConstructiva();
 
-    // Add real-time update for regular inputs
-    const ubicacionEdificioInput = document.getElementById("ubicacionEdificioInput");
-    if (ubicacionEdificioInput) {
-        ubicacionEdificioInput.addEventListener("input", () => {
-            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.ubicacionEdificio = ubicacionEdificioInput.value;
-            }
-        });
-    }
-
     const antiguedadInput = document.getElementById("antiguedadInput");
     if (antiguedadInput) {
         antiguedadInput.addEventListener("input", () => {
             if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
                 datosTasacion.departamento.antiguedad = antiguedadInput.value;
-                calcularCoeficienteAntiguedad();
+            }
+        });
+    }
+
+    const vidaUtilInput = document.getElementById("vidaUtilInput");
+    if (vidaUtilInput) {
+        vidaUtilInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.vidaUtil = vidaUtilInput.value;
             }
         });
     }
@@ -1661,27 +1659,8 @@ function inicializarEstadoConservacion() {
         onSelect: (item, input) => {
             datosTasacion.departamento.estadoConservacion = item.textContent;
             datosTasacion.departamento.estadoConservacionCoef = parseInt(item.dataset.valor);
-            calcularCoeficienteAntiguedad();
         }
     });
-}
-
-function calcularCoeficienteAntiguedad() {
-    const antiguedad = parseInt(document.getElementById("antiguedadInput").value) || 0;
-    const estado = datosTasacion.departamento.estadoConservacionCoef || 1;
-
-    // Tabla de Ross-Heidecke simplificada
-    // Estado 1 (Nuevo/muy bueno): coeficiente = 1 - (antiguedad * 0.01)
-    // Estado 2 (Normal): coeficiente = 1 - (antiguedad * 0.015)
-    // Estado 3 (Reparaciones sencillas): coeficiente = 1 - (antiguedad * 0.02)
-    // Estado 4 (Reparaciones importantes): coeficiente = 1 - (antiguedad * 0.025)
-    // Estado 5 (Demolición): coeficiente = 1 - (antiguedad * 0.03)
-
-    let coeficiente = 1;
-    const factor = [0.01, 0.015, 0.02, 0.025, 0.03][estado - 1] || 0.01;
-    coeficiente = Math.max(0.5, 1 - (antiguedad * factor));
-
-    datosTasacion.departamento.estadoConservacionCoef = coeficiente;
 }
 
 /* =========================
@@ -2155,17 +2134,14 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.antiguedad =
         document.getElementById("antiguedadInput").value;
 
+    datosTasacion.departamento.vidaUtil =
+        document.getElementById("vidaUtilInput")?.value || 80;
+
     datosTasacion.departamento.estadoConservacion =
         document.getElementById("estadoConservacionInput").value;
 
     datosTasacion.departamento.caracteristicaConstructiva =
         document.getElementById("caracteristicaConstructivaInput").value;
-
-    datosTasacion.departamento.ubicacionEdificio =
-        document.getElementById("ubicacionEdificioInput").value;
-
-    // Recalcular coeficiente de antigüedad
-    calcularCoeficienteAntiguedad();
 
     // Reset resultadoCalculado when screen 3 data changes
     resultadoCalculado = false;
@@ -2205,6 +2181,9 @@ async function cargarLocalidadesUI(provincia) {
     const listLocalidad =
         document.getElementById("localidadList");
 
+    // Preservar el valor existente si hay uno
+    const valorExistente = inputLocalidad.value || "";
+
     inputLocalidad.disabled = true;
 
     inputLocalidad.placeholder = "Cargando localidades...";
@@ -2215,7 +2194,12 @@ async function cargarLocalidadesUI(provincia) {
 
     inputLocalidad.placeholder = "Escribí una localidad";
 
-    inputLocalidad.value = "";
+    // Solo limpiar si no había un valor previo válido
+    if (!valorExistente) {
+        inputLocalidad.value = "";
+    } else {
+        inputLocalidad.value = valorExistente;
+    }
 
     inicializarAutocompleteLocalidad();
 }
@@ -2351,22 +2335,13 @@ async function actualizarMapa() {
         !localidad
     ) return;
 
-    const textoBusqueda =
-    `${direccion}, ${localidad}, ${provincia}, Argentina`;
+    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina');
 
-    const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(textoBusqueda)}`
-    );
+    if (!resultado) return;
 
-    const data = await res.json();
+    const { lat, lon, exacto, query } = resultado;
 
-    if (!data.length) return;
-
-    const lat = parseFloat(data[0].lat);
-
-    const lon = parseFloat(data[0].lon);
-
-    mapa.setView([lat, lon], 17);
+    mapa.setView([lat, lon], exacto ? 17 : 12);
 
     marcador.setLatLng([lat, lon]);
 }
@@ -4286,8 +4261,7 @@ function limpiarDatosTasacion() {
         estadoConservacion: "",
         estadoConservacionCoef: 0,
         caracteristicaConstructiva: "",
-        caracteristicaConstructivaCoef: 0,
-        ubicacionEdificio: ""
+        caracteristicaConstructivaCoef: 0
     };
     datosTasacion.casa = {};
     datosTasacion.comparables = [];

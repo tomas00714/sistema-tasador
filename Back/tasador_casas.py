@@ -1,45 +1,10 @@
 import logging
 from typing import List
 
+from tablas.ross_heidecke import coeficiente_depreciacion_ross_heidecke
 from models import Comparable
 
 logger = logging.getLogger(__name__)
-
-
-def _coeficiente_estado(estado_conservacion: str) -> float:
-    """Mapea el texto de estado de conservación al coeficiente de valor."""
-
-    # Normalizar a minúsculas para comparar de forma robusta
-    estado = (estado_conservacion or "").lower().strip()
-
-    # Si el texto empieza con un número (formato del frontend), usar mapeo numérico
-    import re
-    match = re.match(r"\s*(\d+)", estado)
-    if match:
-        nivel = int(match.group(1))
-        mapeo_numerico = {
-            1: 1.0,  # Nuevo / Muy bueno
-            2: 0.9,  # Bueno / Conservación normal
-            3: 0.8,  # Regular / Reparaciones sencillas
-            4: 0.7,  # A reciclar / Reparaciones importantes
-            5: 0.7,  # Demolición
-        }
-        return mapeo_numerico.get(nivel, 1.0)
-
-    mapeo = {
-        "a reciclar": 0.7,
-        "regular": 0.8,
-        "bueno": 0.9,
-        "muy bueno": 1.0,
-        "excelente": 1.1,
-        "a estrenar": 1.2,
-    }
-
-    for clave, coef in mapeo.items():
-        if clave in estado:
-            return coef
-
-    return 1.0
 
 
 def _calcular_valor_m2_referencia(comparables: List[Comparable], superficie_cubierta: float) -> float:
@@ -63,10 +28,8 @@ def _calcular_valor_m2_referencia(comparables: List[Comparable], superficie_cubi
 
 def tasar_casa(datos):
     """
-    Calcula el valor de una casa usando la misma lógica que el frontend,
-    pero recibiendo los comparables y devolviendo el resultado completo.
+    Calcula el valor de una casa usando Ross-Heidecke en el backend.
     """
-
     logger.info(f"Iniciando tasar_casa - Dirección: {datos.direccion}")
 
     if not datos.comparables:
@@ -76,7 +39,21 @@ def tasar_casa(datos):
     if superficie_cubierta <= 0:
         raise ValueError("La superficie cubierta debe ser mayor a 0")
 
-    coeficiente_estado = _coeficiente_estado(datos.estado_conservacion)
+    vida_util = getattr(datos, "vida_util", 80) or 80
+
+    advertencias = []
+    if datos.antiguedad > vida_util:
+        advertencias.append(
+            f"La antigüedad ingresada ({datos.antiguedad} años) supera la vida útil "
+            f"establecida ({vida_util} años). El inmueble alcanzaría el 100% de depreciación "
+            "según Ross-Heidecke. Podés revisar o modificar la vida útil para recalcular."
+        )
+
+    coeficiente_ross = coeficiente_depreciacion_ross_heidecke(
+        datos.antiguedad,
+        datos.estado_conservacion,
+        vida_util
+    )
     coeficiente_calidad = getattr(datos, "calidad_construccion", 1) or 1
 
     if getattr(datos, "valor_m2_referencia", None) is None or datos.valor_m2_referencia is None:
@@ -84,7 +61,7 @@ def tasar_casa(datos):
 
     valor_m2 = datos.valor_m2_referencia
     valor_base = superficie_cubierta * valor_m2
-    valor_final = valor_base * coeficiente_estado * coeficiente_calidad
+    valor_final = valor_base * coeficiente_ross * coeficiente_calidad
 
     ajuste_final = datos.ajuste_final_porcentaje or 0
     if ajuste_final:
@@ -101,11 +78,19 @@ def tasar_casa(datos):
     for comp in datos.comparables:
         superficie = getattr(comp, "superficie", None) or superficie_cubierta
         valor = getattr(comp, "valor_total", None) or getattr(comp, "valor", 0)
+        ross_comp = coeficiente_depreciacion_ross_heidecke(
+            getattr(comp, "antiguedad", 0),
+            getattr(comp, "estado_conservacion", "") or getattr(comp, "estadoConservacion", ""),
+            getattr(comp, "vida_util", vida_util) or vida_util
+        )
         comparables_salida.append({
             "direccion": getattr(comp, "direccion", ""),
             "valor": valor,
+            "valor_total": valor,
             "valor_m2": round(valor / superficie, 2) if superficie and valor else 0,
             "superficie": superficie,
+            "rossHeidecke": round(ross_comp, 4),
+            **comp.model_dump(exclude={"direccion", "valor_total", "superficie"})
         })
 
     return {
@@ -114,12 +99,13 @@ def tasar_casa(datos):
         "superficie": round(superficie_cubierta, 2),
         "superficie_cubierta": round(superficie_cubierta, 2),
         "valor_m2_referencia": round(valor_m2, 2),
-        "coeficiente_estado": round(coeficiente_estado, 2),
-        "calidad_construccion": round(coeficiente_calidad, 2),
+        "rossHeidecke": round(coeficiente_ross, 4),
+        "coeficiente_calidad": round(coeficiente_calidad, 2),
         "valor_final": round(valor_final, 2),
         "valor_m2": round(valor_final / superficie_cubierta, 2),
         "valor_minimo": round(valor_minimo, 2),
         "valor_maximo": round(valor_maximo, 2),
         "ajuste_final_porcentaje": ajuste_final,
+        "advertencias": advertencias,
         "comparables": comparables_salida,
     }

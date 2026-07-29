@@ -4,6 +4,9 @@ a columnas de la base de datos, siguiendo el modelo híbrido del proyecto.
 """
 
 from typing import Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def extraer_valor(datos: Dict[str, Any], *rutas, default=None, transform=None):

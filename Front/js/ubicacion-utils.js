@@ -164,11 +164,38 @@ function getLocalidadesData() {
  * @returns {Promise<Object|null>} { lat, lon, exacto, query } o null
  */
 async function geocodificarConFallback(direccion = '', localidad = '', provincia = '', pais = 'Argentina') {
-    const intentos = [];
     const d = direccion.trim();
     const l = localidad.trim();
     const p = provincia.trim();
 
+    // Intento 1: Usar parámetros estructurados de Nominatim para forzar límites administrativos estrictos
+    if (d && l && p) {
+        try {
+            const params = new URLSearchParams({
+                format: 'json',
+                street: d,
+                city: l,
+                state: p,
+                country: pais,
+                limit: '1'
+            });
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+            const data = await res.json();
+            if (data && data.length) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon),
+                    exacto: true,
+                    query: `${d}, ${l}, ${p}, ${pais} (estructurado)`
+                };
+            }
+        } catch (e) {
+            console.warn('Error geocodificando con parámetros estructurados:', e);
+        }
+    }
+
+    // Fallback: Usar query libre si los parámetros estructurados fallan
+    const intentos = [];
     if (d && l && p) intentos.push(`${d}, ${l}, ${p}, ${pais}`);
     if (l && p) intentos.push(`${l}, ${p}, ${pais}`);
     if (p) intentos.push(`${p}, ${pais}`);
@@ -183,8 +210,8 @@ async function geocodificarConFallback(direccion = '', localidad = '', provincia
                 return {
                     lat: parseFloat(data[0].lat),
                     lon: parseFloat(data[0].lon),
-                    exacto: i === 0,
-                    query
+                    exacto: false,
+                    query: `${query} (fallback)`
                 };
             }
         } catch (e) {

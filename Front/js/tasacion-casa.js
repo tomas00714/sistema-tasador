@@ -133,6 +133,11 @@ function mostrarFormularioCasa() {
 
     cargarProvincias();
 
+    // Si ya hay provincia seleccionada, cargar sus localidades
+    if (datosTasacion.ubicacion.provincia) {
+        cargarLocalidadesUI(datosTasacion.ubicacion.provincia);
+    }
+
     requestAnimationFrame(() => {
         inicializarMapa();
         configurarBusquedaMapa();
@@ -190,11 +195,11 @@ function mostrarCaracteristicasCasa() {
                     <div class="autocomplete-container">
                         <input type="text" id="estadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly value="${datosTasacion.casa.estadoConservacion || ""}">
                         <div class="autocomplete-list" id="estadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Nuevo o muy bueno</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Conservación normal</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Necesitado de reparaciones sencillas</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Necesitado de reparaciones importantes</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Estado de demolición</div>
+                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
+                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
+                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
+                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
+                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
                         </div>
                     </div>
                 </div>
@@ -202,6 +207,11 @@ function mostrarCaracteristicasCasa() {
                 <div class="input-group input-2-3">
                     <label>Antigüedad (años)</label>
                     <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.casa.antiguedad || ""}">
+                </div>
+
+                <div class="input-group input-2-3">
+                    <label>Vida útil (años)</label>
+                    <input type="number" id="vidaUtilInput" placeholder="80" min="1" value="${datosTasacion.casa.vidaUtil || 80}">
                 </div>
             </div>
 
@@ -231,11 +241,11 @@ function mostrarCaracteristicasCasa() {
                 </div>
 
                 <div class="input-group input-2-3">
-                    <label>Calidad de construcción</label>
+                    <label>Característica constructiva</label>
                     <div class="input-dividido-container">
                         <div class="input-dividido-principal">
                             <div class="autocomplete-container">
-                                <input type="text" id="calidadConstruccionInput" placeholder="Seleccionar calidad" autocomplete="off" readonly value="${datosTasacion.casa.calidadConstruccion || ""}">
+                                <input type="text" id="calidadConstruccionInput" placeholder="Seleccionar característica" autocomplete="off" readonly value="${datosTasacion.casa.calidadConstruccion || ""}">
                                 <div class="autocomplete-list" id="calidadConstruccionList">
                                     <div class="autocomplete-item" data-coef="0.85" data-rango="0.85-0.95"><span>Económica</span><span class="coef-display">0.85</span></div>
                                     <div class="autocomplete-item" data-coef="0.95" data-rango="0.95-1.05"><span>Standard</span><span class="coef-display">0.95</span></div>
@@ -614,6 +624,10 @@ function guardarDatosCaracteristicasCasa() {
     }
     if (antiguedadInput) {
         datosTasacion.casa.antiguedad = antiguedadInput.value;
+    }
+    const vidaUtilInput = document.getElementById("vidaUtilInput");
+    if (vidaUtilInput) {
+        datosTasacion.casa.vidaUtil = vidaUtilInput.value;
     }
     if (calidadConstruccionInput) {
         datosTasacion.casa.calidadConstruccion = calidadConstruccionInput.value;

@@ -142,6 +142,11 @@ function mostrarFormularioDepartamento() {
 
     cargarProvincias();
 
+    // Si ya hay provincia seleccionada, cargar sus localidades
+    if (datosTasacion.ubicacion.provincia) {
+        cargarLocalidadesUI(datosTasacion.ubicacion.provincia);
+    }
+
     requestAnimationFrame(() => {
         inicializarMapa();
         configurarBusquedaMapa();
@@ -251,25 +256,6 @@ function mostrarCaracteristicasDepartamento() {
                 </div>
 
                 <div class="input-group input-2-3">
-                    <label>Ubicación del edificio</label>
-                    <input type="text" id="ubicacionEdificioInput" placeholder="Ingresar ubicación del edificio" value="${datosTasacion.departamento.ubicacionEdificio || ""}">
-                </div>
-            </div>
-
-            <div class="columna-departamento-centro">
-                <div class="input-group input-2-3">
-                    <label>Tiene ascensor</label>
-                    <div class="switch-container-ascensor">
-                        <label class="switch">
-                            <input type="checkbox" id="tieneAscensorSwitch" ${datosTasacion.departamento.tieneAscensor === "si" || !datosTasacion.departamento.tieneAscensor ? "checked" : ""}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="columna-departamento">
-                <div class="input-group input-2-3">
                     <label>Superficie cubierta propia</label>
                     <div class="input-dividido-container">
                         <div class="input-dividido-principal">
@@ -290,9 +276,29 @@ function mostrarCaracteristicasDepartamento() {
                     </div>
                 </div>
 
+            </div>
+
+            <div class="columna-departamento-centro">
+                <div class="input-group input-2-3">
+                    <label>Tiene ascensor</label>
+                    <div class="switch-container-ascensor">
+                        <label class="switch">
+                            <input type="checkbox" id="tieneAscensorSwitch" ${datosTasacion.departamento.tieneAscensor === "si" || !datosTasacion.departamento.tieneAscensor ? "checked" : ""}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="columna-departamento">
                 <div class="input-group input-2-3">
                     <label>Antigüedad (años)</label>
                     <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.departamento.antiguedad || ""}">
+                </div>
+
+                <div class="input-group input-2-3">
+                    <label>Vida útil (años)</label>
+                    <input type="number" id="vidaUtilInput" placeholder="80" min="1" value="${datosTasacion.departamento.vidaUtil || 80}">
                 </div>
 
                 <div class="input-group input-2-3">
@@ -300,11 +306,11 @@ function mostrarCaracteristicasDepartamento() {
                     <div class="autocomplete-container">
                         <input type="text" id="estadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly value="${datosTasacion.departamento.estadoConservacion || ""}">
                         <div class="autocomplete-list" id="estadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Nuevo o muy bueno</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Conservación normal</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Necesitado de reparaciones sencillas</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Necesitado de reparaciones importantes</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Estado de demolición</div>
+                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
+                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
+                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
+                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
+                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
                         </div>
                     </div>
                 </div>
@@ -327,21 +333,20 @@ function mostrarCaracteristicasDepartamento() {
         inicializarUbicacionPiso();
     });
 
-    const ubicacionEdificioInput = document.getElementById("ubicacionEdificioInput");
-    if (ubicacionEdificioInput) {
-        ubicacionEdificioInput.addEventListener("input", () => {
-            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.ubicacionEdificio = ubicacionEdificioInput.value;
-            }
-        });
-    }
-
     const antiguedadInput = document.getElementById("antiguedadInput");
     if (antiguedadInput) {
         antiguedadInput.addEventListener("input", () => {
             if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
                 datosTasacion.departamento.antiguedad = antiguedadInput.value;
-                calcularCoeficienteAntiguedad();
+            }
+        });
+    }
+
+    const vidaUtilInput = document.getElementById("vidaUtilInput");
+    if (vidaUtilInput) {
+        vidaUtilInput.addEventListener("input", () => {
+            if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
+                datosTasacion.departamento.vidaUtil = vidaUtilInput.value;
             }
         });
     }

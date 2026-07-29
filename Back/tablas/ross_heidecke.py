@@ -1,4 +1,52 @@
 import logging
+import re
+
+# Mapeo de los 5 estados mostrados en la interfaz a los 9 estados originales de la tabla.
+# La tabla permanece intacta; este mapeo es trivial de modificar para soportar 9 estados.
+MAPEO_ESTADOS_CINCO_A_NUEVE = {
+    1: 1,   # Excelente
+    2: 3,   # Bueno -> Buena
+    3: 5,   # Regular -> Regular
+    4: 6,   # Malo -> Malo
+    5: 7    # Muy malo -> Muy malo
+}
+
+
+def _parse_estado_ross_heidecke(estado):
+    """Extrae el primer dígito de un string de estado o devuelve el entero."""
+    if estado is None:
+        return 0
+    if isinstance(estado, int):
+        return estado if 1 <= estado <= 5 else 0
+    match = re.search(r"\d+", str(estado))
+    if match:
+        return int(match.group(0))
+    return 0
+
+
+def coeficiente_depreciacion_ross_heidecke(antiguedad, estado, vida_util=80):
+    """
+    Calcula el coeficiente de depreciación (C = 1 - K/2) usando la tabla Ross-Heidecke.
+
+    Args:
+        antiguedad: Años de antigüedad.
+        estado: Estado de conservación (1-5, o string del frontend).
+        vida_util: Vida útil en años (default 80).
+
+    Returns:
+        float: Coeficiente de depreciación (0-1).
+    """
+    ant = int(antiguedad) if antiguedad else 0
+    vu = int(vida_util) if vida_util else 80
+    if vu <= 0:
+        vu = 80
+    ant = max(ant, 0)
+    porcentaje_vida = round((ant / vu) * 100)
+    porcentaje_vida = min(max(porcentaje_vida, 0), 99)
+    estado_tabla = MAPEO_ESTADOS_CINCO_A_NUEVE.get(_parse_estado_ross_heidecke(estado), 7)
+    coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, estado_tabla)
+    return 1 - (coeficiente_k / 2)
+
 
 TABLA_ROSS_HEIDECKE = {
     0: {

@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS comparables (
     -- Campos para filtrado (columnas)
     tipo_inmueble VARCHAR(20) NOT NULL CHECK (tipo_inmueble IN ('lote', 'departamento', 'casa')),
     fuente VARCHAR(20) DEFAULT 'manual' CHECK (fuente IN ('manual', 'de_tasacion', 'compartido')),
-    tipo_valor VARCHAR(20) DEFAULT 'venta' CHECK (tipo_valor IN ('venta', 'alquiler')),
+    tipo_valor VARCHAR(20) DEFAULT 'venta' CHECK (tipo_valor IN ('venta', 'oferta')),
     
     -- Datos para filtros y estadísticas
     valor DECIMAL(15,2) NOT NULL,

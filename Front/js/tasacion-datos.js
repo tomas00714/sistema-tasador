@@ -98,7 +98,6 @@ function limpiarDatosTasacion() {
             estadoConservacionCoef: 0,
             caracteristicaConstructiva: "",
             caracteristicaConstructivaCoef: 0,
-            ubicacionEdificio: "",
             homogeneizacion: {
                 cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
                 semicubierto: { superficie: 0, coeficiente: 0.50, homogeneizada: 0 },
@@ -410,9 +409,9 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.ubicacionPiso = document.getElementById("ubicacionPisoInput").value;
     datosTasacion.departamento.superficieCubierta = document.getElementById("superficieCubiertaInput").value;
     datosTasacion.departamento.antiguedad = document.getElementById("antiguedadInput").value;
+    datosTasacion.departamento.vidaUtil = document.getElementById("vidaUtilInput")?.value || 80;
     datosTasacion.departamento.estadoConservacion = document.getElementById("estadoConservacionInput").value;
     datosTasacion.departamento.caracteristicaConstructiva = document.getElementById("caracteristicaConstructivaInput").value;
-    datosTasacion.departamento.ubicacionEdificio = document.getElementById("ubicacionEdificioInput").value;
 
     // Guardar coeficientes numéricos
     datosTasacion.departamento.ubicacionPlantaCoef = parseFloat(document.getElementById("ubicacionPlantaCoef").value) || 1;
@@ -420,17 +419,7 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.superficieCubiertaCoef = parseFloat(document.getElementById("superficieCubiertaCoef").value) || 1;
     datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(document.getElementById("caracteristicaConstructivaCoef").value) || 1;
 
-    // Calcular coeficiente de antigüedad (Ross-Heidecke)
-    const antiguedad = parseInt(datosTasacion.departamento.antiguedad) || 0;
-    const estado = parseInt(datosTasacion.departamento.estadoConservacion) || 1;
-
-    // Tabla de Ross-Heidecke simplificada
-    let coeficiente = 1;
-    const factor = [0.01, 0.015, 0.02, 0.025, 0.03][estado - 1] || 0.01;
-    coeficiente = Math.max(0.5, 1 - (antiguedad * factor));
-
-    datosTasacion.departamento.estadoConservacionCoef = coeficiente;
-
+    // El cálculo de Ross-Heidecke ahora es responsabilidad exclusiva del backend
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
 

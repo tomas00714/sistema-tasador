@@ -67,7 +67,7 @@ function generarHTMLUbicacionConMapa(opciones = {}) {
             <div class="input-group">
                 <label>Localidad</label>
                 <div class="autocomplete-container">
-                    <input type="text" id="localidadInput" placeholder="Seleccionar provincia primero" autocomplete="off" disabled value="${datosTasacion.ubicacion.localidad || ""}">
+                    <input type="text" id="localidadInput" placeholder="${datosTasacion.ubicacion.provincia ? 'Escribí una localidad' : 'Seleccionar provincia primero'}" autocomplete="off" ${datosTasacion.ubicacion.provincia ? '' : 'disabled'} value="${datosTasacion.ubicacion.localidad || ""}">
                     <div class="autocomplete-list" id="localidadList"></div>
                 </div>
             </div>

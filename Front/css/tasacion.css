@@ -2711,6 +2711,7 @@ background-position: right 14px center;
     gap: 24px;
     min-width: 80px;
     max-width: 100px;
+    margin-top: 90px;
 }
 
 .input-2-3 {
@@ -3748,6 +3749,7 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 6px;
     position: relative;
+    width: auto;
 }
 
 .input-group label {

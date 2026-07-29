@@ -89,7 +89,7 @@ function renderComparablesDerecha() {
                     <span class="comparable-item-badge">${badge}</span>
                 </div>
                 <div class="comparable-item-acciones">
-                    <button type="button" class="btn-editar-comparable" data-editar-comparable="${idx}" onclick="event.stopPropagation(); editarComparableDesdeLista(${idx});">Editar</button>
+                    ${comparable.fuente === 'manual' ? `<button type="button" class="btn-editar-comparable" data-editar-comparable="${idx}" onclick="event.stopPropagation(); editarComparableDesdeLista(${idx});">Editar</button>` : ''}
                     <button type="button" class="btn-quitar-comparable" data-quitar-comparable="${idx}">Quitar</button>
                 </div>
             </div>
@@ -533,27 +533,29 @@ function onComparablesContenidoClick(e) {
 async function editarComparableDesdeLista(idx) {
     try {
         const original = datosTasacion.comparables[idx];
-        console.log('[editarComparableDesdeLista] idx:', idx, 'original:', original);
         if (!original) {
             console.warn('[editarComparableDesdeLista] No existe comparable en índice', idx);
             return;
         }
-        if (!window.comparableEditor || typeof window.comparableEditor.abrir !== 'function') {
-            console.error('[editarComparableDesdeLista] window.comparableEditor no está disponible o no tiene abrir', window.comparableEditor);
-            alert('El editor de comparables no se cargó correctamente. Revisá la consola.');
+        // Solo permitir editar comparables agregados manualmente
+        const esManual = !original.fuente || original.fuente === 'manual';
+        if (!esManual) {
+            console.warn('[editarComparableDesdeLista] No se puede editar comparable no manual. Fuente:', original.fuente);
+            alert('Solo se pueden editar comparables agregados manualmente.');
+            return;
+        }
+        if (typeof abrirModalComparable !== 'function') {
+            console.error('[editarComparableDesdeLista] abrirModalComparable no está disponible');
+            alert('El modal de comparables no se cargó correctamente. Revisá la consola.');
             return;
         }
 
         const tipo = original.tipoInmueble || datosTasacion.tipo || 'lote';
-        const datosEditor = normalizarComparableParaEditor(original);
-        console.log('[editarComparableDesdeLista] datosEditor:', datosEditor);
 
-        window.comparableEditor.abrir({
-            modo: 'editar',
-            tipo: tipo,
-            datos: datosEditor,
-            onGuardar: async (datosNuevos) => {
-                const actualizado = aplicarDatosEditorAComparable(datosNuevos, original);
+        await abrirModalComparable(
+            tipo,
+            async (datosForm) => {
+                const actualizado = { ...original, ...datosForm, id: original.id, fuente: original.fuente || 'manual' };
                 datosTasacion.comparables[idx] = actualizado;
 
                 if (actualizado.id) {
@@ -579,8 +581,11 @@ async function editarComparableDesdeLista(idx) {
                 if (pasoActual === pasoResultado && typeof calcularYMostrarResultado === 'function') {
                     await calcularYMostrarResultado();
                 }
-            }
-        });
+            },
+            'editar',
+            null,
+            original
+        );
     } catch (e) {
         console.error('[editarComparableDesdeLista] Error inesperado:', e);
         alert('No se pudo abrir el editor del comparable. Revisá la consola.');

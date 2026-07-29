@@ -44,10 +44,12 @@ const CasaValidator = {
             const errores = [];
             const casa = datos.casa || {};
 
-            // For now, all characteristics are optional
-            // Add specific validations as needed
+            // Validate antiguedad
+            if (!casa.antiguedad || casa.antiguedad === '' || casa.antiguedad === '0') {
+                errores.push({ campo: 'antiguedadInput', mensaje: 'Ingresá la antigüedad' });
+            }
 
-            return ValidatorBase.crearResultado(true, errores);
+            return ValidatorBase.crearResultado(errores.length === 0, errores);
         }
     },
 

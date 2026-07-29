@@ -215,7 +215,12 @@ async function obtenerComparablePorId(id) {
  */
 async function actualizarComparable(id, datos) {
     try {
-        await actualizarComparableAPI(id, { datos });
+        // Limpiar campos de identificación que son propios del backend
+        const datosLimpios = { ...datos };
+        delete datosLimpios.id;
+        delete datosLimpios.idNum;
+
+        await actualizarComparableAPI(id, { datos: datosLimpios });
         return true;
     } catch (error) {
         console.error('Error al actualizar comparable:', error);
@@ -317,7 +322,6 @@ async function crearTasacion(datos = {}) {
                 estadoConservacionCoef: 0,
                 caracteristicaConstructiva: "",
                 caracteristicaConstructivaCoef: 0,
-                ubicacionEdificio: "",
                 homogeneizacion: {
                     cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
                     semicubierto: { superficie: 0, coeficiente: 0.50, homogeneizada: 0 },

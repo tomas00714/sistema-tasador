@@ -90,39 +90,6 @@ class CalculationEngine {
         }
     }
 
-    /**
-     * Calcula el coeficiente Ross-Heidecke
-     * @param {Object} datos - Datos del departamento
-     * @param {number} datos.piso - Piso del departamento
-     * @param {string} datos.ubicacionPlanta - Ubicación en la planta
-     * @param {number} datos.antiguedad - Antigüedad en años
-     * @returns {number} Coeficiente Ross-Heidecke
-     */
-    calcularRossHeidecke(datos) {
-        const { piso, ubicacionPlanta, antiguedad } = datos;
-        
-        // En modo demo, usamos valores simulados
-        // En producción, esto vendría del backend
-        let coeficiente = 1.0;
-        
-        // Ajuste por piso
-        if (piso >= 1 && piso <= 3) coeficiente *= 1.05;
-        else if (piso >= 4 && piso <= 6) coeficiente *= 1.10;
-        else if (piso >= 7) coeficiente *= 1.15;
-        
-        // Ajuste por ubicación en planta
-        if (ubicacionPlanta === 'frente') coeficiente *= 1.05;
-        else if (ubicacionPlanta === 'contrafrente') coeficiente *= 0.95;
-        
-        // Ajuste por antigüedad
-        if (antiguedad <= 5) coeficiente *= 1.10;
-        else if (antiguedad <= 10) coeficiente *= 1.05;
-        else if (antiguedad <= 20) coeficiente *= 1.0;
-        else coeficiente *= 0.95;
-        
-        return coeficiente;
-    }
-
     // =========================
     // HOMOGENEIZACIÓN
     // =========================

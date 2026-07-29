@@ -116,7 +116,9 @@ class TasacionDepartamentoRequest(BaseModel):
 
     antiguedad: int  # años
 
-    estado_conservacion: int  # 1-9
+    estado_conservacion: int  # 1-5, mapeado internamente a 1-9
+
+    vida_util: Optional[int] = 80
 
     valor_m2_referencia: Optional[float] = None
 
@@ -138,6 +140,8 @@ class TasacionCasaRequest(BaseModel):
     antiguedad: int = 0
 
     estado_conservacion: str
+
+    vida_util: Optional[int] = 80
 
     calidad_construccion: float
 

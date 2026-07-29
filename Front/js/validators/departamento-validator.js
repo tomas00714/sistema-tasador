@@ -74,6 +74,13 @@ const DepartamentoValidator = {
                 errores.push({ campo: 'caracteristicaConstructivaInput', mensaje: 'Seleccioná la característica constructiva' });
             }
 
+            console.log('[DepartamentoValidator.caracteristicas.validar] antiguedad:', depto.antiguedad);
+            // Validate antiguedad
+            if (!depto.antiguedad || depto.antiguedad === '' || depto.antiguedad === '0') {
+                console.log('[DepartamentoValidator.caracteristicas.validar] antiguedad missing');
+                errores.push({ campo: 'antiguedadInput', mensaje: 'Ingresá la antigüedad' });
+            }
+
             console.log('[DepartamentoValidator.caracteristicas.validar] superficieCubierta:', depto.superficieCubierta);
             // Validate superficieCubierta
             if (!depto.superficieCubierta || depto.superficieCubierta === '') {

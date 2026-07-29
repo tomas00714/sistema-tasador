@@ -122,7 +122,7 @@ function ReportCharacteristics({ characteristics, property }) {
             <h2 class="report-section-title">Características</h2>
             <div class="report-characteristics">
                 <div class="report-characteristics-item">
-                    <div class="report-characteristics-label">Calidad de construcción</div>
+                    <div class="report-characteristics-label">Característica constructiva</div>
                     <div class="report-characteristics-value">${characteristics.constructionQuality}</div>
                 </div>
                 <div class="report-characteristics-item">

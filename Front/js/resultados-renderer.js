@@ -64,6 +64,11 @@ class ResultadosRenderer {
             // Normalizar dirección
             const direccion = comp.ubicacion?.direccion || comp.direccion || comp.direccion_completa || "Sin dirección";
 
+            // Usar modelo canónico si existe, fallback a estructura antigua
+            const inm = comp.inmueble || {};
+            const depto = comp.departamento || {};
+            const casaComp = comp.casa || {};
+
             // Normalizar según tipo
             if (this.tipo === 'lote') {
                 console.log('[normalizarComparables] lote COMP crudo:', diagnosticStringify(comp));
@@ -72,10 +77,11 @@ class ResultadosRenderer {
                     direccion: direccion,
                     valor_lote: comp.valor_lote || comp.valor,
                     valor_m2: comp.valor_m2 || (comp.valor / comp.superficie),
-                    frente: comp.frente || 0,
-                    fondo: comp.fondo || 0,
-                    fos: comp.fos || null,
-                    fot: comp.fot || null,
+                    frente: inm.frente || comp.frente || 0,
+                    fondo: inm.fondo || comp.fondo || 0,
+                    fos: inm.fos || comp.fos || null,
+                    fot: inm.fot || comp.fot || null,
+                    tipoLote: inm.tipoLote || comp.tipoLote || '',
                     coef_fitto_comparable: comp.coef_fitto_comparable || comp.coef_fitto_relacion || null,
                     coef_fitto_relacion: comp.coef_fitto_comparable || comp.coef_fitto_relacion || null,
                     valor_m2_homogeneizado: comp.valor_m2_homogeneizado || comp.valor_m2
@@ -83,12 +89,12 @@ class ResultadosRenderer {
                 console.log('[normalizarComparables] lote COMP normalizado:', diagnosticStringify(normalizado));
                 return normalizado;
             } else if (this.tipo === 'departamento') {
-                const depto = comp.departamento || {};
                 console.log('[normalizarComparables] departamento COMP crudo:', diagnosticStringify(comp));
-                console.log('[normalizarComparables] departamento OBJETO ANIDADO (comp.departamento):', diagnosticStringify(depto));
-                const superficie = comp.superficie || depto.superficieTotal || 0;
+                const superficie = comp.superficie || inm.superficie || depto.superficieTotal || 0;
+                const superficieHomogeneizada = comp.superficie_homogeneizada ?? superficie;
                 const valor = comp.valor || 0;
                 const valorM2 = comp.valor_m2 || (superficie > 0 ? valor / superficie : 0);
+                const rossHeidecke = parseFloat(comp.rossHeidecke) || 1;
 
                 const normalizado = {
                     ...comp,
@@ -97,21 +103,26 @@ class ResultadosRenderer {
                     valor_m2: valorM2,
                     valor_m2_homogeneizado: comp.valor_m2_homogeneizado || valorM2,
                     superficie: superficie,
-                    // Extraer coeficientes numéricos del objeto departamento anidado
-                    rossHeidecke: comp.rossHeidecke || depto.rossHeidecke || depto.coeficientes?.rossHeidecke || null,
-                    ubicacionPlanta: comp.ubicacionPlantaCoef || depto.ubicacionPlantaCoef || comp.ubicacionPlanta || depto.ubicacionPlanta || null,
-                    ubicacionPiso: comp.ubicacionPisoCoef || depto.ubicacionPisoCoef || comp.ubicacionPiso || depto.ubicacionPiso || null,
-                    caracteristicaConstructiva: comp.caracteristicaConstructivaCoef || depto.caracteristicaConstructivaCoef || comp.caracteristicaConstructiva || depto.caracteristicaConstructiva || depto.coeficientes?.caracteristicaConstructiva || null,
-                    superficieCubierta: comp.superficieCubiertaCoef || depto.superficieCubiertaCoef || comp.superficieCubierta || depto.superficieCubierta || depto.coeficientes?.superficieCubierta || null
+                    superficie_homogeneizada: superficieHomogeneizada,
+                    antiguedad: comp.antiguedad ?? inm.antiguedad ?? depto.antiguedad ?? null,
+                    estadoConservacion: comp.estadoConservacion ?? inm.estadoConservacion ?? depto.estadoConservacion ?? null,
+                    // Extraer coeficientes del modelo canónico o fallback
+                    rossHeidecke,
+                    ubicacionPlantaCoef: inm.ubicacionPlantaCoef || comp.ubicacionPlantaCoef || depto.ubicacionPlantaCoef || null,
+                    ubicacionPisoCoef: inm.ubicacionPisoCoef || comp.ubicacionPisoCoef || depto.ubicacionPisoCoef || null,
+                    caracteristicaConstructivaCoef: inm.caracteristicaConstructivaCoef || comp.caracteristicaConstructivaCoef || depto.caracteristicaConstructivaCoef || null,
+                    superficieCubiertaCoef: inm.superficieCubiertaCoef || comp.superficieCubiertaCoef || depto.superficieCubiertaCoef || null,
+                    superficieTotal: inm.superficieTotal || comp.superficieTotal || depto.superficieTotal || superficie
                 };
                 console.log('[normalizarComparables] departamento COMP normalizado:', diagnosticStringify(normalizado));
                 return normalizado;
             } else if (this.tipo === 'casa') {
                 console.log('[normalizarComparables] casa COMP crudo:', diagnosticStringify(comp));
-                const casaComp = comp.casa || {};
-                const superficie = comp.superficie || casaComp.superficie || 0;
+                const superficie = comp.superficie || inm.superficie || casaComp.superficie || 0;
+                const superficieHomogeneizada = comp.superficie_homogeneizada ?? superficie;
                 const valor = comp.valor || 0;
                 const valorM2 = comp.valor_m2 || (superficie > 0 ? valor / superficie : 0);
+                const rossHeidecke = parseFloat(comp.rossHeidecke) || 1;
 
                 const normalizado = {
                     ...comp,
@@ -120,16 +131,18 @@ class ResultadosRenderer {
                     valor_m2: valorM2,
                     valor_m2_homogeneizado: comp.valor_m2_homogeneizado || valorM2,
                     superficie: superficie,
+                    superficie_homogeneizada: superficieHomogeneizada,
                     superficieCubierta: comp.superficieCubierta || casaComp.superficieCubiertaTexto || casaComp.superficieCubierta || '',
-                    superficieCubiertaCoef: parseFloat(comp.superficieCubiertaCoef || casaComp.superficieCubiertaCoef) || 1,
+                    superficieCubiertaCoef: inm.superficieCubiertaCoef || comp.superficieCubiertaCoef || casaComp.superficieCubiertaCoef || 1,
                     superficieTotal: comp.superficieTotal || casaComp.superficieTotalTexto || casaComp.superficieTotal || '',
-                    superficieTotalCoef: parseFloat(comp.superficieTotalCoef || casaComp.superficieTotalCoef) || 1,
+                    superficieTotalCoef: inm.superficieTotalCoef || comp.superficieTotalCoef || casaComp.superficieTotalCoef || 1,
                     calidadConstruccion: comp.calidadConstruccion || casaComp.calidadConstruccion || '',
-                    calidadConstruccionCoef: parseFloat(comp.calidadConstruccionCoef || casaComp.calidadConstruccionCoef) || 1,
-                    estadoConservacion: comp.estadoConservacion || casaComp.estadoConservacion || '',
-                    antiguedad: comp.antiguedad || casaComp.antiguedad || 0
+                    calidadConstruccionCoef: inm.calidadConstruccionCoef || comp.calidadConstruccionCoef || casaComp.calidadConstruccionCoef || 1,
+                    estadoConservacion: comp.estadoConservacion ?? inm.estadoConservacion ?? casaComp.estadoConservacion ?? null,
+                    antiguedad: comp.antiguedad ?? inm.antiguedad ?? casaComp.antiguedad ?? null,
+                    rossHeidecke
                 };
-                normalizado.estadoConservacionCoef = parseFloat(normalizado.estadoConservacionCoef) || _coeficienteEstadoCasa(normalizado.estadoConservacion, normalizado.antiguedad);
+                normalizado.estadoConservacionCoef = parseFloat(normalizado.estadoConservacionCoef) || rossHeidecke;
 
                 console.log('[normalizarComparables] casa COMP normalizado:', diagnosticStringify(normalizado));
                 return normalizado;
@@ -179,6 +192,7 @@ class ResultadosRenderer {
     renderizar() {
         const html = `
             ${this.renderizarHeader()}
+            ${this.renderizarAdvertencias()}
             <div class="resultado-layout-vertical">
                 ${this.renderizarTarjetaValor()}
                 ${this.renderizarSecciones()}
@@ -186,6 +200,18 @@ class ResultadosRenderer {
         `;
         this.contenedor.innerHTML = html;
         this.inicializarEventListeners();
+    }
+
+    renderizarAdvertencias() {
+        const advertencias = this.resultado?.advertencias || [];
+        if (!advertencias.length) return '';
+        const lista = advertencias.map(a => `<li>${a}</li>`).join('');
+        return `
+            <div class="alerta-advertencia" style="background:#fff3cd;color:#856404;padding:12px 16px;border:1px solid #ffeeba;border-radius:6px;margin:0 0 16px 0;">
+                <strong>Advertencia</strong>
+                <ul style="margin:8px 0 0 0; padding-left: 20px;">${lista}</ul>
+            </div>
+        `;
     }
 
     renderizarHeader() {

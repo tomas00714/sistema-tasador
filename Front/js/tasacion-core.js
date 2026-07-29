@@ -77,7 +77,6 @@ const datosTasacion = {
         estadoConservacionCoef: 0,
         caracteristicaConstructiva: "",
         caracteristicaConstructivaCoef: 0,
-        ubicacionEdificio: "",
         homogeneizacion: {
             cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
             semicubierto: { superficie: 0, coeficiente: 0.50, homogeneizada: 0 },

@@ -203,7 +203,6 @@ function mapearCaracteristicas(tasacion) {
             windows: '—',
             extra: [
                 { label: 'Ubicación en planta', value: valorSeguro(d.ubicacionPlanta) },
-                { label: 'Ubicación en edificio', value: valorSeguro(d.ubicacionEdificio) },
                 { label: 'Ascensor', value: d.tieneAscensor === 'si' ? 'Sí' : d.tieneAscensor === 'no' ? 'No' : '—' }
             ]
         };
@@ -243,7 +242,7 @@ function mapearMetodologia(tasacion) {
         factors: [
             'Ubicación y entorno',
             'Superficie y distribución',
-            'Estado y calidad constructiva',
+            'Estado y característica constructiva',
             'Antigüedad y conservación',
             'Comparables de mercado seleccionados'
         ],

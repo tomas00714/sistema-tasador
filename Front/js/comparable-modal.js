@@ -9,6 +9,7 @@ let comparableModalOnGuardar = null;
 let comparableModalOnSeleccion = null; // Callback para modo 'seleccionar' con contexto externo
 let comparableModalModo = null; // 'formulario' o 'seleccionar'
 let comparableModalCategoriaSeleccionada = 'tasaciones'; // 'tasaciones' o 'comparables'
+let comparableModalDatosEdicion = null; // Datos del comparable a editar
 let comparableModalSelecciones = new Set(); // IDs de items seleccionados
 let comparableModalBtnGuardarListener = null; // Listener actual del botón guardar
 
@@ -19,11 +20,12 @@ let comparableModalBtnGuardarListener = null; // Listener actual del botón guar
  * @param {string} modo - 'formulario' (default) o 'seleccionar'
  * @param {Function} onSeleccion - Callback para el modo seleccionar (items, categoria)
  */
-function abrirModalComparable(tipoInmueble, onGuardar, modo = 'formulario', onSeleccion = null) {
+async function abrirModalComparable(tipoInmueble, onGuardar, modo = 'formulario', onSeleccion = null, datosEdicion = null) {
     comparableModalTipoInmueble = tipoInmueble;
     comparableModalOnGuardar = onGuardar;
     comparableModalOnSeleccion = onSeleccion;
     comparableModalModo = modo;
+    comparableModalDatosEdicion = datosEdicion;
     comparableModalCategoriaSeleccionada = 'tasaciones'; // Reset a tasaciones
     
     // Crear el modal si no existe
@@ -52,13 +54,14 @@ function abrirModalComparable(tipoInmueble, onGuardar, modo = 'formulario', onSe
         comparableModalBtnGuardarListener = async () => await agregarSeleccionados();
         btnGuardar.addEventListener('click', comparableModalBtnGuardarListener);
     } else {
-        // Modo formulario manual
+        // Modo formulario manual o edición
+        const esEdicion = modo === 'editar';
         contenido.innerHTML = generarFormularioComparable(tipoInmueble);
-        titulo.textContent = `Agregar Comparable - ${tipoInmueble.charAt(0).toUpperCase() + tipoInmueble.slice(1)}`;
-        btnGuardar.textContent = 'Guardar Comparable';
+        titulo.textContent = `${esEdicion ? 'Editar' : 'Agregar'} Comparable - ${tipoInmueble.charAt(0).toUpperCase() + tipoInmueble.slice(1)}`;
+        btnGuardar.textContent = esEdicion ? 'Guardar Edición' : 'Guardar Comparable';
         btnGuardar.style.display = 'block';
         btnGuardar.disabled = true; // Comenzar deshabilitado
-        inicializarFormularioComparable(tipoInmueble);
+        await inicializarFormularioComparable(tipoInmueble, { datos: datosEdicion });
         
         // Asignar listener para modo formulario
         comparableModalBtnGuardarListener = () => {
@@ -116,14 +119,14 @@ function agregarListenersValidacionFormulario(tipoInmueble, btnGuardar) {
     // Función para validar el formulario
     const validarFormulario = () => {
         let valido = true;
-        
+
         inputIds.forEach(id => {
             const input = document.getElementById(id);
             if (!input || !input.value.trim()) {
                 valido = false;
             }
         });
-        
+
         btnGuardar.disabled = !valido;
     };
     
@@ -240,16 +243,7 @@ function inicializarListenersModalComparable() {
         }
     });
 
-    // Enter para guardar cuando el modal está abierto (usando sistema seguro)
-    agregarListenerSeguro(document, 'keydown', (e) => {
-        if (e.key === 'Enter' && comparableModalAbierto) {
-            const btnGuardar = document.getElementById('comparableModalBtnGuardar');
-            if (btnGuardar && !btnGuardar.disabled && btnGuardar.style.display !== 'none') {
-                e.preventDefault();
-                btnGuardar.click();
-            }
-        }
-    });
+    // Enter para guardar cuando el modal está abierto - manejado por tasacion-navegacion.js
 }
 
 /**
@@ -258,30 +252,35 @@ function inicializarListenersModalComparable() {
 async function guardarComparableDesdeModal() {
     if (!comparableModalTipoInmueble) return;
 
-    // Validar formulario
-    const validacion = validarFormularioComparable(comparableModalTipoInmueble);
+    const btnGuardar = document.getElementById('comparableModalBtnGuardar');
+    if (btnGuardar) btnGuardar.disabled = true;
 
-    if (!validacion.valido) {
-        alert('Por favor, corregí los siguientes errores:\n\n' + validacion.errores.join('\n'));
-        return;
-    }
+    try {
+        // Validar formulario
+        const validacion = validarFormularioComparable(comparableModalTipoInmueble);
 
-    // Obtener datos
-    const datos = obtenerDatosFormularioComparable(comparableModalTipoInmueble);
-
-    // Llamar al callback y esperar antes de cerrar
-    if (comparableModalOnGuardar) {
-        try {
-            await comparableModalOnGuardar(datos);
-        } catch (e) {
-            console.error('Error al guardar comparable:', e);
-            alert('No se pudo guardar el comparable. Revisá la consola o el servidor.');
+        if (!validacion.valido) {
+            alert('Por favor, corregí los siguientes errores:\n\n' + validacion.errores.join('\n'));
+            if (btnGuardar) btnGuardar.disabled = false;
             return;
         }
-    }
 
-    // Cerrar el modal
-    cerrarModalComparable();
+        // Obtener datos
+        const datos = obtenerDatosFormularioComparable(comparableModalTipoInmueble);
+
+        // Llamar al callback y esperar antes de cerrar
+        if (comparableModalOnGuardar) {
+            await comparableModalOnGuardar(datos);
+        }
+
+        // Cerrar el modal (botón permanece deshabilitado)
+        cerrarModalComparable();
+    } catch (e) {
+        console.error('Error al guardar comparable:', e);
+        alert('No se pudo guardar el comparable. Revisá la consola o el servidor.');
+        // Re-habilitar botón solo en caso de error
+        if (btnGuardar) btnGuardar.disabled = false;
+    }
 }
 
 /**
@@ -643,6 +642,7 @@ async function agregarTasacionComoComparable(tasacionId, cerrarModal = true) {
         tasacionOrigenId: tasacionId
     };
 
+    // Copiar datos específicos del inmueble según tipo
     if (tasacion.tipo === 'lote') {
         const caracteristicas = tasacion.lote?.caracteristicas || {};
         datosComparable.tipoLote = tasacion.lote?.tipoLote || '';
@@ -650,10 +650,40 @@ async function agregarTasacionComoComparable(tasacionId, cerrarModal = true) {
         datosComparable.fondo = caracteristicas.fondo ?? 0;
         datosComparable.superficie = caracteristicas.superficie ?? 0;
         datosComparable.lote = tasacion.lote;
+    } else if (tasacion.tipo === 'departamento') {
+        // Copiar todos los datos del departamento
+        datosComparable.departamento = tasacion.departamento || {};
+        datosComparable.antiguedad = tasacion.departamento?.antiguedad ?? null;
+        datosComparable.estadoConservacion = tasacion.departamento?.estadoConservacion ?? null;
+        datosComparable.ubicacionPlanta = tasacion.departamento?.ubicacionPlanta ?? null;
+        datosComparable.ubicacionPlantaCoef = tasacion.departamento?.ubicacionPlantaCoef ?? null;
+        datosComparable.ubicacionPiso = tasacion.departamento?.ubicacionPiso ?? null;
+        datosComparable.ubicacionPisoCoef = tasacion.departamento?.ubicacionPisoCoef ?? null;
+        datosComparable.caracteristicaConstructiva = tasacion.departamento?.caracteristicaConstructiva ?? null;
+        datosComparable.caracteristicaConstructivaCoef = tasacion.departamento?.caracteristicaConstructivaCoef ?? null;
+        datosComparable.superficieCubierta = tasacion.departamento?.superficieCubierta ?? null;
+        datosComparable.superficieCubiertaCoef = tasacion.departamento?.superficieCubiertaCoef ?? null;
+        datosComparable.superficie = tasacion.departamento?.homogeneizacion?.totalHomogeneizada || tasacion.departamento?.superficie || 0;
+        datosComparable.superficieTotal = tasacion.departamento?.superficieTotal || datosComparable.superficie;
+    } else if (tasacion.tipo === 'casa') {
+        // Copiar todos los datos de la casa
+        datosComparable.casa = tasacion.casa || {};
+        datosComparable.antiguedad = tasacion.casa?.antiguedad ?? null;
+        datosComparable.estadoConservacion = tasacion.casa?.estadoConservacion ?? null;
+        datosComparable.superficieCubierta = tasacion.casa?.superficieCubierta ?? null;
+        datosComparable.superficieCubiertaCoef = tasacion.casa?.superficieCubiertaCoef ?? null;
+        datosComparable.superficieTotal = tasacion.casa?.superficieTotal ?? null;
+        datosComparable.superficieTotalCoef = tasacion.casa?.superficieTotalCoef ?? null;
+        datosComparable.calidadConstruccion = tasacion.casa?.calidadConstruccion ?? null;
+        datosComparable.calidadConstruccionCoef = tasacion.casa?.calidadConstruccionCoef ?? null;
+        datosComparable.superficie = tasacion.casa?.homogeneizacion?.totalHomogeneizada || tasacion.casa?.superficie || 0;
     }
 
+    // Normalizar al modelo canónico
+    const comparableNormalizado = normalizarComparable(datosComparable, tasacion.tipo);
+
     // Crear comparable desde la tasación
-    const comparable = await crearComparable(datosComparable);
+    const comparable = await crearComparable(comparableNormalizado);
     
     // NO guardar en storage, solo agregar a memoria
     datosTasacion.comparables.push(comparable);

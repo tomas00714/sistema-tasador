@@ -383,199 +383,8 @@ async function recalcularConCoeficientes() {
     }
 }
 
-function recalcularConCoeficientesDepartamento() {
-    const r = resultadoTasacion;
-    if (!r || !r.comparables || r.comparables.length === 0) return;
-
-    // Recopilar coeficientes de comparables y del objetivo
-    const coeficientes = {};
-    Object.keys(coeficientesPersonalizados).forEach(index => {
-        coeficientes[index] = coeficientes[index] || {};
-        coeficientes[index].personalizados = {};
-        coeficientesPersonalizados[index].forEach(coef => {
-            if (coef.id === 'ubicacion') {
-                coeficientes[index].ubicacion = parseFloat(coef.valor) || 1;
-            } else if (coef.id === 'actividad') {
-                coeficientes[index].actividad = parseFloat(coef.valor) || 1;
-            } else {
-                coeficientes[index].personalizados[coef.id] = parseFloat(coef.valor) || 1;
-            }
-        });
-    });
-
-    // Recalcular valores homogeneizados de comparables
-    r.comparables.forEach((c, index) => {
-        const indexStr = index.toString();
-        const coef = coeficientes[indexStr] || {};
-
-        let coefPersonalizadoTotal = 1;
-        if (coef.personalizados) {
-            Object.values(coef.personalizados).forEach(val => {
-                const num = parseFloat(val);
-                if (!isNaN(num) && num > 0) {
-                    coefPersonalizadoTotal *= num;
-                }
-            });
-        }
-
-        // Incluir coeficientes específicos de departamento (coerción numérica)
-        const coefUbicacionPlanta = parseFloat(c.ubicacionPlanta) || 1;
-        const coefUbicacionPiso = parseFloat(c.ubicacionPiso) || 1;
-        const coefCaracteristicaConstructiva = parseFloat(c.caracteristicaConstructiva) || 1;
-        const coefSuperficieCubierta = parseFloat(c.superficieCubierta) || 1;
-
-        // Incluir coeficientes fijos editables
-        const coefUbicacion = parseFloat(coef.ubicacion) || 1;
-        const coefActividad = parseFloat(coef.actividad) || 1;
-
-        // Fórmula completa: valor_m2 / (todos los coeficientes)
-        const valorM2Original = (Number(c.valor) || 0) / (Number(c.superficie) || 1);
-        const coeficienteTotal = coefUbicacionPlanta * coefUbicacionPiso * coefCaracteristicaConstructiva * coefSuperficieCubierta * coefUbicacion * coefActividad * coefPersonalizadoTotal;
-        c.valor_m2_homogeneizado = valorM2Original / (coeficienteTotal || 1);
-    });
-
-    // Recalcular valor promedio
-    const valorPromedio = r.comparables.reduce((sum, c) => sum + (Number(c.valor_m2_homogeneizado) || 0), 0) / r.comparables.length;
-
-    // Coeficientes del objetivo (departamento a tasar)
-    const depto = datosTasacion.departamento || {};
-    const coefObjetivo = coeficientes['departamento'] || {};
-
-    const targetUbicacion = parseFloat(coefObjetivo.ubicacion) || 1;
-    const targetActividad = parseFloat(coefObjetivo.actividad) || 1;
-    let targetPersonalizadoTotal = 1;
-    if (coefObjetivo.personalizados) {
-        Object.values(coefObjetivo.personalizados).forEach(val => {
-            const num = parseFloat(val);
-            if (!isNaN(num) && num > 0) {
-                targetPersonalizadoTotal *= num;
-            }
-        });
-    }
-
-    const targetUbicacionPlanta = parseFloat(depto.ubicacionPlantaCoef) || parseFloat(depto.ubicacionPlanta) || 1;
-    const targetUbicacionPiso = parseFloat(depto.ubicacionPisoCoef) || parseFloat(depto.ubicacionPiso) || 1;
-    const targetCaracteristicaConstructiva = parseFloat(depto.caracteristicaConstructivaCoef) || parseFloat(depto.caracteristicaConstructiva) || 1;
-    const targetSuperficieCubierta = parseFloat(depto.superficieCubiertaCoef) || parseFloat(depto.superficieCubierta) || 1;
-
-    const k = parseFloat(r.rossHeidecke || depto.rossHeidecke || 0);
-    const targetRossHeidecke = k > 0 ? 1 - (k / 2) : 1;
-
-    const targetCoefTotal = targetUbicacionPlanta * targetUbicacionPiso * targetCaracteristicaConstructiva * targetSuperficieCubierta * targetUbicacion * targetActividad * targetPersonalizadoTotal * targetRossHeidecke;
-
-    // Recalcular valor final
-    const hom = depto.homogeneizacion || {};
-    const superficieHomogeneizada = parseFloat(hom.totalHomogeneizada) || 0;
-
-    r.valor_m2 = valorPromedio * targetCoefTotal;
-    r.valor_final = r.valor_m2 * superficieHomogeneizada;
-    r.valor_promedio_homogeneizado = valorPromedio;
-
-    // El renderizado queda a cargo del llamador (mostrarPantallaResultado o reactive-coefficients)
-}
-
-function recalcularConCoeficientesCasa() {
-    const r = resultadoTasacion;
-    if (!r || !r.comparables) return;
-
-    // Similar a departamento, adaptado a casa
-    const coeficientes = {};
-    Object.keys(coeficientesPersonalizados).forEach(index => {
-        if (index === 'lote' || index === 'esquina' || index === 'medial') return;
-        coeficientes[index] = coeficientes[index] || {};
-        coeficientes[index].personalizados = {};
-        coeficientes[index].ubicacion = 1;
-        coeficientes[index].actualizacion = 1;
-        coeficientesPersonalizados[index].forEach(coef => {
-            const val = parseFloat(coef.valor) || 1;
-            if (coef.id === 'ubicacion') {
-                coeficientes[index].ubicacion = val;
-            } else if (coef.id === 'actualizacion') {
-                coeficientes[index].actualizacion = val;
-            } else {
-                coeficientes[index].personalizados[coef.id] = val;
-            }
-        });
-    });
-
-    // Recalcular valores homogeneizados de comparables
-    r.comparables.forEach((c, index) => {
-        const indexStr = index.toString();
-        const coef = coeficientes[indexStr] || {};
-        
-        let coefPersonalizadoTotal = 1;
-        if (coef.personalizados) {
-            Object.values(coef.personalizados).forEach(val => {
-                const num = parseFloat(val);
-                if (!isNaN(num) && num > 0) {
-                    coefPersonalizadoTotal *= num;
-                }
-            });
-        }
-        
-        // Incluir coeficientes fijos de casa
-        const coefUbicacion = parseFloat(coef.ubicacion) || 1;
-        const coefActualizacion = parseFloat(coef.actualizacion) || 1;
-
-        // Coeficientes propios de la casa
-        const compSuperficieCubierta = parseFloat(c.superficieCubiertaCoef) || 1;
-        const compSuperficieTotal = parseFloat(c.superficieTotalCoef) || 1;
-        const compCalidadConstruccion = parseFloat(c.calidadConstruccionCoef) || 1;
-        const compEstadoConservacion = parseFloat(c.estadoConservacionCoef) || _coeficienteEstadoCasa(c.estadoConservacion, c.antiguedad);
-        
-        // Fórmula completa: valor_m2 / (todos los coeficientes)
-        const valorM2Original = (Number(c.valor) || 0) / (Number(c.superficie) || 1);
-        const coeficienteTotal = compSuperficieCubierta * compSuperficieTotal * compCalidadConstruccion * compEstadoConservacion * coefUbicacion * coefActualizacion * coefPersonalizadoTotal;
-        c.valor_m2_homogeneizado = valorM2Original / (coeficienteTotal || 1);
-    });
-
-    // Recalcular valor promedio
-    const valorPromedio = r.comparables.reduce((sum, c) => sum + (Number(c.valor_m2_homogeneizado) || 0), 0) / r.comparables.length;
-    
-    // Coeficientes y superficie del objetivo (casa a tasar)
-    const casa = datosTasacion.casa || {};
-    const hom = casa.homogeneizacion || {};
-    const totalHomo = parseFloat(hom.totalHomogeneizada) || 0;
-
-    let superficieHomogeneizada = 0;
-    let incluirSuperficieCubiertaEnCoef = false;
-    if (totalHomo > 0) {
-        superficieHomogeneizada = totalHomo;
-        incluirSuperficieCubiertaEnCoef = true;
-    } else {
-        const rango = (casa.superficieCubierta || "").match(/\d+/g);
-        const coef = parseFloat(casa.superficieCubiertaCoef) || 1;
-        if (rango) {
-            superficieHomogeneizada = rango.reduce((sum, val) => sum + parseInt(val), 0) / rango.length * coef;
-        }
-    }
-
-    const coefObjetivo = coeficientes['casa'] || {};
-    const targetUbicacion = parseFloat(coefObjetivo.ubicacion) || 1;
-    const targetActualizacion = parseFloat(coefObjetivo.actualizacion) || 1;
-    let targetPersonalizadoTotal = 1;
-    if (coefObjetivo.personalizados) {
-        Object.values(coefObjetivo.personalizados).forEach(val => {
-            const num = parseFloat(val);
-            if (!isNaN(num) && num > 0) {
-                targetPersonalizadoTotal *= num;
-            }
-        });
-    }
-
-    const targetSuperficieCubierta = incluirSuperficieCubiertaEnCoef ? (parseFloat(casa.superficieCubiertaCoef) || 1) : 1;
-    const targetSuperficieTotal = parseFloat(casa.superficieTotalCoef) || 1;
-    const targetCalidadConstruccion = parseFloat(casa.calidadConstruccionCoef) || 1;
-    const targetRossHeidecke = _coeficienteEstadoCasa(casa.estadoConservacion, casa.antiguedad);
-
-    const targetCoefTotal = targetSuperficieCubierta * targetSuperficieTotal * targetCalidadConstruccion * targetRossHeidecke * targetUbicacion * targetActualizacion * targetPersonalizadoTotal;
-
-    r.valor_m2 = valorPromedio * targetCoefTotal;
-    r.valor_final = r.valor_m2 * superficieHomogeneizada;
-    r.valor_promedio_homogeneizado = valorPromedio;
-
-    // El renderizado lo realiza el llamador
-}
+// recalcularConCoeficientesDepartamento y recalcularConCoeficientesCasa eliminados:
+// el cálculo Ross-Heidecke y el valor final provienen exclusivamente del backend.
 
 function normalizarTipologiaApi(tipoLote) {
 
@@ -748,8 +557,6 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
                                 <th>Dirección</th>
                                 <th>Frente</th>
                                 <th>${fondoLabel}</th>
-                                <th>FOS</th>
-                                <th>FOT</th>
                                 <th>Valor promedio de comp.</th>
                                 <th>F&C</th>
                                 ${valvanoColumna}
@@ -766,8 +573,6 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
                                 <td><strong>${formatearDireccion(datosTasacion.ubicacion.direccion || 'Lote a tasar')}</strong></td>
                                 <td><strong>${resultado.frente || '-'}</strong></td>
                                 <td><strong>${fondoValor}</strong></td>
-                                <td><strong>${car.fos || '-'}</strong></td>
-                                <td><strong>${car.fot || '-'}</strong></td>
                                 <td><strong>${formatearMoneda(resultado.valor_promedio_m2)}</strong></td>
                                 <td><strong>${truncarDosDecimales(resultado.coeficiente_fitto_lote).toFixed(2)}</strong></td>
                                 ${valvanoCelda}
@@ -1192,11 +997,8 @@ async function mostrarPantallaResultado(recalcular = true) {
         const tieneCoeficientes = coeficientesPersonalizados && Object.keys(coeficientesPersonalizados).length > 0;
         if (tipo === 'lote' && tieneCoeficientes && typeof recalcularConCoeficientes === 'function') {
             await recalcularConCoeficientes();
-        } else if (tipo === 'departamento' && typeof recalcularConCoeficientesDepartamento === 'function') {
-            await recalcularConCoeficientesDepartamento();
-        } else if (tipo === 'casa' && typeof recalcularConCoeficientesCasa === 'function') {
-            await recalcularConCoeficientesCasa();
         }
+        // departamento y casa usan el resultado directo del backend (no se recalcula en frontend)
     }
 
     renderer.renderizar();
