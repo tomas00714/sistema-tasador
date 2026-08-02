@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasador - Sistema de Tasaciones Inmobiliarias</title>
+    <meta name="description" content="Sistema profesional de tasaciones inmobiliarias mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida y confiable.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --color-primary: #007AFF;
+            --color-primary-light: #E3F2FD;
+            --color-primary-lighter: #F0F7FF;
+            --color-secondary: #5856D6;
+            --color-success: #34C759;
+            --color-success-light: #E8F5E9;
+            --color-text-primary: #04172D;
+            --color-text-secondary: #6E6E73;
+            --color-bg-light: #F5F7FA;
+            --color-white: #FFFFFF;
+            --color-border: #D1D1D6;
+            --color-shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--color-text-primary);
+            background: var(--color-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--color-border);
+            z-index: 1000;
+            padding: 16px 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-text-primary);
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--color-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--color-primary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056CC;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-light);
+            color: var(--color-text-primary);
+            border: 1.5px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-border);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 24px 100px;
+            background: linear-gradient(180deg, var(--color-primary-lighter) 0%, var(--color-white) 100%);
+            text-align: center;
+        }
+
+        .hero-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 span {
+            color: var(--color-primary);
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: var(--color-text-secondary);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-cta {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-mockup {
+            margin-top: 80px;
+            background: var(--color-white);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            padding: 40px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid var(--color-border);
+        }
+
+        .mockup-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .mockup-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--color-border);
+        }
+
+        .mockup-dot:first-child {
+            background: #FF5F57;
+        }
+
+        .mockup-dot:nth-child(2) {
+            background: #FEBC2E;
+        }
+
+        .mockup-dot:nth-child(3) {
+            background: #28C840;
+        }
+
+       mockup-content {
+            background: var(--color-bg-light);
+            border-radius: 12px;
+            padding: 32px;
+            min-height: 300px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 24px;
+            background: var(--color-white);
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--color-text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .feature-card {
+            padding: 32px;
+            background: var(--color-bg-light);
+            border-radius: 20px;
+            border: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--color-primary-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--color-text-secondary);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 24px;
+            background: var(--color-bg-light);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: var(--color-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
+
+        .step h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            color: var(--color-text-secondary);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Comparison Section */
+        .comparison {
+            padding: 100px 24px;
+            background: var(--color-white);
+        }
+
+        .comparison-table {
+            max-width: 900px;
+            margin: 60px auto 0;
+            background: var(--color-white);
+            border-radius: 20px;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-row.header {
+            background: var(--color-bg-light);
+            font-weight: 700;
+        }
+
+        .comparison-cell {
+            padding: 0 16px;
+        }
+
+        .comparison-cell:first-child {
+            color: var(--color-text-secondary);
+        }
+
+        .comparison-cell:last-child {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .comparison-cell .icon {
+            margin-right: 8px;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 100px 24px;
+            background: linear-gradient(180deg, var(--color-primary-lighter) 0%, var(--color-white) 100%);
+        }
+
+        .pricing-card {
+            max-width: 400px;
+            margin: 60px auto 0;
+            background: var(--color-white);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            border: 2px solid var(--color-primary);
+            box-shadow: 0 20px 60px rgba(0, 122, 255, 0.15);
+        }
+
+        .pricing-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pricing-price {
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--color-primary);
+            margin: 24px 0;
+        }
+
+        .pricing-price span {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 32px 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 12px 0;
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pricing-features li i {
+            color: var(--color-success);
+        }
+
+        /* FAQ Section */
+        .faq {
+            padding: 100px 24px;
+            background: var(--color-white);
+        }
+
+        .faq-list {
+            max-width: 800px;
+            margin: 60px auto 0;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--color-border);
+            padding: 24px 0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-question {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question i {
+            color: var(--color-primary);
+            transition: transform 0.3s ease;
+        }
+
+        .faq-answer {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 60px 24px;
+            background: var(--color-bg-light);
+            border-top: 1px solid var(--color-border);
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .footer-section a {
+            display: block;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .footer-section a:hover {
+            color: var(--color-primary);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding-top: 40px;
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .hero-subtitle {
+                font-size: 16px;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .comparison-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .pricing-card {
+                padding: 32px;
+            }
+
+            .pricing-price {
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">
+                    <i class="fa-solid fa-home"></i>
+                </div>
+                <span class="nav-logo-text">Tasador</span>
+            </a>
+            <div class="nav-menu">
+                <a href="#features" class="nav-link">Características</a>
+                <a href="#how-it-works" class="nav-link">Cómo funciona</a>
+                <a href="#pricing" class="nav-link">Precios</a>
+                <a href="#faq" class="nav-link">Preguntas</a>
+            </div>
+            <div class="nav-buttons">
+                <a href="login.html" class="btn btn-secondary">Iniciar sesión</a>
+                <a href="registro.html" class="btn btn-primary">Registrarse</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-badge">
+                <i class="fa-solid fa-star"></i>
+                Sistema profesional de tasaciones
+            </div>
+            <h1>Tasá inmuebles con <span>precisión</span> y rapidez</h1>
+            <p class="hero-subtitle">
+                Sistema de tasación mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida, confiable y profesional.
+            </p>
+            <div class="hero-cta">
+                <a href="registro.html" class="btn btn-primary">
+                    Comenzar ahora
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                <a href="#how-it-works" class="btn btn-secondary">
+                    <i class="fa-solid fa-play"></i>
+                    Ver cómo funciona
+                </a>
+            </div>
+            <div class="hero-mockup">
+                <div class="mockup-header">
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                </div>
+                <div class="mockup-content" style="display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary);">
+                    <div style="text-align: center;">
+                        <i class="fa-solid fa-chart-line" style="font-size: 48px; margin-bottom: 16px; color: var(--color-primary);"></i>
+                        <p style="font-size: 16px;">Interfaz intuitiva para tasaciones profesionales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>Características principales</h2>
+                <p>Todo lo que necesitás para realizar tasaciones profesionales de manera eficiente</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <h3>Cálculo preciso</h3>
+                    <p>Algoritmos de homogeneización de comparables que garantizan resultados precisos y consistentes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <h3>Base de datos integrada</h3>
+                    <p>Guardá y gestioná todas tus tasaciones en un solo lugar con historial completo y búsqueda avanzada.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <h3>Informes profesionales</h3>
+                    <p>Generá informes PDF personalizados con tu marca y toda la información necesaria.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <h3>Integración con mapas</h3>
+                    <p>Visualizá la ubicación de las propiedades y sus comparables en mapas interactivos.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h3>Colaboración en tiempo real</h3>
+                    <p>Compartí solicitudes de comparables y recibí aportes de otros profesionales del sector.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3>Seguridad total</h3>
+                    <p>Tus datos están protegidos con encriptación de extremo a extremo y backups automáticos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>Cómo funciona</h2>
+                <p>Proceso simple en 4 pasos para obtener tasaciones profesionales</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Ingresá los datos</h3>
+                    <p>Cargá la información del inmueble: ubicación, características, servicios y más.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Seleccioná comparables</h3>
+                    <p>Elegí propiedades similares de tu base de datos o agregá nuevos comparables.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Homogeneización</h3>
+                    <p>El sistema aplica coeficientes para ajustar diferencias entre propiedades.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Obtené el resultado</h3>
+                    <p>Recibí el valor de mercado calculado con el informe detallado listo para compartir.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="comparison">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>¿Por qué elegir Tasador?</h2>
+                <p>Compará el método tradicional con nuestra solución moderna</p>
+            </div>
+            <div class="comparison-table">
+                <div class="comparison-row header">
+                    <div class="comparison-cell">Método tradicional</div>
+                    <div class="comparison-cell">Tasador</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Cálculos manuales en Excel</div>
+                    <div class="comparison-cell"><i class="fa-solid fa-check icon"></i> Cálculo automático</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Propenso a errores humanos</div>
+                    <div class="comparison-cell"><i class="fa-solid fa-check
+ icon"></i> Algoritmos validados</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Sin historial de comparables</div>
+                    <div class="comparison-cell"><i class="fa-solid fa-check icon"></i> Base de datos completa</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Informes manuales</div>
+                    <div class="comparison-cell"><i class="fa-solid fa-check icon"></i> Informes automáticos</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Difícil de compartir</div>
+                    <div class="comparison-cell"><i class="fa-solid fa-check icon"></i> Colaboración en tiempo real</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>Precios simples</h2>
+                <p>Un plan único con todas las funcionalidades que necesitás</p>
+            </div>
+            <div class="pricing-card">
+                <h3>Plan Profesional</h3>
+                <div class="pricing-price">
+                    USD 10<span>/mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-check"></i> Tasaciones ilimitadas</li>
+                    <li><i class="fa-solid fa-check"></i> Base de datos de comparables</li>
+                    <li><i class="fa-solid fa-check"></i> Informes PDF personalizados</li>
+                    <li><i class="fa-solid fa-check"></i> Integración con mapas</li>
+                    <li><i class="fa-solid fa-check"></i> Colaboración en tiempo real</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte prioritario</li>
+                </ul>
+                <!-- TODO: Implementar sistema de pagos -->
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.')">
+                    Comenzar ahora
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>Preguntas frecuentes</h2>
+                <p>Respuestas a las dudas más comunes sobre nuestro sistema</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ¿Qué tipos de propiedades puedo tasar?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Actualmente soportamos lotes, casas y departamentos/PH. Próximamente agregaremos más tipos de propiedades como campos, galpones y locales comerciales.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ¿Cómo se calcula el valor de la propiedad?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Utilizamos el método de comparación de mercado con homogeneización de comparables. El sistema aplica coeficientes para ajustar diferencias en superficie, ubicación, estado de conservación y otras características relevantes.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ¿Puedo exportar los informes en PDF?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Sí, puedes generar informes PDF personalizados con tu logo, colores corporativos y toda la información detallada de la tasación.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ¿Mis datos están seguros?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutamente. Utilizamos encriptación de extremo a extremo, backups automáticos y seguimos las mejores prácticas de seguridad para proteger toda tu información.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ¿Puedo cancelar mi suscripción en cualquier momento?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Sí, puedes cancelar tu suscripción en cualquier momento sin penalidades. Continuarás teniendo acceso hasta el final del período de facturación actual.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Producto</h4>
+                <a href="#features">Características</a>
+                <a href="#pricing">Precios</a>
+                <a href="#faq">Preguntas frecuentes</a>
+            </div>
+            <div class="footer-section">
+                <h4>Recursos</h4>
+                <a href="#">Documentación</a>
+                <a href="#">Tutoriales</a>
+                <a href="#">Blog</a>
+            </div>
+            <div class="footer-section">
+                <h4>Empresa</h4>
+                <a href="#">Sobre nosotros</a>
+                <a href="#">Contacto</a>
+                <a href="#">Términos de uso</a>
+                <a href="#">Privacidad</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="#">Términos del servicio</a>
+                <a href="#">Política de privacidad</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Tasador. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <script>
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                item.classList.toggle('active');
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

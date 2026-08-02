@@ -1,0 +1,84 @@
+from typing import List, Optional, Dict, Any
+from repositories.base_repository import BaseRepository
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class SolicitudRepository(BaseRepository):
+    """Repositorio para operaciones con solicitudes."""
+    
+    def __init__(self):
+        super().__init__("solicitudes")
+    
+    def find_by_link_publico(self, link_publico: str) -> Optional[Dict[str, Any]]:
+        """
+        Busca una solicitud por link público.
+        
+        El link público tiene el formato: https://tasador.app/s/{codigo_publico}
+        Extrae el código público, lo decodifica a ID interno y busca por ID.
+        """
+        from utils.id_encoder import obtener_id_desde_codigo, TIPO_SOLICITUD
+        
+        # Extraer código público del link
+        # Formato esperado: https://tasador.app/s/SB73PM
+        parts = link_publico.rstrip('/').split('/')
+        if len(parts) < 1:
+            return None
+        
+        codigo_publico = parts[-1]
+        
+        # Decodificar código público a ID interno
+        id_interno = obtener_id_desde_codigo(codigo_publico)
+        if not id_interno:
+            return None
+        
+        # Validar que sea una solicitud
+        from utils.id_encoder import obtener_tipo_codigo
+        if obtener_tipo_codigo(codigo_publico) != TIPO_SOLICITUD:
+            return None
+        
+        # Buscar por ID interno
+        return self.find_by_id(id_interno)
+    
+    def find_by_usuario(self, usuario_id: int, limit: int = None) -> List[Dict[str, Any]]:
+        """Busca solicitudes de un usuario."""
+        return self.find_where({"usuario_id": usuario_id}, limit=limit)
+    
+    def get_by_usuario(self, usuario_id: int) -> List[Dict[str, Any]]:
+        """Obtiene todas las solicitudes de un usuario."""
+        return self.find_where({"usuario_id": usuario_id})
+    
+    def get_by_usuario_and_estado(self, usuario_id: int, estado: str) -> List[Dict[str, Any]]:
+        """Obtiene solicitudes de un usuario filtradas por estado."""
+        return self.find_where({"usuario_id": usuario_id, "estado": estado})
+    
+    def find_by_estado(self, estado: str, limit: int = None) -> List[Dict[str, Any]]:
+        """Busca solicitudes por estado."""
+        return self.find_where({"estado": estado}, limit=limit)
+    
+    def find_expiradas(self) -> List[Dict[str, Any]]:
+        """Busca solicitudes expiradas."""
+        query = "SELECT * FROM solicitudes WHERE estado = 'pendiente' AND fecha_expiracion < CURRENT_TIMESTAMP"
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute(query)
+            columns = [desc[0] for desc in cursor.description]
+            results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return results
+        except Exception as e:
+            logger.error(f"Error al buscar solicitudes expiradas: {e}")
+            return []
+        finally:
+            cursor.close()
+            release_connection(conn)
+    
+    def create_solicitud(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Crea una nueva solicitud."""
+        return self.create(data)
+    
+    def update_solicitud(self, solicitud_id: int, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Actualiza una solicitud."""
+        return self.update(solicitud_id, data)

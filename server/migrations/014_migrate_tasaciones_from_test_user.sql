@@ -1,0 +1,16 @@
+-- ============================================
+-- MIGRACIÓN 014: NO EJECUTAR - Tasaciones del usuario de prueba permanecen
+-- Fecha: Pendiente de decisión
+-- Descripción: Esta migración NO se ejecutará.
+-- 
+-- DECISIÓN: Las tasaciones con usuario_id=1 (usuario de prueba) deben
+-- permanecer así. NO se migrarán a otros usuarios.
+-- 
+-- Los usuarios reales (manu@gmail.com, tomasbragado17@gmail.com) se registrarán
+-- normalmente y tendrán sus propias tasaciones. El usuario de prueba (id=1)
+-- continuará existiendo con sus tasaciones originales.
+-- ============================================
+
+-- Esta migración está vacía intencionalmente.
+-- Las tasaciones del usuario de prueba (id=1) NO se reasignan.
+-- El usuario de prueba continúa existiendo con sus datos originales.
