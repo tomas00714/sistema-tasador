@@ -16,7 +16,7 @@ from models import (
 from tasador_lotes import tasar_lote
 from tasador_departamentos import tasar_departamento
 from tasador_casas import tasar_casa
-from database import init_db_pool, test_connection, close_db_pool
+from database import init_db_pool, test_connection, close_db_pool, get_connection, release_connection
 from migrations.migration_runner import MigrationRunner
 from repositories.tasacion_repository import TasacionRepository
 from repositories.comparable_repository import ComparableRepository
@@ -1316,4 +1316,34 @@ def get_valvano_data():
     except Exception as e:
         logger.error(f"Error al leer valvano_data.json: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/clean-db")
+def endpoint_clean_db(usuario_id: int = Depends(middleware.require_admin)):
+    """Endpoint temporal para limpiar la base de datos. Solo administradores."""
+    tablas = ['tasacion_comparable', 'solicitudes', 'comparables', 'tasaciones']
+    
+    conn = get_connection()
+    conn.autocommit = False
+    cursor = conn.cursor()
+    
+    try:
+        for tabla in tablas:
+            cursor.execute(f'TRUNCATE TABLE {tabla} RESTART IDENTITY CASCADE')
+        
+        cursor.execute("UPDATE contadores SET valor = 100")
+        
+        conn.commit()
+        return {
+            "mensaje": "Base de datos limpiada exitosamente",
+            "status": "success",
+            "tablas_afectadas": tablas
+        }
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error al limpiar base de datos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al limpiar base de datos: {str(e)}")
+    finally:
+        cursor.close()
+        release_connection(conn)
 
