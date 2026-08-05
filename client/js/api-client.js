@@ -176,7 +176,9 @@ async function crearComparableAPI(comparable) {
         }
         
         if (!response.ok) {
-            throw new Error(`Error al crear comparable: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`Respuesta del servidor al crear comparable (${response.status}):`, errorText);
+            throw new Error(`Error al crear comparable: ${response.status} - ${errorText}`);
         }
         
         return await response.json();
@@ -494,9 +496,7 @@ async function tasarAPI(payload) {
     try {
         const response = await fetch(`${API_BASE_URL}/tasar`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(payload)
         });
 

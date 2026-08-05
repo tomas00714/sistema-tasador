@@ -37,14 +37,18 @@ function diagnosticStringify(obj, maxDepth = 8) {
 }
 
 class ResultadosRenderer {
-    constructor(contenedor, resultado, tipo) {
+    constructor(contenedor, resultado, tipo, datosTasacionArg = null, modo = 'edicion') {
         this.contenedor = contenedor;
         this.resultado = resultado;
         this.tipo = tipo;
+        this.modo = modo;
+        this.datosTasacion = datosTasacionArg || window.datosTasacion || {};
+        this.coeficientesPersonalizados = (this.datosTasacion?.coeficientesPersonalizados) || window.coeficientesPersonalizados || {};
         this.config = configuracionResultados[tipo] || configuracionResultados.lote;
 
         console.log('=== DIAGNOSTICO ResultadosRenderer ===');
         console.log('TIPO:', tipo);
+        console.log('MODO:', modo);
         console.log('CONFIG COLUMNAS COMPARABLES:', diagnosticStringify(this.config.columnas_comparables));
         console.log('CONFIG COLUMNAS OBJETIVO:', diagnosticStringify(this.config.columnas_objetivo));
         console.log('RESULTADO CRUDO:', diagnosticStringify(resultado));
@@ -152,23 +156,26 @@ class ResultadosRenderer {
     }
 
     detectarCambioGeneracionCuadros() {
+        // En modo solo lectura no se mutan coeficientes ni resultados globales
+        if (this.modo === 'lectura') return;
+
         // Calcular la firma actual de la generación de cuadros
         const firmaActual = this.calcularFirmaGeneracion();
-        
+
         // Variable global para almacenar la firma anterior
         if (typeof firmaGeneracionCuadros === 'undefined') {
             window.firmaGeneracionCuadros = {};
         }
-        
+
         const firmaAnterior = window.firmaGeneracionCuadros[this.tipo];
-        
+
         // Si la firma cambió, resetear coeficientes y resultados
         if (firmaAnterior && firmaAnterior !== firmaActual) {
             console.log('[ResultadosRenderer] Cambio de generación de cuadros detectado, reseteando coeficientes y resultados');
-            coeficientesPersonalizados = {};
+            this.coeficientesPersonalizados = window.coeficientesPersonalizados = {};
             resultadoTasacion = null;
         }
-        
+
         // Guardar la firma actual
         window.firmaGeneracionCuadros[this.tipo] = firmaActual;
     }
@@ -178,7 +185,7 @@ class ResultadosRenderer {
         let firma = this.tipo;
         
         if (this.tipo === 'lote') {
-            const tipoLote = datosTasacion.lote?.tipoLote;
+            const tipoLote = this.datosTasacion.lote?.tipoLote;
             // Para lote, la condición principal es si es esquina (agrega valvano)
             const esEsquina = tipoLote === 'Esquina' || tipoLote === 'Esquina larga (+30m)';
             firma += `_${esEsquina ? 'esquina' : 'no_esquina'}`;
@@ -190,16 +197,25 @@ class ResultadosRenderer {
     }
 
     renderizar() {
-        const html = `
-            ${this.renderizarHeader()}
-            ${this.renderizarAdvertencias()}
-            <div class="resultado-layout-vertical">
-                ${this.renderizarTarjetaValor()}
-                ${this.renderizarSecciones()}
-            </div>
-        `;
+        const html = this.modo === 'lectura'
+            ? `
+                <div class="resultado-layout-vertical">
+                    ${this.renderizarSecciones()}
+                </div>
+            `
+            : `
+                ${this.renderizarHeader()}
+                ${this.renderizarAdvertencias()}
+                <div class="resultado-layout-vertical">
+                    ${this.renderizarTarjetaValor()}
+                    ${this.renderizarSecciones()}
+                </div>
+            `;
         this.contenedor.innerHTML = html;
-        this.inicializarEventListeners();
+        if (this.modo !== 'lectura') {
+            this.inicializarEventListeners();
+        }
+        return html;
     }
 
     renderizarAdvertencias() {
@@ -319,7 +335,7 @@ class ResultadosRenderer {
     renderizarTablaObjetivoLote() {
         const columnas = this.obtenerColumnas('objetivo');
         const r = this.resultado;
-        const tipoLote = datosTasacion.lote?.tipoLote;
+        const tipoLote = this.datosTasacion.lote?.tipoLote;
 
         // Verificar condiciones especiales
         const esEsquinaLarga = tipoLote === "Esquina larga (+30m)" || tipoLote === "esquina_larga";
@@ -334,13 +350,15 @@ class ResultadosRenderer {
             if (r.resultado_medial) {
                 html += this.generarCuadroDetalleLote(r.resultado_medial, 'medial');
             }
-            // Inicializar event listeners para los nuevos elementos
-            this.inicializarEventListeners();
+            // Inicializar event listeners para los nuevos elementos (solo en modo edición)
+            if (this.modo !== 'lectura') {
+                this.inicializarEventListeners();
+            }
             return html;
         }
 
         // Obtener datos de fila usando el renderizador del config
-        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, datosTasacion) || {};
+        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, this.datosTasacion) || {};
         const filaObjetivo = this.renderizarFilaGenerica(columnas, datosFila, 'objetivo', this.tipo);
 
         // Salida a dos calles y otros tipos usan tabla estándar
@@ -362,7 +380,7 @@ class ResultadosRenderer {
         const r = this.resultado;
 
         // Obtener datos de fila usando el renderizador del config
-        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, datosTasacion) || {};
+        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, this.datosTasacion) || {};
         const filaObjetivo = this.renderizarFilaGenerica(columnas, datosFila, 'objetivo', this.tipo);
 
         return `
@@ -383,7 +401,7 @@ class ResultadosRenderer {
         const r = this.resultado;
 
         // Obtener datos de fila usando el renderizador del config
-        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, datosTasacion) || {};
+        const datosFila = this.config.renderizadores_objetivo?.obtenerDatosFila(r, this.datosTasacion) || {};
         const filaObjetivo = this.renderizarFilaGenerica(columnas, datosFila, 'objetivo', this.tipo);
 
         return `
@@ -412,7 +430,7 @@ class ResultadosRenderer {
                     return;
                 }
 
-                if (cond.condicion(datosTasacion)) {
+                if (cond.condicion(this.datosTasacion)) {
                     if (cond.insertar_despues_de) {
                         // Insertar después de la columna especificada
                         const insertIndex = columnas.findIndex(col => col.id === cond.insertar_despues_de);
@@ -451,9 +469,10 @@ class ResultadosRenderer {
     renderizarThead(columnas, tipoTabla = 'comparables') {
         // Agregar columnas personalizadas dinámicas
         const columnasPersonalizadas = this.obtenerColumnasPersonalizadas(tipoTabla);
-        const columnasPersonalizadasHeader = columnasPersonalizadas.map(coef =>
-            `<th><button type="button" class="coef-eliminar-btn" data-coef-id="${coef.id}" data-tipo="${tipoTabla === 'objetivo' ? this.tipo : ''}" title="Eliminar coeficiente">-</button><br><span class="coef-title">${coef.nombre}</span></th>`
-        ).join('');
+        const columnasPersonalizadasHeader = columnasPersonalizadas.map(coef => {
+            const botonEliminar = this.modo === 'lectura' ? '' : `<button type="button" class="coef-eliminar-btn" data-coef-id="${coef.id}" data-tipo="${tipoTabla === 'objetivo' ? this.tipo : ''}" title="Eliminar coeficiente">-</button><br>`;
+            return `<th>${botonEliminar}<span class="coef-title">${coef.nombre}</span></th>`;
+        }).join('');
 
         // Insertar columnas personalizadas después de los coeficientes fijos
         const { columnasAntes, columnasDespues } = this.insertarColumnasPersonalizadas(columnas, tipoTabla);
@@ -472,7 +491,7 @@ class ResultadosRenderer {
 
     obtenerColumnasPersonalizadas(tipoTabla = 'comparables') {
         console.log('[obtenerColumnasPersonalizadas] START - tipoTabla:', tipoTabla, 'this.tipo:', this.tipo);
-        if (!coeficientesPersonalizados) return [];
+        if (!this.coeficientesPersonalizados) return [];
 
         const todosCoeficientes = [];
 
@@ -480,7 +499,7 @@ class ResultadosRenderer {
             // Para tabla objetivo, solo mostrar coeficientes del tipo actual
             const tipoIndex = this.tipo;
             console.log('[obtenerColumnasPersonalizadas] tipoIndex:', tipoIndex);
-            const coefs = coeficientesPersonalizados[tipoIndex] || [];
+            const coefs = this.coeficientesPersonalizados[tipoIndex] || [];
             console.log('[obtenerColumnasPersonalizadas] coefs:', coefs);
             coefs.forEach(coef => {
                 if (!todosCoeficientes.find(c => c.id === coef.id) &&
@@ -490,9 +509,9 @@ class ResultadosRenderer {
             });
         } else {
             // Para tabla comparables, mostrar coeficientes acumulados
-            Object.keys(coeficientesPersonalizados).forEach(index => {
+            Object.keys(this.coeficientesPersonalizados).forEach(index => {
                 if (!isNaN(parseInt(index))) {
-                    const coefs = coeficientesPersonalizados[index];
+                    const coefs = this.coeficientesPersonalizados[index];
                     coefs.forEach(coef => {
                         if (!todosCoeficientes.find(c => c.id === coef.id) &&
                             coef.id !== 'ubicacion' && coef.id !== 'actualizacion' && coef.id !== 'actividad') {
@@ -523,14 +542,18 @@ class ResultadosRenderer {
         // Insertar columnas personalizadas después de los coeficientes fijos
         const { columnasAntes, columnasDespues } = this.insertarColumnasPersonalizadas(columnas, 'comparables');
 
+        const celdaAcciones = this.modo === 'lectura' ? '<td></td>' : `
+            <td>
+                <button type="button" class="btn-opciones-comparable" data-index="${index}">•••</button>
+            </td>
+        `;
+
         return `
             <tr data-comparable-index="${index}">
                 ${columnasAntes.map(col => this.renderizarCelda(comparable, col, index)).join('')}
                 ${columnasPersonalizadas.map(coef => this.renderizarCeldaPersonalizada(comparable, coef, index)).join('')}
                 ${columnasDespues.map(col => this.renderizarCelda(comparable, col, index)).join('')}
-                <td>
-                    <button type="button" class="btn-opciones-comparable" data-index="${index}">•••</button>
-                </td>
+                ${celdaAcciones}
             </tr>
         `;
     }
@@ -542,9 +565,9 @@ class ResultadosRenderer {
         const { columnasAntes, columnasDespues } = this.insertarColumnasPersonalizadas(columnas, tipoTabla);
 
         // Obtener columnas personalizadas
-        console.log('[renderizarFilaGenerica] coeficientesPersonalizados:', coeficientesPersonalizados);
+        console.log('[renderizarFilaGenerica] this.coeficientesPersonalizados:', this.coeficientesPersonalizados);
         const columnasPersonalizadas = tipoTabla === 'objetivo'
-            ? (coeficientesPersonalizados[index] || []).filter(c => c.id !== 'ubicacion' && c.id !== 'actualizacion' && c.id !== 'actividad')
+            ? (this.coeficientesPersonalizados[index] || []).filter(c => c.id !== 'ubicacion' && c.id !== 'actualizacion' && c.id !== 'actividad')
             : this.obtenerColumnasPersonalizadas();
         
         console.log('[renderizarFilaGenerica] columnasPersonalizadas:', columnasPersonalizadas);
@@ -556,8 +579,10 @@ class ResultadosRenderer {
 
         // Agregar columnas personalizadas
         columnasPersonalizadas.forEach(coef => {
-            if (tipoTabla === 'objetivo') {
+            if (tipoTabla === 'objetivo' && this.modo !== 'lectura') {
                 celdas += `<td><input type="number" class="coef-personalizado-input" data-index="${index}" data-coef-id="${coef.id}" value="${coef.valor.toFixed(2)}" step="0.01" min="0"></td>`;
+            } else if (tipoTabla === 'objetivo' && this.modo === 'lectura') {
+                celdas += `<td><strong>${parseFloat(coef.valor).toFixed(2)}</strong></td>`;
             } else {
                 celdas += this.renderizarCeldaPersonalizada(datosFila, coef, index);
             }
@@ -570,25 +595,31 @@ class ResultadosRenderer {
         const filaClass = tipoTabla === 'objetivo' ? `fila-${this.tipo}-tasar` : '';
         const filaStyle = tipoTabla === 'objetivo' ? 'color: #0066cc;' : '';
 
+        const celdaAcciones = this.modo === 'lectura' ? '<td></td>' : `
+            <td>
+                <button type="button" class="btn-opciones-comparable" data-index="${index}">•••</button>
+            </td>
+        `;
+
         return `
             <tr class="${filaClass}" style="${filaStyle}" data-${tipoTabla === 'comparables' ? 'comparable-index' : 'tipo'}="${index}">
                 ${celdas}
-                <td>
-                    <button type="button" class="btn-opciones-comparable" data-index="${index}">•••</button>
-                </td>
+                ${celdaAcciones}
             </tr>
         `;
     }
 
     renderizarCeldaGenerica(columna, datosFila, tipoTabla, index) {
-        // Para coeficientes fijos, siempre mostrar input
+        // Para coeficientes fijos, mostrar input en edición o valor fijo en lectura
         if (columna.es_fijo) {
+            const valor = this.obtenerValorCoeficienteFijo(columna.id, index);
+            if (this.modo === 'lectura') {
+                return `<td><strong>${parseFloat(valor).toFixed(2)}</strong></td>`;
+            }
             const inputClass = columna.id === 'ubicacion' ? 'coef-ubicacion-input' :
                               columna.id === 'actualizacion' ? 'coef-actualizacion-input' :
                               columna.id === 'actividad' ? 'coef-actividad-input' : 'coef-input';
-            const dataIndex = tipoTabla === 'objetivo' ? index : index;
-            const valor = this.obtenerValorCoeficienteFijo(columna.id, dataIndex);
-            return `<td><input type="number" class="${inputClass}" data-index="${dataIndex}" data-coef-id="${columna.id}" value="${valor.toFixed(2)}" step="0.01" min="0"></td>`;
+            return `<td><input type="number" class="${inputClass}" data-index="${index}" data-coef-id="${columna.id}" value="${valor.toFixed(2)}" step="0.01" min="0"></td>`;
         }
 
         // Usar obtenerValor para respetar la propiedad fuente del config
@@ -619,13 +650,16 @@ class ResultadosRenderer {
     }
 
     renderizarCelda(datos, columna, index = null) {
-        // Para coeficientes fijos (ubicacion, actualizacion, actividad), siempre mostrar input
+        // Para coeficientes fijos (ubicacion, actualizacion, actividad), mostrar input en edición o valor fijo en lectura
         if (columna.es_fijo) {
+            const dataIndex = index !== null ? index : (this.tipo === 'lote' ? 'lote' : '-1');
+            const valor = this.obtenerValorCoeficienteFijo(columna.id, dataIndex);
+            if (this.modo === 'lectura') {
+                return `<td><strong>${parseFloat(valor).toFixed(2)}</strong></td>`;
+            }
             const inputClass = columna.id === 'ubicacion' ? 'coef-ubicacion-input' :
                               columna.id === 'actualizacion' ? 'coef-actualizacion-input' :
                               columna.id === 'actividad' ? 'coef-actividad-input' : 'coef-input';
-            const dataIndex = index !== null ? index : (this.tipo === 'lote' ? 'lote' : '-1');
-            const valor = this.obtenerValorCoeficienteFijo(columna.id, dataIndex);
             return `<td><input type="number" class="${inputClass}" data-index="${dataIndex}" data-coef-id="${columna.id}" value="${valor.toFixed(2)}" step="0.01" min="0"></td>`;
         }
 
@@ -656,9 +690,14 @@ class ResultadosRenderer {
     }
 
     renderizarCeldaPersonalizada(datos, coef, index) {
-        const coefPersonalizado = coeficientesPersonalizados[index]?.find(c => c.id === coef.id);
+        const coefPersonalizado = this.coeficientesPersonalizados[index]?.find(c => c.id === coef.id);
         if (coefPersonalizado) {
+            if (this.modo === 'lectura') {
+                return `<td><strong>${parseFloat(coefPersonalizado.valor).toFixed(2)}</strong></td>`;
+            }
             return `<td><input type="number" class="coef-personalizado-input" data-index="${index}" data-coef-id="${coef.id}" value="${coefPersonalizado.valor}" step="0.01" min="0"></td>`;
+        } else if (this.modo === 'lectura') {
+            return `<td>-</td>`;
         } else {
             return `<td><button type="button" class="coef-mas-btn" data-index="${index}" data-coef-id="${coef.id}">+</button></td>`;
         }
@@ -698,28 +737,31 @@ class ResultadosRenderer {
     }
 
     obtenerValorCoeficienteFijo(coefId, index) {
-        // Inicializar coeficientes fijos si no existen
-        if (!coeficientesPersonalizados[index]) {
-            coeficientesPersonalizados[index] = [];
-        }
+        const coefs = this.coeficientesPersonalizados[index] || [];
 
         // Buscar el coeficiente
-        const coef = coeficientesPersonalizados[index].find(c => c.id === coefId);
+        const coef = coefs.find(c => c.id === coefId);
         if (coef) {
             return coef.valor;
         }
 
-        // Si no existe, inicializarlo
-        const nombreMap = {
-            'ubicacion': 'Ubicacion',
-            'actualizacion': 'Actualización',
-            'actividad': 'Actividad'
-        };
-        coeficientesPersonalizados[index].push({
-            id: coefId,
-            nombre: nombreMap[coefId] || coefId,
-            valor: 1.0
-        });
+        // En modo edición, inicializar el coeficiente si no existe
+        if (this.modo !== 'lectura') {
+            if (!this.coeficientesPersonalizados[index]) {
+                this.coeficientesPersonalizados[index] = [];
+            }
+            const nombreMap = {
+                'ubicacion': 'Ubicacion',
+                'actualizacion': 'Actualización',
+                'actividad': 'Actividad'
+            };
+            this.coeficientesPersonalizados[index].push({
+                id: coefId,
+                nombre: nombreMap[coefId] || coefId,
+                valor: 1.0
+            });
+        }
+
         return 1.0;
     }
 
@@ -746,27 +788,30 @@ class ResultadosRenderer {
             });
         }
 
-        // Inicializar coeficientes fijos para este tipo
-        if (!coeficientesPersonalizados[tipo]) {
-            coeficientesPersonalizados[tipo] = [];
-        }
-        if (!coeficientesPersonalizados[tipo].find(c => c.id === 'ubicacion')) {
-            coeficientesPersonalizados[tipo].push({ id: 'ubicacion', nombre: 'Ubicacion', valor: 1.0 });
-        }
-        if (!coeficientesPersonalizados[tipo].find(c => c.id === 'actualizacion')) {
-            coeficientesPersonalizados[tipo].push({ id: 'actualizacion', nombre: 'Actualización', valor: 1.0 });
+        // Inicializar coeficientes fijos para este tipo (solo en modo edición)
+        if (this.modo !== 'lectura') {
+            if (!this.coeficientesPersonalizados[tipo]) {
+                this.coeficientesPersonalizados[tipo] = [];
+            }
+            if (!this.coeficientesPersonalizados[tipo].find(c => c.id === 'ubicacion')) {
+                this.coeficientesPersonalizados[tipo].push({ id: 'ubicacion', nombre: 'Ubicacion', valor: 1.0 });
+            }
+            if (!this.coeficientesPersonalizados[tipo].find(c => c.id === 'actualizacion')) {
+                this.coeficientesPersonalizados[tipo].push({ id: 'actualizacion', nombre: 'Actualización', valor: 1.0 });
+            }
         }
 
         // Obtener datos de fila usando el renderizador del config
         const datosFila = this.config.renderizadores_detalle?.obtenerDatosFila(resultado, tipo) || {};
 
         // Renderizar thead
-        console.log('[generarCuadroDetalleLote] coeficientesPersonalizados[tipo]:', coeficientesPersonalizados[tipo]);
-        const columnasPersonalizadas = (coeficientesPersonalizados[tipo] || []).filter(c => c.id !== 'ubicacion' && c.id !== 'actualizacion');
+        console.log('[generarCuadroDetalleLote] this.coeficientesPersonalizados[tipo]:', this.coeficientesPersonalizados[tipo]);
+        const columnasPersonalizadas = (this.coeficientesPersonalizados[tipo] || []).filter(c => c.id !== 'ubicacion' && c.id !== 'actualizacion');
         console.log('[generarCuadroDetalleLote] columnasPersonalizadas:', columnasPersonalizadas);
-        const columnasPersonalizadasHeader = columnasPersonalizadas.map(coef =>
-            `<th><button type="button" class="coef-eliminar-btn" data-coef-id="${coef.id}" data-tipo="${tipo}" title="Eliminar coeficiente">-</button><br><span class="coef-title">${coef.nombre}</span></th>`
-        ).join('');
+        const columnasPersonalizadasHeader = columnasPersonalizadas.map(coef => {
+            const botonEliminar = this.modo === 'lectura' ? '' : `<button type="button" class="coef-eliminar-btn" data-coef-id="${coef.id}" data-tipo="${tipo}" title="Eliminar coeficiente">-</button><br>`;
+            return `<th>${botonEliminar}<span class="coef-title">${coef.nombre}</span></th>`;
+        }).join('');
 
         const { columnasAntes, columnasDespues } = this.insertarColumnasPersonalizadas(columnas, 'objetivo');
 
@@ -859,34 +904,34 @@ class ResultadosRenderer {
     }
 
     guardarCoeficiente(index, input, valor) {
-        if (!coeficientesPersonalizados[index]) {
-            coeficientesPersonalizados[index] = [];
+        if (!this.coeficientesPersonalizados[index]) {
+            this.coeficientesPersonalizados[index] = [];
         }
 
         if (input.classList.contains('coef-ubicacion-input')) {
-            const coef = coeficientesPersonalizados[index].find(c => c.id === 'ubicacion');
+            const coef = this.coeficientesPersonalizados[index].find(c => c.id === 'ubicacion');
             if (coef) {
                 coef.valor = valor;
             } else {
-                coeficientesPersonalizados[index].push({ id: 'ubicacion', nombre: 'Ubicacion', valor });
+                this.coeficientesPersonalizados[index].push({ id: 'ubicacion', nombre: 'Ubicacion', valor });
             }
         } else if (input.classList.contains('coef-actualizacion-input')) {
-            const coef = coeficientesPersonalizados[index].find(c => c.id === 'actualizacion');
+            const coef = this.coeficientesPersonalizados[index].find(c => c.id === 'actualizacion');
             if (coef) {
                 coef.valor = valor;
             } else {
-                coeficientesPersonalizados[index].push({ id: 'actualizacion', nombre: 'Actualización', valor });
+                this.coeficientesPersonalizados[index].push({ id: 'actualizacion', nombre: 'Actualización', valor });
             }
         } else if (input.classList.contains('coef-actividad-input')) {
-            const coef = coeficientesPersonalizados[index].find(c => c.id === 'actividad');
+            const coef = this.coeficientesPersonalizados[index].find(c => c.id === 'actividad');
             if (coef) {
                 coef.valor = valor;
             } else {
-                coeficientesPersonalizados[index].push({ id: 'actividad', nombre: 'Actividad', valor });
+                this.coeficientesPersonalizados[index].push({ id: 'actividad', nombre: 'Actividad', valor });
             }
         } else if (input.classList.contains('coef-personalizado-input')) {
             const coefId = input.dataset.coefId;
-            const coef = coeficientesPersonalizados[index].find(c => c.id === coefId);
+            const coef = this.coeficientesPersonalizados[index].find(c => c.id === coefId);
             if (coef) {
                 coef.valor = valor;
             }
@@ -899,29 +944,29 @@ class ResultadosRenderer {
         const nombre = coefDef ? coefDef.nombre : 'Coeficiente';
         console.log('[agregarCoeficientePersonalizado] coefDef:', coefDef, 'nombre:', nombre);
 
-        if (!coeficientesPersonalizados[index]) {
+        if (!this.coeficientesPersonalizados[index]) {
             console.log('[agregarCoeficientePersonalizado] Creando array para index:', index);
-            coeficientesPersonalizados[index] = [];
+            this.coeficientesPersonalizados[index] = [];
         }
 
         // Inicializar coeficientes fijos si es necesario (solo para comparables, no para objetivos)
         const esObjetivo = ['lote', 'esquina', 'medial', 'departamento', 'casa'].includes(index);
         if (!esObjetivo) {
-            if (!coeficientesPersonalizados[index].find(c => c.id === 'ubicacion')) {
-                coeficientesPersonalizados[index].push({ id: 'ubicacion', nombre: 'Ubicacion', valor: 1.0 });
+            if (!this.coeficientesPersonalizados[index].find(c => c.id === 'ubicacion')) {
+                this.coeficientesPersonalizados[index].push({ id: 'ubicacion', nombre: 'Ubicacion', valor: 1.0 });
             }
-            if (!coeficientesPersonalizados[index].find(c => c.id === 'actualizacion')) {
-                coeficientesPersonalizados[index].push({ id: 'actualizacion', nombre: 'Actualización', valor: 1.0 });
+            if (!this.coeficientesPersonalizados[index].find(c => c.id === 'actualizacion')) {
+                this.coeficientesPersonalizados[index].push({ id: 'actualizacion', nombre: 'Actualización', valor: 1.0 });
             }
         }
 
-        coeficientesPersonalizados[index].push({
+        this.coeficientesPersonalizados[index].push({
             id: coefId,
             nombre: nombre,
             valor: 1.0
         });
 
-        console.log('[agregarCoeficientePersonalizado] Coeficiente agregado. coeficientesPersonalizados[index]:', coeficientesPersonalizados[index]);
+        console.log('[agregarCoeficientePersonalizado] Coeficiente agregado. this.coeficientesPersonalizados[index]:', this.coeficientesPersonalizados[index]);
 
         // Re-renderizar la pantalla para mostrar la nueva columna
         this.renderizar();
@@ -930,15 +975,15 @@ class ResultadosRenderer {
     eliminarCoeficientePersonalizado(coefId, tipo) {
         if (tipo) {
             // Es un coeficiente de objetivo (lote/esquina/medial/departamento/casa)
-            if (coeficientesPersonalizados[tipo]) {
-                coeficientesPersonalizados[tipo] = coeficientesPersonalizados[tipo].filter(c => c.id !== coefId);
+            if (this.coeficientesPersonalizados[tipo]) {
+                this.coeficientesPersonalizados[tipo] = this.coeficientesPersonalizados[tipo].filter(c => c.id !== coefId);
             }
         } else {
             // Es un coeficiente de comparables (eliminar de todos los comparables)
             const indicesObjetivo = ['lote', 'esquina', 'medial', 'departamento', 'casa'];
-            Object.keys(coeficientesPersonalizados).forEach(index => {
+            Object.keys(this.coeficientesPersonalizados).forEach(index => {
                 if (!indicesObjetivo.includes(index)) {
-                    coeficientesPersonalizados[index] = coeficientesPersonalizados[index].filter(c => c.id !== coefId);
+                    this.coeficientesPersonalizados[index] = this.coeficientesPersonalizados[index].filter(c => c.id !== coefId);
                 }
             });
         }

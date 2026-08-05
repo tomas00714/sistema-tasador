@@ -43,7 +43,8 @@ function capturarDatosCompletos() {
             tipoLote: datosTasacion.lote.tipoLote,
             servicios: [...datosTasacion.lote.servicios],
             caracteristicas: { ...datosTasacion.lote.caracteristicas },
-            observaciones: datosTasacion.lote.observaciones || ""
+            observaciones: datosTasacion.lote.observaciones || "",
+            mejoras: datosTasacion.lote.mejoras || ""
         };
     } else if (datosTasacion.tipo === 'departamento') {
         datos.departamento = JSON.parse(JSON.stringify(datosTasacion.departamento));
@@ -74,7 +75,8 @@ function limpiarDatosTasacion() {
             tipoLote: "",
             servicios: [],
             caracteristicas: {},
-            observaciones: ""
+            observaciones: "",
+            mejoras: ""
         };
         datosTasacion.departamento = {
             ambientes: "",
@@ -167,7 +169,8 @@ async function cargarDatosCompletos(datosCompletos) {
             tipoLote: datosCompletos.lote.tipoLote,
             servicios: [...datosCompletos.lote.servicios],
             caracteristicas: { ...datosCompletos.lote.caracteristicas },
-            observaciones: datosCompletos.lote.observaciones || ""
+            observaciones: datosCompletos.lote.observaciones || "",
+            mejoras: datosCompletos.lote.mejoras || ""
         };
     } else if (datosCompletos.tipo === 'departamento') {
         datosTasacion.departamento = JSON.parse(JSON.stringify(datosCompletos.departamento));
@@ -268,7 +271,6 @@ async function guardarTasacion(estado = 'completada') {
         // Crear nueva tasación en la API
         try {
             const tasacionCreada = await crearTasacionAPI({
-                usuario_id: 1,
                 tipo: datosTasacion.tipo,
                 estado: estado,
                 datos: datosCompletos,

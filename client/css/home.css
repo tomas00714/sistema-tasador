@@ -588,11 +588,10 @@ body:not([data-vista="inicio"])
 
 .home-action-card {
     display: flex;
-    flex-direction: column;
+    gap: 15px;
     align-items: center;
-    justify-content: center;
-    width: min(260px, 100%);
-    aspect-ratio: 1;
+    width: 300px;
+    aspect-ratio: 2.5;
     padding: 24px;
     border-radius: 24px;
     color: var(--color-text-primary);
@@ -635,7 +634,6 @@ body:not([data-vista="inicio"])
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 18px;
 }
 
 .btn-nueva-tasacion-home-icon i {

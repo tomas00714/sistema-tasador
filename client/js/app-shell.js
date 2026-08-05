@@ -117,7 +117,7 @@ function initAppShell() {
 
                 // Handle "nueva-tasacion" specially
                 if (vista === "nueva-tasacion") {
-                    window.location.href = "app/tasacion.html";
+                    window.location.href = "tasacion.html";
                     return;
                 }
 
@@ -125,8 +125,8 @@ function initAppShell() {
 
                 const url =
                     vista === "inicio"
-                        ? "app/index.html"
-                        : `app/index.html?view=${vista}`;
+                        ? "index.html"
+                        : `index.html?view=${vista}`;
 
                 history.replaceState(
                     { vista },

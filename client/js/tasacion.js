@@ -3010,7 +3010,7 @@ function etiquetaTipoInmueble(tipo) {
 
 async function leerHistorialDesdeAPI() {
     try {
-        const tasaciones = await listarTasacionesAPI(1);
+        const tasaciones = await listarTasacionesAPI();
         return tasaciones.map(t => ({
             id: t.id,
             tipo: t.tipo,
@@ -4353,7 +4353,6 @@ async function guardarTasacion() {
         if (tasacionId === 0) {
             // Nueva tasación
             const tasacionCreada = await crearTasacionAPI({
-                usuario_id: 1,
                 tipo: datosTasacion.tipo || 'lote',
                 estado: 'completada',
                 datos: datosCompletos,
@@ -4431,7 +4430,6 @@ async function guardarBorrador() {
         if (tasacionId === 0) {
             // Nueva tasación borrador
             const tasacionCreada = await crearTasacionAPI({
-                usuario_id: 1,
                 tipo: datosTasacion.tipo || 'lote',
                 estado: 'borrador',
                 datos: datosCompletos,

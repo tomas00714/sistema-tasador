@@ -89,16 +89,8 @@ const CasaValidator = {
         validar(datos) {
             const errores = [];
             const casa = datos.casa || {};
-            let total = parseFloat(casa.superficieHomogeneizada) || 0;
-
-            if (total <= 0) {
-                const rango = (casa.superficieCubierta || "").match(/\d+/g);
-                const coef = parseFloat(casa.superficieCubiertaCoef) || 1;
-                if (rango) {
-                    const valorMedio = rango.reduce((sum, val) => sum + parseInt(val), 0) / rango.length;
-                    total = valorMedio * coef;
-                }
-            }
+            const hom = casa.homogeneizacion || {};
+            let total = parseFloat(hom.totalHomogeneizada) || 0;
 
             if (total <= 0) {
                 errores.push({ campo: null, mensaje: 'El total de superficie homogeneizada debe ser mayor a 0' });

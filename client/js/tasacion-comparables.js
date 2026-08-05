@@ -142,7 +142,7 @@ function generarDetallesComparable(comparable) {
 
 async function leerHistorialDesdeAPI() {
     try {
-        const tasaciones = await listarTasacionesAPI(1);
+        const tasaciones = await listarTasacionesAPI();
         return tasaciones.map(t => ({
             id: t.id,
             tipo: t.tipo,
@@ -266,6 +266,19 @@ function bindComparableManualUbicacion() {
                 listLoc.style.display = "none";
             }
         }
+    });
+
+    // Cerrar lista al perder el foco
+    inputLoc.addEventListener("blur", () => {
+        setTimeout(() => {
+            listLoc.style.display = "none";
+        }, 200);
+    });
+
+    inputProv.addEventListener("blur", () => {
+        setTimeout(() => {
+            listProv.style.display = "none";
+        }, 200);
     });
 
     const cerrarListas = e => {

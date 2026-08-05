@@ -351,6 +351,7 @@ p {
 
     /* transparencia de las barras */
     --color-bar: rgba(255, 255, 255, 0.50);
+    --color-bar-70: rgba(255, 255, 255, 0.70);
 
     /* pantalla de carga */
     --color-load: rgba(255, 255, 255, 0.9);
@@ -579,7 +580,7 @@ body.dark-mode .leaflet-tile {
     left: 0;
     bottom: 0;
     width: var(--sidebar-width-expanded);
-    background: transparent;
+    background: var(--color-white);
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -669,7 +670,6 @@ body.dark-mode .leaflet-tile {
 .sidebar-nav-item.active {
     background: var(--color-primary-light);
     color: var(--color-primary);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     overflow: visible;
 }
 
@@ -1092,8 +1092,10 @@ html.sidebar-collapsed-initial .main-layout {
 }
 
 /* Posicionamiento relativo para el botón de apariencia */
+/* Oculto por ahora; la funcionalidad permanece en theme.js y el elemento sigue en el DOM */
 #appearanceBtn {
     position: relative;
+    display: none;
 }
 
 .form-actions {

@@ -11,585 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
 
-    <style>
-        :root {
-            --color-primary: #007AFF;
-            --color-primary-light: #E3F2FD;
-            --color-primary-lighter: #F0F7FF;
-            --color-secondary: #5856D6;
-            --color-success: #34C759;
-            --color-success-light: #E8F5E9;
-            --color-text-primary: #04172D;
-            --color-text-secondary: #6E6E73;
-            --color-bg-light: #F5F7FA;
-            --color-white: #FFFFFF;
-            --color-border: #D1D1D6;
-            --color-shadow: rgba(0, 0, 0, 0.08);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            color: var(--color-text-primary);
-            background: var(--color-white);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Navigation */
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--color-border);
-            z-index: 1000;
-            padding: 16px 0;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: var(--color-text-primary);
-        }
-
-        .nav-logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--color-primary);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .nav-logo-text {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--color-primary);
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 32px;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--color-text-secondary);
-            font-weight: 500;
-            font-size: 15px;
-            transition: color 0.2s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--color-primary);
-        }
-
-        .nav-buttons {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--color-primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #0056CC;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-        }
-
-        .btn-secondary {
-            background: var(--color-bg-light);
-            color: var(--color-text-primary);
-            border: 1.5px solid var(--color-border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--color-border);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 160px 24px 100px;
-            background: linear-gradient(180deg, var(--color-primary-lighter) 0%, var(--color-white) 100%);
-            text-align: center;
-        }
-
-        .hero-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--color-primary-light);
-            color: var(--color-primary);
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 24px;
-        }
-
-        .hero h1 {
-            font-size: 56px;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            letter-spacing: -0.02em;
-        }
-
-        .hero h1 span {
-            color: var(--color-primary);
-        }
-
-        .hero-subtitle {
-            font-size: 20px;
-            color: var(--color-text-secondary);
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-cta {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .hero-mockup {
-            margin-top: 80px;
-            background: var(--color-white);
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-            padding: 40px;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
-            border: 1px solid var(--color-border);
-        }
-
-        .mockup-header {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-        }
-
-        .mockup-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--color-border);
-        }
-
-        .mockup-dot:first-child {
-            background: #FF5F57;
-        }
-
-        .mockup-dot:nth-child(2) {
-            background: #FEBC2E;
-        }
-
-        .mockup-dot:nth-child(3) {
-            background: #28C840;
-        }
-
-       mockup-content {
-            background: var(--color-bg-light);
-            border-radius: 12px;
-            padding: 32px;
-            min-height: 300px;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 100px 24px;
-            background: var(--color-white);
-        }
-
-        .section-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-header h2 {
-            font-size: 40px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .section-header p {
-            font-size: 18px;
-            color: var(--color-text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
-        }
-
-        .feature-card {
-            padding: 32px;
-            background: var(--color-bg-light);
-            border-radius: 20px;
-            border: 1px solid var(--color-border);
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            background: var(--color-primary-light);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-primary);
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        .feature-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .feature-card p {
-            color: var(--color-text-secondary);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* How It Works */
-        .how-it-works {
-            padding: 100px 24px;
-            background: var(--color-bg-light);
-        }
-
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-top: 60px;
-        }
-
-        .step {
-            text-align: center;
-        }
-
-        .step-number {
-            width: 48px;
-            height: 48px;
-            background: var(--color-primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            margin: 0 auto 20px;
-        }
-
-        .step h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .step p {
-            color: var(--color-text-secondary);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* Comparison Section */
-        .comparison {
-            padding: 100px 24px;
-            background: var(--color-white);
-        }
-
-        .comparison-table {
-            max-width: 900px;
-            margin: 60px auto 0;
-            background: var(--color-white);
-            border-radius: 20px;
-            border: 1px solid var(--color-border);
-            overflow: hidden;
-        }
-
-        .comparison-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .comparison-row:last-child {
-            border-bottom: none;
-        }
-
-        .comparison-row.header {
-            background: var(--color-bg-light);
-            font-weight: 700;
-        }
-
-        .comparison-cell {
-            padding: 0 16px;
-        }
-
-        .comparison-cell:first-child {
-            color: var(--color-text-secondary);
-        }
-
-        .comparison-cell:last-child {
-            color: var(--color-primary);
-            font-weight: 600;
-        }
-
-        .comparison-cell .icon {
-            margin-right: 8px;
-        }
-
-        /* Pricing Section */
-        .pricing {
-            padding: 100px 24px;
-            background: linear-gradient(180deg, var(--color-primary-lighter) 0%, var(--color-white) 100%);
-        }
-
-        .pricing-card {
-            max-width: 400px;
-            margin: 60px auto 0;
-            background: var(--color-white);
-            border-radius: 24px;
-            padding: 48px;
-            text-align: center;
-            border: 2px solid var(--color-primary);
-            box-shadow: 0 20px 60px rgba(0, 122, 255, 0.15);
-        }
-
-        .pricing-card h3 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .pricing-price {
-            font-size: 64px;
-            font-weight: 800;
-            color: var(--color-primary);
-            margin: 24px 0;
-        }
-
-        .pricing-price span {
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--color-text-secondary);
-        }
-
-        .pricing-features {
-            list-style: none;
-            margin: 32px 0;
-            text-align: left;
-        }
-
-        .pricing-features li {
-            padding: 12px 0;
-            color: var(--color-text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .pricing-features li i {
-            color: var(--color-success);
-        }
-
-        /* FAQ Section */
-        .faq {
-            padding: 100px 24px;
-            background: var(--color-white);
-        }
-
-        .faq-list {
-            max-width: 800px;
-            margin: 60px auto 0;
-        }
-
-        .faq-item {
-            border-bottom: 1px solid var(--color-border);
-            padding: 24px 0;
-        }
-
-        .faq-item:last-child {
-            border-bottom: none;
-        }
-
-        .faq-question {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .faq-question i {
-            color: var(--color-primary);
-            transition: transform 0.3s ease;
-        }
-
-        .faq-answer {
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            display: none;
-        }
-
-        .faq-item.active .faq-answer {
-            display: block;
-        }
-
-        .faq-item.active .faq-question i {
-            transform: rotate(180deg);
-        }
-
-        /* Footer */
-        .footer {
-            padding: 60px 24px;
-            background: var(--color-bg-light);
-            border-top: 1px solid var(--color-border);
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-        }
-
-        .footer-section h4 {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .footer-section a {
-            display: block;
-            color: var(--color-text-secondary);
-            text-decoration: none;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .footer-section a:hover {
-            color: var(--color-primary);
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 40px auto 0;
-            padding-top: 40px;
-            border-top: 1px solid var(--color-border);
-            text-align: center;
-            color: var(--color-text-secondary);
-            font-size: 14px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-
-            .hero h1 {
-                font-size: 40px;
-            }
-
-            .hero-subtitle {
-                font-size: 16px;
-            }
-
-            .hero-cta {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .comparison-row {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-
-            .pricing-card {
-                padding: 32px;
-            }
-
-            .pricing-price {
-                font-size: 48px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -607,9 +30,30 @@
                 <a href="#pricing" class="nav-link">Precios</a>
                 <a href="#faq" class="nav-link">Preguntas</a>
             </div>
-            <div class="nav-buttons">
+            <div class="nav-buttons" id="navButtons">
                 <a href="login.html" class="btn btn-secondary">Iniciar sesión</a>
-                <a href="registro.html" class="btn btn-primary">Registrarse</a>
+                <a href="registro.html" class="btn btn-primary">Suscribirme</a>
+            </div>
+            <div class="nav-user" id="navUser" style="display: none;">
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" id="navUserTrigger">
+                        <div class="nav-user-avatar" id="navUserAvatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <span class="nav-user-name" id="navUserName">Usuario</span>
+                        <i class="fa-solid fa-chevron-down nav-user-chevron"></i>
+                    </button>
+                    <div class="nav-user-menu" id="navUserMenu">
+                        <a href="app/index.html" class="nav-user-menu-item">
+                            <i class="fa-solid fa-home"></i>
+                            Ir a la aplicación
+                        </a>
+                        <button class="nav-user-menu-item nav-user-menu-logout" id="navLogout">
+                            <i class="fa-solid fa-sign-out-alt"></i>
+                            Cerrar sesión
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -626,7 +70,7 @@
                 Sistema de tasación mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida, confiable y profesional.
             </p>
             <div class="hero-cta">
-                <a href="registro.html" class="btn btn-primary">
+                <a href="#pricing" class="btn btn-primary" id="heroCtaButton">
                     Comenzar ahora
                     <i class="fa-solid fa-arrow-right"></i>
                 </a>
@@ -795,8 +239,8 @@
                     <li><i class="fa-solid fa-check"></i> Soporte prioritario</li>
                 </ul>
                 <!-- TODO: Implementar sistema de pagos -->
-                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.')">
-                    Comenzar ahora
+                <button class="btn btn-primary pricing-cta" id="pricingCtaButton" style="width: 100%; justify-content: center;" onclick="alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.')">
+                    Suscribirme
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
@@ -894,6 +338,7 @@
         </div>
     </footer>
 
+    <script src="js/auth.js"></script>
     <script>
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {
@@ -903,11 +348,12 @@
             });
         });
 
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        // Smooth scroll for anchor links (solo anchors válidos)
+        document.querySelectorAll('a[href^="#"]:not([href="#"])').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const href = this.getAttribute('href');
+                const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({
                         behavior: 'smooth',
@@ -915,6 +361,124 @@
                     });
                 }
             });
+        });
+
+        // Auth state handling
+        function updateUIForAuthState() {
+            const isAuthenticated = window.isAuthenticated && window.isAuthenticated();
+            const userData = window.getUserData && window.getUserData();
+            
+            const navButtons = document.getElementById('navButtons');
+            const navUser = document.getElementById('navUser');
+            const heroCtaButton = document.getElementById('heroCtaButton');
+            const pricingCtaButton = document.getElementById('pricingCtaButton');
+            
+            if (isAuthenticated) {
+                // Show user menu, hide auth buttons
+                if (navButtons) navButtons.style.display = 'none';
+                if (navUser) navUser.style.display = 'block';
+                
+                // Update user info
+                if (userData) {
+                    const navUserName = document.getElementById('navUserName');
+                    if (navUserName) {
+                        navUserName.textContent = `${userData.nombre} ${userData.apellido}`;
+                    }
+                }
+                
+                // Cambiar CTA principal a "Ir a la aplicación"
+                if (heroCtaButton) {
+                    heroCtaButton.innerHTML = 'Ir a la aplicación <i class="fa-solid fa-arrow-right"></i>';
+                    heroCtaButton.href = 'app/index.html';
+                }
+            } else {
+                // Show auth buttons, hide user menu
+                if (navButtons) navButtons.style.display = 'flex';
+                if (navUser) navUser.style.display = 'none';
+                
+                // Restaurar CTA principal a "Comenzar ahora"
+                if (heroCtaButton) {
+                    heroCtaButton.innerHTML = 'Comenzar ahora <i class="fa-solid fa-arrow-right"></i>';
+                    heroCtaButton.href = '#pricing';
+                }
+            }
+        }
+
+        // Handler para botón hero CTA - verifica autenticación
+        function setupHeroCtaHandler() {
+            const heroCtaButton = document.getElementById('heroCtaButton');
+            if (!heroCtaButton) return;
+
+            // Remover event listeners existentes
+            const newButton = heroCtaButton.cloneNode(true);
+            heroCtaButton.parentNode.replaceChild(newButton, heroCtaButton);
+
+            // Agregar nuevo handler
+            newButton.addEventListener('click', function(e) {
+                const isAuthenticated = window.isAuthenticated && window.isAuthenticated();
+                if (isAuthenticated) {
+                    e.preventDefault();
+                    window.location.href = 'app/index.html';
+                }
+                // Si no está autenticado, deja que el href original funcione (scroll)
+            });
+        }
+
+        // Handler para botón de pricing - verifica autenticación
+        function setupPricingCtaHandler() {
+            const pricingCtaButton = document.getElementById('pricingCtaButton');
+            if (!pricingCtaButton) return;
+
+            const isAuthenticated = window.isAuthenticated && window.isAuthenticated();
+            
+            if (isAuthenticated) {
+                // Usuario autenticado: ir a la aplicación
+                pricingCtaButton.removeAttribute('onclick');
+                pricingCtaButton.onclick = function() {
+                    window.location.href = 'app/index.html';
+                };
+                pricingCtaButton.innerHTML = 'Ir a la aplicación <i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                // Usuario no autenticado: mostrar alerta de pagos
+                pricingCtaButton.onclick = function() {
+                    alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.');
+                };
+                pricingCtaButton.innerHTML = 'Suscribirme <i class="fa-solid fa-arrow-right"></i>';
+            }
+        }
+
+        // User dropdown toggle
+        const navUserTrigger = document.getElementById('navUserTrigger');
+        const navUserMenu = document.getElementById('navUserMenu');
+        
+        if (navUserTrigger && navUserMenu) {
+            navUserTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navUserMenu.classList.toggle('active');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                navUserMenu.classList.remove('active');
+            });
+        }
+        
+        // Logout handler
+        const navLogout = document.getElementById('navLogout');
+        if (navLogout) {
+            navLogout.addEventListener('click', () => {
+                // Cerrar sesión local y recargar la landing, sin redirigir a login
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Initialize UI on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUIForAuthState();
+            setupHeroCtaHandler();
+            setupPricingCtaHandler();
         });
     </script>
 </body>

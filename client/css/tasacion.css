@@ -2753,7 +2753,6 @@ background-position: right 14px center;
 .switch-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
     gap: 4px;
     height: 100%;
@@ -2947,7 +2946,41 @@ input:checked + .slider:before {
 
 .fila-total {
     background: var(--color-bg-light);
+}
+
+.fila-separador {
+    background: var(--color-bg-light);
+}
+
+.celda-separador {
+    padding: 8px 16px;
+    text-align: center;
     font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-tabla-coef {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.input-tabla-coef:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.coef-placeholder {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+    font-style: italic;
 }
 
 .fila-total td {

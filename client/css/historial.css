@@ -677,15 +677,20 @@ html.modal-open {
     line-height: 1.6;
 }
 
-.perfil-resultados-placeholder {
+.perfil-resultados-placeholder,
+#perfil-resultados-renderer {
 
     min-height: 200px;
 
+    width: 100%;
+
     display: flex;
 
-    align-items: center;
+    flex-direction: column;
 
-    justify-content: center;
+    align-items: stretch;
+
+    justify-content: flex-start;
 }
 
 .cerrar-modal {

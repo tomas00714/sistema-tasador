@@ -85,8 +85,18 @@ class MigrationRunner:
         cursor = conn.cursor()
         
         try:
-            # Ejecutar el SQL de la migración
-            cursor.execute(sql_content)
+            # Verificar si el archivo contiene alguna sentencia SQL real.
+            # Las líneas que son solo comentarios o espacios en blanco no cuentan.
+            has_sql = any(
+                line.strip() and not line.strip().startswith('--')
+                for line in sql_content.splitlines()
+            )
+            
+            # Ejecutar el SQL original solo si hay sentencias reales
+            if has_sql:
+                cursor.execute(sql_content)
+            else:
+                logger.warning(f"Migración {version} no contiene sentencias SQL ejecutables. Se registra sin ejecutar.")
             
             # Registrar la migración
             insert_query = f"""
@@ -96,7 +106,7 @@ class MigrationRunner:
             cursor.execute(insert_query, (version, filename))
             
             conn.commit()
-            logger.info(f"Migración {version} ejecutada exitosamente")
+            logger.info(f"Migración {version} registrada exitosamente")
             return True
         except Exception as e:
             conn.rollback()

@@ -16,11 +16,23 @@ L.Icon.Default.mergeOptions({
 });
 
 /**
+ * Obtiene el objeto de homogeneización de los datos de edición del comparable
+ * @param {string} tipoInmueble - 'departamento' o 'casa'
+ * @param {Object} datosEdicion - Datos del comparable a editar
+ * @returns {Object} Objeto homogeneización
+ */
+function obtenerDatosEdicionHomogeneizacion(tipoInmueble, datosEdicion = null) {
+    if (!datosEdicion) return {};
+    const inmueble = datosEdicion[tipoInmueble] || datosEdicion.inmueble || {};
+    return inmueble.homogeneizacion || datosEdicion.homogeneizacion || {};
+}
+
+/**
  * Genera el HTML del formulario para un tipo de inmueble específico
  * @param {string} tipoInmueble - 'lote', 'departamento', 'casa'
  * @returns {string} HTML del formulario
  */
-function generarFormularioComparable(tipoInmueble) {
+function generarFormularioComparable(tipoInmueble, datosEdicion = null) {
     let secciones = '';
     
     // Campos comunes a todos los tipos
@@ -36,6 +48,13 @@ function generarFormularioComparable(tipoInmueble) {
         seccionCaracteristicas = generarSeccionCaracteristicasCasa();
     }
     
+    // Homogeneización de superficie (departamento y casa)
+    let seccionHomogeneizacion = '';
+    if (tipoInmueble === 'departamento' || tipoInmueble === 'casa') {
+        const homData = obtenerDatosEdicionHomogeneizacion(tipoInmueble, datosEdicion);
+        seccionHomogeneizacion = generarSeccionHomogeneizacionModal(tipoInmueble, homData, 'compForm-');
+    }
+    
     // Sección de fuente (común a todos)
     const seccionFuente = generarSeccionFuente();
     
@@ -44,6 +63,7 @@ function generarFormularioComparable(tipoInmueble) {
     
     secciones += seccionUbicacion;
     secciones += seccionCaracteristicas;
+    secciones += seccionHomogeneizacion;
     secciones += seccionFuente;
     secciones += seccionValor;
     
@@ -150,26 +170,7 @@ function generarSeccionCaracteristicasDepartamento() {
                     <label>Superficie total (m²)</label>
                     <input type="number" id="compFormSuperficieInput" placeholder="0" step="0.01" min="0">
                 </div>
-                <div class="input-group">
-                    <label>Superficie cubierta propia</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="compFormSuperficieCubiertaInput" placeholder="Seleccionar rango" autocomplete="off" readonly>
-                                <div class="autocomplete-list" id="compFormSuperficieCubiertaList">
-                                    <div class="autocomplete-item" data-coef="1.10" data-rango="1.10"><span>Hasta 30m²</span><span class="coef-display">1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05"><span>De 30 a 50m²</span><span class="coef-display">1.05</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>De 50 a 100m²</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95"><span>De 100 a 150m²</span><span class="coef-display">0.95</span></div>
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Más de 150m²</span><span class="coef-display">0.90</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="compFormSuperficieCubiertaCoef" placeholder="Coef" step="0.01" min="0">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputSuperficieCubierta({ inputId: 'compFormSuperficieCubiertaInput', listId: 'compFormSuperficieCubiertaList', coefInputId: 'compFormSuperficieCubiertaCoef', label: 'Superficie cubierta propia' })}
                 <div class="input-group">
                     <label>Ubicación en planta</label>
                     <div class="input-dividido-container">
@@ -203,83 +204,17 @@ function generarSeccionCaracteristicasDepartamento() {
                         </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Característica constructiva</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="compFormCaracteristicaConstructivaInput" placeholder="Seleccionar característica" autocomplete="off" readonly>
-                                <div class="autocomplete-list" id="compFormCaracteristicaConstructivaList">
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Económica</span><span class="coef-display">0.90</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>Buena económica</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05-1.10"><span>Buena sin servicios</span><span class="coef-display">1.05-1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.15" data-rango="1.15-1.20"><span>Buena con servicios</span><span class="coef-display">1.15-1.20</span></div>
-                                    <div class="autocomplete-item" data-coef="1.25" data-rango="1.25-1.30"><span>Muy buena</span><span class="coef-display">1.25-1.30</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="compFormCaracteristicaConstructivaCoef" placeholder="Coef" step="0.01" min="0">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputCaracteristicaConstructiva({ inputId: 'compFormCaracteristicaConstructivaInput', listId: 'compFormCaracteristicaConstructivaList', coefInputId: 'compFormCaracteristicaConstructivaCoef' })}
                 <div class="input-group">
                     <label>Antigüedad (años)</label>
                     <input type="number" id="compFormAntiguedadInput" placeholder="0" min="0" step="1">
                 </div>
-                <div class="input-group">
-                    <label>Estado de conservación</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormEstadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormEstadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Ambientes</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormAmbientesInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormAmbientesList">
-                            <div class="autocomplete-item">Monoambiente</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5</div>
-                            <div class="autocomplete-item">6+</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Dormitorios</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormDormitoriosInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormDormitoriosList">
-                            <div class="autocomplete-item">1</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5+</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Baños</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormBanosInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormBanosList">
-                            <div class="autocomplete-item">1</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5+</div>
-                        </div>
-                    </div>
-                </div>
+                ${generarInputEstadoConservacion({ inputId: 'compFormEstadoConservacionInput', listId: 'compFormEstadoConservacionList' })}
+                ${generarInputAmbientes({ inputId: 'compFormAmbientesInput', listId: 'compFormAmbientesList' })}
+
+                ${generarInputDormitorios({ inputId: 'compFormDormitoriosInput', listId: 'compFormDormitoriosList' })}
+
+                ${generarInputBanos({ inputId: 'compFormBanosInput', listId: 'compFormBanosList' })}
                 <div class="input-group">
                     <label>Cochera</label>
                     <div class="switch-container">
@@ -322,26 +257,7 @@ function generarSeccionCaracteristicasCasa() {
                     <label>Superficie terreno (m²)</label>
                     <input type="number" id="compFormSuperficieTerrenoInput" placeholder="0" step="0.01" min="0">
                 </div>
-                <div class="input-group">
-                    <label>Superficie cubierta (rango)</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="compFormSuperficieCubiertaInput" placeholder="Seleccionar rango" autocomplete="off" readonly>
-                                <div class="autocomplete-list" id="compFormSuperficieCubiertaList">
-                                    <div class="autocomplete-item" data-coef="1.10" data-rango="1.10"><span>Hasta 50 m²</span><span class="coef-display">1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05"><span>51-70 m²</span><span class="coef-display">1.05</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>71-90 m²</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95"><span>91-120 m²</span><span class="coef-display">0.95</span></div>
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Más de 120 m²</span><span class="coef-display">0.90</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="compFormSuperficieCubiertaCoef" placeholder="Coef" step="0.01" min="0">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputSuperficieCubierta({ inputId: 'compFormSuperficieCubiertaInput', listId: 'compFormSuperficieCubiertaList', coefInputId: 'compFormSuperficieCubiertaCoef', label: 'Superficie cubierta (rango)' })}
                 <div class="input-group">
                     <label>Superficie total (rango)</label>
                     <div class="input-dividido-container">
@@ -362,83 +278,17 @@ function generarSeccionCaracteristicasCasa() {
                         </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Característica constructiva</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="compFormCalidadConstruccionInput" placeholder="Seleccionar característica" autocomplete="off" readonly>
-                                <div class="autocomplete-list" id="compFormCalidadConstruccionList">
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Económica</span><span class="coef-display">0.90</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>Buena económica</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05-1.10"><span>Buena sin servicios</span><span class="coef-display">1.05-1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.15" data-rango="1.15-1.20"><span>Buena con servicios</span><span class="coef-display">1.15-1.20</span></div>
-                                    <div class="autocomplete-item" data-coef="1.25" data-rango="1.25-1.30"><span>Muy buena</span><span class="coef-display">1.25-1.30</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="compFormCalidadConstruccionCoef" placeholder="Coef" step="0.01" min="0">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputCaracteristicaConstructiva({ inputId: 'compFormCalidadConstruccionInput', listId: 'compFormCalidadConstruccionList', coefInputId: 'compFormCalidadConstruccionCoef' })}
                 <div class="input-group">
                     <label>Antigüedad (años)</label>
                     <input type="number" id="compFormAntiguedadInput" placeholder="0" min="0" step="1">
                 </div>
-                <div class="input-group">
-                    <label>Estado de conservación</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormEstadoConservacionInput" placeholder="Seleccionar estado" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormEstadoConservacionList">
-                            <div class="autocomplete-item" data-valor="1">1 - Excelente</div>
-                            <div class="autocomplete-item" data-valor="2">2 - Bueno</div>
-                            <div class="autocomplete-item" data-valor="3">3 - Regular</div>
-                            <div class="autocomplete-item" data-valor="4">4 - Malo</div>
-                            <div class="autocomplete-item" data-valor="5">5 - Muy malo</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Ambientes</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormAmbientesInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormAmbientesList">
-                            <div class="autocomplete-item">Monoambiente</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5</div>
-                            <div class="autocomplete-item">6+</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Dormitorios</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormDormitoriosInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormDormitoriosList">
-                            <div class="autocomplete-item">1</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5+</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Baños</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="compFormBanosInput" placeholder="Seleccionar cantidad" autocomplete="off" readonly>
-                        <div class="autocomplete-list" id="compFormBanosList">
-                            <div class="autocomplete-item">1</div>
-                            <div class="autocomplete-item">2</div>
-                            <div class="autocomplete-item">3</div>
-                            <div class="autocomplete-item">4</div>
-                            <div class="autocomplete-item">5+</div>
-                        </div>
-                    </div>
-                </div>
+                ${generarInputEstadoConservacion({ inputId: 'compFormEstadoConservacionInput', listId: 'compFormEstadoConservacionList' })}
+                ${generarInputAmbientes({ inputId: 'compFormAmbientesInput', listId: 'compFormAmbientesList' })}
+
+                ${generarInputDormitorios({ inputId: 'compFormDormitoriosInput', listId: 'compFormDormitoriosList' })}
+
+                ${generarInputBanos({ inputId: 'compFormBanosInput', listId: 'compFormBanosList' })}
                 <div class="input-group">
                     <label>Cochera</label>
                     <div class="switch-container">
@@ -565,6 +415,12 @@ async function inicializarFormularioComparable(tipoInmueble, opciones = {}) {
         inicializarCaracteristicasDepartamento();
     } else if (tipoInmueble === 'casa') {
         inicializarCaracteristicasCasa();
+    }
+
+    // Inicializar homogeneización de superficie (departamento y casa)
+    if (tipoInmueble === 'departamento' || tipoInmueble === 'casa') {
+        const homData = obtenerDatosEdicionHomogeneizacion(tipoInmueble, datos);
+        inicializarHomogeneizacionSuperficie(tipoInmueble, homData, 'compForm-');
     }
 
     // Inicializar campo fuente
@@ -1152,6 +1008,21 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
                 calidadConstruccion: datos.calidadConstruccion,
                 calidadConstruccionCoef: datos.calidadConstruccionCoef
             };
+        }
+    }
+
+    // Homogeneización de superficie (departamento y casa)
+    if (tipoInmueble === 'departamento' || tipoInmueble === 'casa') {
+        const homData = {};
+        const total = guardarHomogeneizacionSuperficie(tipoInmueble, homData, 'compForm-');
+        datos.homogeneizacion = homData;
+        datos.superficieHomogeneizada = total;
+        if (tipoInmueble === 'departamento') {
+            datos.departamento.homogeneizacion = homData;
+            datos.departamento.superficieHomogeneizada = total;
+        } else if (tipoInmueble === 'casa') {
+            datos.casa.homogeneizacion = homData;
+            datos.casa.superficieHomogeneizada = total;
         }
     }
 

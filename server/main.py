@@ -1,7 +1,7 @@
 import logging
 import os
-from typing import Dict, Any
-from fastapi import FastAPI, HTTPException, Depends
+from typing import Dict, Any, Optional
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from contextlib import asynccontextmanager
@@ -40,6 +40,17 @@ def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
     """Crea un comparable nuevo. Retorna el registro recién creado."""
     repo = ComparableRepository()
 
+    columnas = mapear_comparable_a_columnas(datos)
+
+    # Validar campos obligatorios de la tabla comparables
+    obligatorios = ['direccion', 'provincia', 'localidad', 'lat', 'lon', 'valor']
+    faltantes = [c for c in obligatorios if columnas.get(c) is None]
+    if faltantes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faltan campos obligatorios para crear el comparable: {', '.join(faltantes)}"
+        )
+
     datos_comparable = {
         'usuario_id': usuario_id,
         'tipo_inmueble': tipo_inmueble,
@@ -48,9 +59,13 @@ def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
     }
     if solicitud_origen_id is not None:
         datos_comparable['solicitud_origen_id'] = solicitud_origen_id
-    datos_comparable.update(mapear_comparable_a_columnas(datos))
+    datos_comparable.update(columnas)
 
-    return repo.create(datos_comparable)
+    try:
+        return repo.create(datos_comparable)
+    except Exception as e:
+        logger.error(f"Error de base de datos al crear comparable: columnas={list(datos_comparable.keys())} error={e}")
+        raise
 
 
 @asynccontextmanager
@@ -329,7 +344,6 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         # Construir datos de tasación con columnas específicas extraídas del JSON
         datos_tasacion = {
             'usuario_id': usuario_id,
-            'tipo': tasacion.tipo,
             'estado': tasacion.estado,
             'datos': tasacion.datos
         }
@@ -355,7 +369,7 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         return TasacionResponse(
             id=codigo_publico,
             usuario_id=tasacion_creada['usuario_id'],
-            tipo=tasacion_creada['tipo'],
+            tipo=tasacion_creada['tipo_inmueble'],
             estado=tasacion_creada['estado'],
             datos=tasacion_creada['datos'],
             comparables_ids=comparables_ids,
@@ -395,7 +409,7 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
         return TasacionResponse(
             id=tasacion_id,
             usuario_id=tasacion['usuario_id'],
-            tipo=tasacion['tipo'],
+            tipo=tasacion['tipo_inmueble'],
             estado=tasacion['estado'],
             datos=tasacion['datos'],
             comparables_ids=comparables_ids,
@@ -410,23 +424,28 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
 
 
 @app.get("/api/tasaciones", response_model=list[TasacionResponse])
-def listar_tasaciones(usuario_id: int = Depends(middleware.get_current_user_id), estado: str = None):
-    """Lista todas las tasaciones de un usuario (opcionalmente filtrado por estado)."""
+def listar_tasaciones(
+    usuario_id: int = Depends(middleware.get_current_user_id),
+    estado: str = None,
+    limit: Optional[int] = Query(None, ge=1, le=1000),
+    offset: Optional[int] = Query(None, ge=0)
+):
+    """Lista tasaciones de un usuario con paginación."""
     logger.info(f"Listando tasaciones para usuario: {usuario_id}, estado: {estado}")
     
     try:
         repo = TasacionRepository()
         
         if estado:
-            tasaciones = repo.get_by_usuario_and_estado(usuario_id, estado)
+            tasaciones = repo.get_by_usuario_and_estado(usuario_id, estado, limit=limit, offset=offset)
         else:
-            tasaciones = repo.get_by_usuario(usuario_id)
+            tasaciones = repo.get_by_usuario(usuario_id, limit=limit, offset=offset)
         
         return [
             TasacionResponse(
                 id=generar_codigo_publico(TIPO_TASACION, t['id']),
                 usuario_id=t['usuario_id'],
-                tipo=t['tipo'],
+                tipo=t['tipo_inmueble'],
                 estado=t['estado'],
                 datos=t['datos'],
                 comparables_ids=[generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in repo.obtener_comparables(t['id'])],
@@ -498,7 +517,7 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         return TasacionResponse(
             id=tasacion_id,
             usuario_id=tasacion_actualizada['usuario_id'],
-            tipo=tasacion_actualizada['tipo'],
+            tipo=tasacion_actualizada['tipo_inmueble'],
             estado=tasacion_actualizada['estado'],
             datos=tasacion_actualizada['datos'],
             comparables_ids=comparables_ids,
@@ -575,8 +594,11 @@ def crear_comparable(comparable: ComparableCreate, usuario_id: int = Depends(mid
             fecha_creacion=comparable_creado['fecha_creacion'],
             fecha_modificacion=comparable_creado['fecha_modificacion']
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al crear comparable: {e}")
+        logger.error(f"Payload recibido: {comparable.datos}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -654,19 +676,25 @@ def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int =
 
 
 @app.get("/api/comparables", response_model=list[ComparableResponse])
-def listar_comparables(usuario_id: int = Depends(middleware.get_current_user_id), tipo_inmueble: str = None, fuente: str = None):
-    """Lista todos los comparables de un usuario (opcionalmente filtrado)."""
+def listar_comparables(
+    usuario_id: int = Depends(middleware.get_current_user_id),
+    tipo_inmueble: str = None,
+    fuente: str = None,
+    limit: Optional[int] = Query(None, ge=1, le=1000),
+    offset: Optional[int] = Query(None, ge=0)
+):
+    """Lista comparables de un usuario con paginación."""
     logger.info(f"Listando comparables para usuario: {usuario_id}, tipo: {tipo_inmueble}, fuente: {fuente}")
     
     try:
         repo = ComparableRepository()
         
         if tipo_inmueble and fuente:
-            comparables = repo.get_by_usuario_tipo_origen(usuario_id, tipo_inmueble, fuente)
+            comparables = repo.get_by_usuario_tipo_origen(usuario_id, tipo_inmueble, fuente, limit=limit, offset=offset)
         elif tipo_inmueble:
-            comparables = repo.get_by_usuario_tipo(usuario_id, tipo_inmueble)
+            comparables = repo.get_by_usuario_tipo(usuario_id, tipo_inmueble, limit=limit, offset=offset)
         else:
-            comparables = repo.get_by_usuario(usuario_id)
+            comparables = repo.get_by_usuario(usuario_id, limit=limit, offset=offset)
         
         return [
             ComparableResponse(
@@ -864,17 +892,22 @@ def obtener_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.ge
 
 
 @app.get("/api/solicitudes", response_model=list[SolicitudResponse])
-def listar_solicitudes(usuario_id: int = Depends(middleware.get_current_user_id), estado: str = None):
-    """Lista todas las solicitudes de un usuario (opcionalmente filtrado por estado)."""
+def listar_solicitudes(
+    usuario_id: int = Depends(middleware.get_current_user_id),
+    estado: str = None,
+    limit: Optional[int] = Query(None, ge=1, le=1000),
+    offset: Optional[int] = Query(None, ge=0)
+):
+    """Lista solicitudes de un usuario con paginación."""
     logger.info(f"Listando solicitudes para usuario: {usuario_id}, estado: {estado}")
     
     try:
         repo = SolicitudRepository()
         
         if estado:
-            solicitudes = repo.get_by_usuario_and_estado(usuario_id, estado)
+            solicitudes = repo.get_by_usuario_and_estado(usuario_id, estado, limit=limit, offset=offset)
         else:
-            solicitudes = repo.get_by_usuario(usuario_id)
+            solicitudes = repo.get_by_usuario(usuario_id, limit=limit, offset=offset)
         
         # Resolver IDs públicos de tasaciones en batch
         tasacion_ids = list({s['tasacion_id'] for s in solicitudes if s['tasacion_id']})

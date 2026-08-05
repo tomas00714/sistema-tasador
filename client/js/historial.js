@@ -87,225 +87,6 @@ function formatearDireccion(direccion) {
         .join(' ');
 }
 
-function generarTablaResultadosPerfil(tasacion) {
-    if (!tasacion.resultado || !tasacion.resultado.comparables) {
-        return `<p class="historial-sin-datos">No hay datos de resultados disponibles</p>`;
-    }
-
-    const r = tasacion.resultado;
-    const esLote = tasacion.tipo === 'lote';
-
-    // Get custom coefficients if available
-    const coeficientesPersonalizados = tasacion.datosCompletos?.coeficientesPersonalizados || {};
-    
-    // Get custom coefficients for comparables (excluding 'lote')
-    const todosCoeficientesComparables = [];
-    Object.keys(coeficientesPersonalizados).forEach(index => {
-        if (index !== 'lote') {
-            const coefs = coeficientesPersonalizados[index];
-            coefs.forEach(coef => {
-                if (!todosCoeficientesComparables.find(c => c.id === coef.id)) {
-                    todosCoeficientesComparables.push(coef);
-                }
-            });
-        }
-    });
-
-    // Get custom coefficients for lot
-    const coeficientesLote = coeficientesPersonalizados['lote'] || [];
-
-    let filasHTML = "";
-
-    // Generate rows for comparables
-    const filasComp = (r.comparables || [])
-        .map((c, index) => {
-            const coefUbicacion = c.coef_ubicacion || 1;
-            const coefAct = c.coef_act || 1;
-
-            // Generate cells for all custom coefficients
-            const celdasCoefPersonalizados = todosCoeficientesComparables.map(coef => {
-                const coefPersonalizado = coeficientesPersonalizados[index]?.find(c => c.id === coef.id);
-                if (coefPersonalizado) {
-                    return `<td><strong>${coefPersonalizado.valor.toFixed(2)}</strong></td>`;
-                } else {
-                    return `<td>-</td>`;
-                }
-            }).join('');
-
-            if (esLote) {
-                return `
-                    <tr>
-                        <td>${escapeHtml(c.direccion)}</td>
-                        <td>${formatearMoneda(c.valor_lote)}</td>
-                        <td>${formatearMoneda(c.valor_m2)}</td>
-                        <td>${c.frente}</td>
-                        <td>${c.fondo || '-'}</td>
-                        <td>${c.fos || '-'}</td>
-                        <td>${c.fot || '-'}</td>
-                        <td>${c.coef_fitto_comparable ? c.coef_fitto_comparable.toFixed(2) : '1.00'}</td>
-                        <td>${coefUbicacion.toFixed(2)}</td>
-                        <td>${coefAct.toFixed(2)}</td>
-                        ${celdasCoefPersonalizados}
-                        <td><strong>${formatearMoneda(c.valor_m2_homogeneizado)}</strong></td>
-                    </tr>
-                `;
-            } else {
-                // Departamento
-                return `
-                    <tr>
-                        <td>${escapeHtml(c.direccion)}</td>
-                        <td>${formatearMoneda(c.valor)}</td>
-                        <td>${formatearMoneda(c.valor / (c.superficie || 1))}</td>
-                        <td>${c.superficie || '-'}</td>
-                        <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
-                        <td>${c.coeficiente ? c.coeficiente.toFixed(2) : '1.00'}</td>
-                        <td>1.00</td>
-                        <td>1.00</td>
-                        <td><strong>${formatearMoneda(c.valor / (c.superficie || 1))}</strong></td>
-                    </tr>
-                `;
-            }
-        })
-        .join("");
-
-    filasHTML += filasComp;
-
-    // Calculate average
-    const valorPromedio = r.comparables && r.comparables.length > 0
-        ? r.comparables.reduce((sum, c) => sum + c.valor_m2_homogeneizado, 0) / r.comparables.length
-        : 0;
-
-    // Generate table headers based on type
-    let theadHTML = "";
-    if (esLote) {
-        theadHTML = `
-            <tr>
-                <th>Dirección</th>
-                <th>Valor del lote</th>
-                <th>Valor por m²</th>
-                <th>Frente</th>
-                <th>Fondo</th>
-                <th>FOS</th>
-                <th>FOT</th>
-                <th>F&C</th>
-                <th>Ubicacion</th>
-                <th>Actividad</th>
-                ${todosCoeficientesComparables.map(coef => `<th>${coef.nombre}</th>`).join('')}
-                <th>Valor por m² homogeneizado</th>
-            </tr>
-        `;
-    } else {
-        theadHTML = `
-            <tr>
-                <th>Dirección</th>
-                <th>Valor</th>
-                <th>Valor m²</th>
-                <th>Superficie</th>
-                <th>Valor m² homogeneizado</th>
-                <th>Coeficiente</th>
-                <th>Ubicacion</th>
-                <th>Actividad</th>
-                <th>Valor m² final</th>
-            </tr>
-        `;
-    }
-
-    // Generate tfoot
-    let tfootHTML = "";
-    if (esLote) {
-        tfootHTML = `
-            <tr class="valor-promedio-row">
-                <td><strong>Valor promedio:</strong></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                ${todosCoeficientesComparables.map(() => `<td></td>`).join('')}
-                <td><strong>${formatearMoneda(valorPromedio)}</strong></td>
-            </tr>
-        `;
-    }
-
-    const tablaComparables = `
-        <div class="resultado-tabla-scroll">
-            <h4>Detalle de comparables</h4>
-            <table class="resultado-tabla">
-                <thead>${theadHTML}</thead>
-                <tbody>${filasHTML}</tbody>
-                ${tfootHTML ? `<tfoot>${tfootHTML}</tfoot>` : ""}
-            </table>
-        </div>
-    `;
-
-    let tablaLote = "";
-    if (esLote) {
-        // Generate lot row
-        const car = tasacion.lote?.caracteristicas || {};
-        const frente = parseFloat(car.frente) || 0;
-        const fondo = car.fondo ? parseFloat(car.fondo) : null;
-        const valorM2Lote = r.valor_m2 || 0;
-        const valorTotalLote = r.valor_final || 0;
-        const coefFittoLote = r.coeficiente_fitto_lote || 1.0;
-        const coefUbicacionLote = r.coeficiente_ubicacion || 1.0;
-        const coefActividadLote = r.coeficiente_actividad || 1.0;
-
-        const filaLoteTasar = `
-            <tr class="fila-lote-tasar">
-                <td><strong>${formatearDireccion(tasacion.ubicacion?.direccion || 'Lote a tasar')}</strong></td>
-                <td><strong>${frente}</strong></td>
-                <td><strong>${fondo || '-'}</strong></td>
-                <td><strong>${car.fos || '-'}</strong></td>
-                <td><strong>${car.fot || '-'}</strong></td>
-                <td><strong>${formatearMoneda(r.valor_promedio_homogeneizado)}</strong></td>
-                <td><strong>${coefFittoLote.toFixed(2)}</strong></td>
-                <td><strong>${coefUbicacionLote.toFixed(2)}</strong></td>
-                <td><strong>${coefActividadLote.toFixed(2)}</strong></td>
-                ${coeficientesLote.map(coef => {
-                    return `<td><strong>${coef.valor.toFixed(2)}</strong></td>`;
-                }).join('')}
-                <td><strong>${formatearMoneda(valorTotalLote)}</strong></td>
-                <td><strong>${formatearMoneda(valorM2Lote)}</strong></td>
-            </tr>
-        `;
-
-        const theadLote = `
-            <tr>
-                <th>Dirección</th>
-                <th>Frente</th>
-                <th>Fondo</th>
-                <th>FOS</th>
-                <th>FOT</th>
-                <th>Valor promedio de comp.</th>
-                <th>F&C</th>
-                <th>Ubicacion</th>
-                <th>Actividad</th>
-                ${coeficientesLote.map(coef => `<th>${coef.nombre}</th>`).join('')}
-                <th>Valor del lote</th>
-                <th>Valor por m²</th>
-            </tr>
-        `;
-
-        tablaLote = `
-            <div class="resultado-tabla-scroll">
-                <h4>Detalle del inmueble tasado</h4>
-                <table class="resultado-tabla">
-                    <thead>${theadLote}</thead>
-                    <tbody>${filaLoteTasar}</tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    return `
-        ${tablaComparables}
-        ${tablaLote}
-    `;
-}
 
 /* =========================
    INICIALIZACIÓN
@@ -729,9 +510,13 @@ window.abrirPerfilTasacion = function(id) {
         if (tasacion.lote?.caracteristicas?.superficie) {
             superficie = `${tasacion.lote.caracteristicas.superficie} m²`;
         }
-        if (tasacion.lote?.caracteristicas?.frente && tasacion.lote?.caracteristicas?.fondo) {
-            frenteFondo = `${tasacion.lote.caracteristicas.frente}m x ${tasacion.lote.caracteristicas.fondo}m`;
+        const frente = tasacion.lote?.caracteristicas?.frente;
+        const fondo = tasacion.lote?.caracteristicas?.fondoFicticio || tasacion.lote?.caracteristicas?.fondo;
+        if (frente && fondo) {
+            frenteFondo = `${frente}m x ${fondo}m`;
         }
+    } else if (tasacion.casa?.caracteristicas?.superficie) {
+        superficie = `${tasacion.casa.caracteristicas.superficie} m²`;
     } else if (tasacion.departamento?.caracteristicas?.superficie) {
         superficie = `${tasacion.departamento.caracteristicas.superficie} m²`;
     }
@@ -742,48 +527,290 @@ window.abrirPerfilTasacion = function(id) {
         tipoPropiedad = tasacion.lote.tipoLote;
     } else if (!esLote && tasacion.departamento?.tipo) {
         tipoPropiedad = tasacion.departamento.tipo;
+    } else if (tasacion.tipo) {
+        tipoPropiedad = tasacion.tipo.charAt(0).toUpperCase() + tasacion.tipo.slice(1);
     }
 
     // Services
-    const serviciosHtml =
-        tasacion.lote &&
-        tasacion.lote.servicios &&
-        tasacion.lote.servicios.length
-            ? tasacion.lote.servicios.map(servicio => `
-                <div class="chip-servicio">
-                    ${servicio}
-                </div>
-            `).join("")
-            : `<p class="historial-sin-datos">Sin servicios cargados</p>`;
+    const servicios = esLote
+        ? (tasacion.lote?.servicios || [])
+        : (tasacion.casa?.servicios || tasacion.departamento?.servicios || []);
+    const serviciosHtml = servicios.length
+        ? servicios.map(servicio => `<div class="chip-servicio">${servicio}</div>`).join("")
+        : `<p class="historial-sin-datos">Sin servicios cargados</p>`;
 
-    // Amenities (for departments)
+    // Amenities (only for departments)
     const amenidadesHtml =
-        tasacion.departamento &&
-        tasacion.departamento.amenidades &&
-        tasacion.departamento.amenidades.length
-            ? tasacion.departamento.amenidades.map(amenidad => `
-                <div class="chip-servicio">
-                    ${amenidad}
-                </div>
-            `).join("")
+        tasacion.departamento?.amenidades && tasacion.departamento.amenidades.length
+            ? tasacion.departamento.amenidades.map(amenidad => `<div class="chip-servicio">${amenidad}</div>`).join("")
             : "";
 
-    // Infrastructure (for departments)
+    // Infrastructure (departments and houses)
+    const infraestructura =
+        tasacion.casa?.infraestructura || tasacion.departamento?.infraestructura || [];
     const infraestructuraHtml =
-        tasacion.departamento &&
-        tasacion.departamento.infraestructura &&
-        tasacion.departamento.infraestructura.length
-            ? tasacion.departamento.infraestructura.map(infra => `
-                <div class="chip-servicio">
-                    ${infra}
-                </div>
-            `).join("")
+        infraestructura.length
+            ? infraestructura.map(infra => `<div class="chip-servicio">${infra}</div>`).join("")
             : "";
 
     // Observations
     const observaciones = esLote
         ? (tasacion.lote?.observaciones || "Sin observaciones")
-        : (tasacion.departamento?.observaciones || "Sin observaciones");
+        : (tasacion.casa?.observaciones || tasacion.departamento?.observaciones || "Sin observaciones");
+
+    // Lote: mejoras
+    const mejoras = esLote
+        ? (tasacion.lote?.mejoras || "Sin mejoras")
+        : null;
+
+    // Lote: additional characteristics
+    const orientacion = tasacion.ubicacion?.orientacion || '—';
+    const segundaCalle = tasacion.lote?.caracteristicas?.segundaCalle || '—';
+    const zona = tasacion.lote?.caracteristicas?.zona || '—';
+
+    // Department / House: additional characteristics
+    const ambientes = !esLote
+        ? (tasacion.casa?.ambientes || tasacion.departamento?.ambientes || '—')
+        : null;
+    const dormitorios = !esLote
+        ? (tasacion.casa?.dormitorios || tasacion.departamento?.dormitorios || '—')
+        : null;
+    const banos = !esLote
+        ? (tasacion.casa?.banos || tasacion.departamento?.banos || '—')
+        : null;
+    const cochera = !esLote
+        ? (tasacion.casa?.cochera === true ? 'Sí' : tasacion.departamento?.cochera === true ? 'Sí' : 'No')
+        : null;
+    const baulera = !esLote
+        ? (tasacion.casa?.baulera === true ? 'Sí' : tasacion.departamento?.baulera === true ? 'Sí' : 'No')
+        : null;
+    const ubicacionPlanta = !esLote ? (tasacion.departamento?.ubicacionPlanta || '—') : null;
+    const ubicacionPiso = !esLote ? (tasacion.departamento?.ubicacionPiso || '—') : null;
+    const tieneAscensor = !esLote ? (tasacion.departamento?.tieneAscensor || '—') : null;
+    const antiguedad = !esLote
+        ? (tasacion.casa?.antiguedad || tasacion.departamento?.antiguedad || '—')
+        : null;
+    const estadoConservacion = !esLote
+        ? (tasacion.casa?.estadoConservacion || tasacion.departamento?.estadoConservacion || '—')
+        : null;
+    const caracteristicaConstructiva = !esLote ? (tasacion.departamento?.caracteristicaConstructiva || '—') : null;
+    const superficieCubierta = !esLote
+        ? (tasacion.casa?.superficieCubierta || tasacion.departamento?.superficieCubierta || '—')
+        : null;
+    const superficieTotal = !esLote ? (tasacion.casa?.superficieTotal || '—') : null;
+    const calidadConstruccion = !esLote ? (tasacion.casa?.calidadConstruccion || '—') : null;
+
+    // Homogeneization table for departments and houses
+    function generarTablaHomogeneizacion(hom) {
+        if (!hom) return '';
+        const conceptos = {
+            cubierto: 'Cubierto',
+            semicubierto: 'Semicubierto',
+            balcon: 'Balcón / Terraza',
+            descubierto: 'Descubierto'
+        };
+        const filas = Object.keys(conceptos).map(key => {
+            const item = hom[key] || {};
+            return `
+                <tr>
+                    <td>${conceptos[key]}</td>
+                    <td>${item.superficie !== undefined ? item.superficie + ' m²' : '—'}</td>
+                    <td>${item.coeficiente !== undefined ? item.coeficiente : '—'}</td>
+                    <td>${item.homogeneizada !== undefined ? item.homogeneizada + ' m²' : '—'}</td>
+                </tr>
+            `;
+        }).join('');
+        return `
+            <div class="resultado-tabla-wrap">
+                <h3>Homogeneización de superficies</h3>
+                <div class="resultado-tabla-scroll">
+                    <table class="resultado-tabla">
+                        <thead>
+                            <tr>
+                                <th>Concepto</th>
+                                <th>Superficie</th>
+                                <th>Coef.</th>
+                                <th>Homogeneizada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filas}
+                            <tr class="valor-promedio-row">
+                                <td><strong>Total</strong></td>
+                                <td><strong>${hom.totalSuperficie !== undefined ? hom.totalSuperficie + ' m²' : '—'}</strong></td>
+                                <td></td>
+                                <td><strong>${hom.totalHomogeneizada !== undefined ? hom.totalHomogeneizada + ' m²' : '—'}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    const hom = !esLote
+        ? (tasacion.casa?.homogeneizacion || tasacion.departamento?.homogeneizacion)
+        : null;
+    const tablaHomogeneizacion = hom ? generarTablaHomogeneizacion(hom) : '';
+
+    // Additional characteristics section
+    let perfilCaracteristicasHtml = '';
+    if (esLote) {
+        perfilCaracteristicasHtml = `
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Orientación</div>
+                        <div class="perfil-item-value">${orientacion}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Segunda calle</div>
+                        <div class="perfil-item-value">${segundaCalle}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Zona</div>
+                        <div class="perfil-item-value">${zona}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (tasacion.departamento) {
+        perfilCaracteristicasHtml = `
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ambientes</div>
+                        <div class="perfil-item-value">${ambientes}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Dormitorios</div>
+                        <div class="perfil-item-value">${dormitorios}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baños</div>
+                        <div class="perfil-item-value">${banos}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ubicación en planta</div>
+                        <div class="perfil-item-value">${ubicacionPlanta}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ubicación piso</div>
+                        <div class="perfil-item-value">${ubicacionPiso}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Antigüedad</div>
+                        <div class="perfil-item-value">${antiguedad}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Estado de conservación</div>
+                        <div class="perfil-item-value">${estadoConservacion}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Característica constructiva</div>
+                        <div class="perfil-item-value">${caracteristicaConstructiva}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie cubierta</div>
+                        <div class="perfil-item-value">${superficieCubierta}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Cochera</div>
+                        <div class="perfil-item-value">${cochera}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baulera</div>
+                        <div class="perfil-item-value">${baulera}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ascensor</div>
+                        <div class="perfil-item-value">${tieneAscensor}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-card-item perfil-card-full">
+                    <div class="perfil-item-label">Orientación</div>
+                    <div class="perfil-item-value">${orientacion}</div>
+                </div>
+            </div>
+        `;
+    } else if (tasacion.casa) {
+        perfilCaracteristicasHtml = `
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ambientes</div>
+                        <div class="perfil-item-value">${ambientes}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Dormitorios</div>
+                        <div class="perfil-item-value">${dormitorios}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baños</div>
+                        <div class="perfil-item-value">${banos}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie cubierta</div>
+                        <div class="perfil-item-value">${superficieCubierta}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie total</div>
+                        <div class="perfil-item-value">${superficieTotal}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Antigüedad</div>
+                        <div class="perfil-item-value">${antiguedad}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Estado de conservación</div>
+                        <div class="perfil-item-value">${estadoConservacion}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Calidad de construcción</div>
+                        <div class="perfil-item-value">${calidadConstruccion}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Cochera</div>
+                        <div class="perfil-item-value">${cochera}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baulera</div>
+                        <div class="perfil-item-value">${baulera}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Orientación</div>
+                        <div class="perfil-item-value">${orientacion}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     contenidoModal.innerHTML = `
 
@@ -857,7 +884,9 @@ window.abrirPerfilTasacion = function(id) {
                     </div>
                 </div>
 
-                <!-- Row 3: Services (and amenities/infrastructure for departments) -->
+                ${perfilCaracteristicasHtml}
+
+                <!-- Row 3: Services (and amenities/infrastructure for departments and houses) -->
                 <div class="perfil-row">
                     <div class="perfil-card-item perfil-card-full">
                         <div class="perfil-item-label">
@@ -903,11 +932,16 @@ window.abrirPerfilTasacion = function(id) {
                         <div class="perfil-item-label">
                             Resultados
                         </div>
-                        <div class="perfil-resultados-placeholder">
-                            ${generarTablaResultadosPerfil(tasacion)}
-                        </div>
+                        <div id="perfil-resultados-renderer" class="perfil-resultados-placeholder"></div>
                     </div>
                 </div>
+
+                ${tablaHomogeneizacion ? `
+                <!-- Row 4b: Homogeneización de superficies -->
+                <div class="perfil-row">
+                    ${tablaHomogeneizacion}
+                </div>
+                ` : ""}
 
                 <!-- Row 5: Observations -->
                 <div class="perfil-row">
@@ -920,6 +954,20 @@ window.abrirPerfilTasacion = function(id) {
                         </div>
                     </div>
                 </div>
+
+                ${esLote ? `
+                <!-- Row 6: Mejoras -->
+                <div class="perfil-row">
+                    <div class="perfil-card-item perfil-card-full">
+                        <div class="perfil-item-label">
+                            Mejoras
+                        </div>
+                        <div class="perfil-observaciones">
+                            ${mejoras}
+                        </div>
+                    </div>
+                </div>
+                ` : ""}
 
             </div>
 
@@ -937,6 +985,22 @@ window.abrirPerfilTasacion = function(id) {
 
         </div>
     `;
+
+    // Renderizar tablas reutilizando el mismo componente de la pantalla final
+    const contenedorResultados = document.getElementById("perfil-resultados-renderer");
+    if (contenedorResultados && tasacion.resultado && typeof ResultadosRenderer !== 'undefined') {
+        const datosTasacion = tasacion.datosCompletos || tasacion;
+        const renderer = new ResultadosRenderer(
+            contenedorResultados,
+            tasacion.resultado,
+            tasacion.tipo || 'lote',
+            datosTasacion,
+            'lectura'
+        );
+        renderer.renderizar();
+    } else if (contenedorResultados) {
+        contenedorResultados.innerHTML = '<p class="historial-sin-datos">No hay datos de resultados disponibles</p>';
+    }
 
     // Back button event listener
     document
@@ -1003,7 +1067,7 @@ function editarTasacion(id) {
     cerrarPerfil();
 
     // Navegar a la página de tasación
-    window.location.href = "app/tasacion.html";
+    window.location.href = "tasacion.html";
 }
 
 document

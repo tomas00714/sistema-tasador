@@ -6,6 +6,8 @@ a columnas de la base de datos, siguiendo el modelo híbrido del proyecto.
 from typing import Dict, Any
 import logging
 
+from tablas.ross_heidecke import _parse_estado_ross_heidecke
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,7 +63,7 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
         columnas['valor_m2'] = extraer_valor(resultado, 'valor_m2', 'valorM2', 'valorUnitario', default=None, transform=float)
     
     # Tipo de inmueble
-    tipo = datos.get('tipo', 'lote').lower()
+    tipo = (datos.get('tipo') or 'lote').lower()
     columnas['tipo_inmueble'] = tipo
     
     # Campos específicos por tipo
@@ -88,13 +90,25 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
             columnas['cochera'] = extraer_valor(depto, 'cochera', 'tieneCochera', default=None, transform=lambda v: bool(v))
             columnas['baulera'] = extraer_valor(depto, 'baulera', 'tieneBaulera', default=None, transform=lambda v: bool(v))
             columnas['tiene_ascensor'] = extraer_valor(depto, 'tieneAscensor', 'ascensor', default=None, transform=lambda v: bool(v) if isinstance(v, bool) else v in ('si', 'Si', 'SI', 'sí', 'true'))
-            columnas['antiguedad'] = str(depto.get('antiguedad')) if depto.get('antiguedad') is not None else None
-            columnas['estado_conservacion'] = depto.get('estadoConservacion')
+            columnas['antiguedad'] = extraer_valor(depto, 'antiguedad', default=None, transform=int)
+            columnas['estado_conservacion'] = extraer_valor(
+                depto, 'estadoConservacion',
+                default=None,
+                transform=lambda v: _parse_estado_ross_heidecke(v) or None
+            )
             columnas['ubicacion_piso'] = depto.get('ubicacionPiso')
             columnas['ubicacion_planta'] = depto.get('ubicacionPlanta')
             columnas['superficie_cubierta'] = extraer_valor(depto, 'superficieCubierta', 'superficie', default=None, transform=float)
             columnas['superficie_total'] = extraer_valor(depto, 'superficieTotal', 'superficieCubierta', default=None, transform=float)
-            columnas['superficie_homogeneizada'] = extraer_valor(depto, 'superficieHomogeneizada', 'totalHomogeneizada', 'totalSuperficie', default=None, transform=float)
+            columnas['superficie_homogeneizada'] = extraer_valor(
+                depto,
+                ['homogeneizacion', 'totalHomogeneizada'],
+                'superficieHomogeneizada',
+                'totalHomogeneizada',
+                'totalSuperficie',
+                default=None,
+                transform=float
+            )
     
     elif tipo == 'casa':
         casa = datos.get('casa', {})
@@ -105,9 +119,24 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
             columnas['cochera'] = extraer_valor(casa, 'cochera', 'tieneCochera', default=None, transform=lambda v: bool(v))
             columnas['tiene_pileta'] = extraer_valor(casa, 'tienePileta', 'pileta', default=None, transform=lambda v: bool(v))
             columnas['tiene_jardin'] = extraer_valor(casa, 'tieneJardin', 'jardin', default=None, transform=lambda v: bool(v))
+            columnas['antiguedad'] = extraer_valor(casa, 'antiguedad', default=None, transform=int)
+            columnas['estado_conservacion'] = extraer_valor(
+                casa, 'estadoConservacion',
+                default=None,
+                transform=lambda v: _parse_estado_ross_heidecke(v) or None
+            )
             columnas['superficie_cubierta'] = extraer_valor(casa, 'superficieCubierta', 'superficie', default=None, transform=float)
             columnas['superficie_terreno'] = extraer_valor(casa, 'superficieTerreno', 'superficieTotal', default=None, transform=float)
             columnas['superficie_total'] = extraer_valor(casa, 'superficieTotal', 'superficieCubierta', default=None, transform=float)
+            columnas['superficie_homogeneizada'] = extraer_valor(
+                casa,
+                ['homogeneizacion', 'totalHomogeneizada'],
+                'superficieHomogeneizada',
+                'totalHomogeneizada',
+                'totalSuperficie',
+                default=None,
+                transform=float
+            )
     
     # Limpiar valores vacíos para evitar conflictos con NOT NULL
     columnas_limpias = {}
@@ -136,7 +165,7 @@ def mapear_comparable_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
         columnas['lon'] = extraer_valor(ubicacion, 'lon', 'longitud', 'lng', default=None, transform=float)
     
     # Tipo inmueble: el frontend envia 'tipoInmueble', no 'tipo'
-    tipo = (datos.get('tipoInmueble') or datos.get('tipo', 'lote')).lower()
+    tipo = ((datos.get('tipoInmueble') or datos.get('tipo')) or 'lote').lower()
     columnas['tipo_inmueble'] = tipo
     
     # Valor y superficie

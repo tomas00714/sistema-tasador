@@ -529,6 +529,13 @@ function inicializarAutocompleteProvincia() {
         }
     });
 
+    // Cerrar lista al perder el foco
+    input.addEventListener("blur", () => {
+        setTimeout(() => {
+            list.style.display = "none";
+        }, 200);
+    });
+
     document.addEventListener("click", (e) => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
@@ -582,6 +589,13 @@ function inicializarAutocompleteLocalidad() {
                 actualizarMapa();
             }
         }
+    });
+
+    // Cerrar lista al perder el foco
+    input.addEventListener("blur", () => {
+        setTimeout(() => {
+            list.style.display = "none";
+        }, 200);
     });
 
     document.addEventListener("click", (e) => {

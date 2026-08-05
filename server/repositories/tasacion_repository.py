@@ -16,13 +16,13 @@ class TasacionRepository(BaseRepository):
         """Busca tasaciones de un usuario."""
         return self.find_where({"usuario_id": usuario_id}, limit=limit)
     
-    def get_by_usuario(self, usuario_id: int) -> List[Dict[str, Any]]:
-        """Obtiene todas las tasaciones de un usuario."""
-        return self.find_where({"usuario_id": usuario_id})
+    def get_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene tasaciones de un usuario, opcionalmente paginadas."""
+        return self.find_where({"usuario_id": usuario_id}, limit=limit, offset=offset)
     
-    def get_by_usuario_and_estado(self, usuario_id: int, estado: str) -> List[Dict[str, Any]]:
-        """Obtiene tasaciones de un usuario filtradas por estado."""
-        return self.find_where({"usuario_id": usuario_id, "estado": estado})
+    def get_by_usuario_and_estado(self, usuario_id: int, estado: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene tasaciones de un usuario filtradas por estado, opcionalmente paginadas."""
+        return self.find_where({"usuario_id": usuario_id, "estado": estado}, limit=limit, offset=offset)
     
     def find_by_tipo_inmueble(self, tipo_inmueble: str, limit: int = None) -> List[Dict[str, Any]]:
         """Busca tasaciones por tipo de inmueble."""

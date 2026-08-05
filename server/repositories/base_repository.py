@@ -106,19 +106,23 @@ class BaseRepository(ABC):
         rowcount = self.execute_query(query, (id,), fetch=False)
         return rowcount > 0
     
-    def find_where(self, conditions: Dict[str, Any], limit: int = None) -> List[Dict[str, Any]]:
-        """Busca registros con condiciones WHERE."""
+    def find_where(self, conditions: Dict[str, Any], limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Busca registros con condiciones WHERE, opcionalmente paginados."""
         where_clauses = []
         params = []
-        
+
         for column, value in conditions.items():
             where_clauses.append(f"{column} = %s")
             params.append(value)
-        
+
         where_str = ' AND '.join(where_clauses)
         query = f"SELECT * FROM {self.table_name} WHERE {where_str}"
-        
-        if limit:
-            query += f" LIMIT {limit}"
-        
+
+        if limit is not None:
+            query += " LIMIT %s"
+            params.append(limit)
+        if limit is not None and offset is not None:
+            query += " OFFSET %s"
+            params.append(offset)
+
         return self.execute_query(query, tuple(params))

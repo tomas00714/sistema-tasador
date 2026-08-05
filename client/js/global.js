@@ -159,6 +159,187 @@ function getNombrePaso(tipo, index) {
     return pasos[index] || null;
 }
 
+/* =========================
+   CONFIGURACION DE INPUTS
+   Sets de opciones reutilizables
+========================= */
+
+const OPCIONES_AMBIENTES = ['Monoambiente', '2', '3', '4', '5', '6+'];
+const OPCIONES_DORMITORIOS = ['1', '2', '3', '4', '5+'];
+const OPCIONES_BANOS = ['1', '2', '3', '4', '5+'];
+
+const OPCIONES_SUPERFICIE_CUBIERTA = [
+    { label: 'Hasta 30m²', coef: 1.10, rango: '1.10', coefDisplay: '1.10' },
+    { label: 'De 30 a 50m²', coef: 1.05, rango: '1.05', coefDisplay: '1.05' },
+    { label: 'De 50 a 100m²', coef: 1.00, rango: '1', coefDisplay: '1' },
+    { label: 'De 100 a 150m²', coef: 0.95, rango: '0.95', coefDisplay: '0.95' },
+    { label: 'Más de 150m²', coef: 0.90, rango: '0.90', coefDisplay: '0.90' }
+];
+
+const OPCIONES_CARACTERISTICA_CONSTRUCTIVA = [
+    { label: 'Económica', coef: 0.90, rango: '0.90', coefDisplay: '0.90' },
+    { label: 'Buena económica', coef: 1.00, rango: '1', coefDisplay: '1' },
+    { label: 'Buena sin servicios', coef: 1.05, rango: '1.05-1.10', coefDisplay: '1.05-1.10' },
+    { label: 'Buena con servicios', coef: 1.15, rango: '1.15-1.20', coefDisplay: '1.15-1.20' },
+    { label: 'Muy buena', coef: 1.25, rango: '1.25-1.30', coefDisplay: '1.25-1.30' }
+];
+
+const OPCIONES_ESTADO_CONSERVACION = [
+    { label: '1 - Excelente', valor: '1' },
+    { label: '2 - Bueno', valor: '2' },
+    { label: '3 - Regular', valor: '3' },
+    { label: '4 - Malo', valor: '4' },
+    { label: '5 - Muy malo', valor: '5' }
+];
+
+/**
+ * Genera un input simple de autocomplete con las opciones indicadas.
+ * @param {Object} p
+ * @returns {string} HTML del input
+ */
+function generarInputAutocompletado({ label, inputId, listId, opciones, placeholder = 'Seleccionar', value = '', disabled = false, claseInputGroup = '' }) {
+    const items = opciones.map(opcion => {
+        if (typeof opcion === 'string') {
+            return `<div class="autocomplete-item">${escapeHtml(opcion)}</div>`;
+        }
+        const attrs = Object.entries(opcion.attrs || {})
+            .map(([k, v]) => `data-${k}="${escapeHtml(String(v))}"`)
+            .join(' ');
+        return `<div class="autocomplete-item" ${attrs}>${escapeHtml(opcion.label)}</div>`;
+    }).join('');
+
+    const disabledAttr = disabled ? ' disabled' : '';
+    const clase = claseInputGroup ? `input-group ${claseInputGroup}` : 'input-group';
+
+    return `
+        <div class="${clase}">
+            <label>${escapeHtml(label)}</label>
+            <div class="autocomplete-container">
+                <input type="text" id="${inputId}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" readonly value="${escapeHtml(value || '')}"${disabledAttr}>
+                <div class="autocomplete-list" id="${listId}">
+                    ${items}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Genera un input de autocomplete con coeficiente anexo.
+ * @param {Object} p
+ * @returns {string} HTML del input
+ */
+function generarInputAutocompletadoConCoef({ label, inputId, listId, coefInputId, opciones, placeholder = 'Seleccionar', value = '', coefValue = '', claseInputGroup = '' }) {
+    const items = opciones.map(opcion => {
+        const attrs = Object.entries({
+            coef: opcion.coef,
+            rango: opcion.rango,
+            ...(opcion.attrs || {})
+        })
+            .map(([k, v]) => `data-${k}="${escapeHtml(String(v))}"`)
+            .join(' ');
+        return `<div class="autocomplete-item" ${attrs}><span>${escapeHtml(opcion.label)}</span><span class="coef-display">${escapeHtml(opcion.coefDisplay)}</span></div>`;
+    }).join('');
+
+    const clase = claseInputGroup ? `input-group ${claseInputGroup}` : 'input-group';
+
+    return `
+        <div class="${clase}">
+            <label>${escapeHtml(label)}</label>
+            <div class="input-dividido-container">
+                <div class="input-dividido-principal">
+                    <div class="autocomplete-container">
+                        <input type="text" id="${inputId}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" readonly value="${escapeHtml(value || '')}">
+                        <div class="autocomplete-list" id="${listId}">
+                            ${items}
+                        </div>
+                    </div>
+                </div>
+                <div class="input-dividido-coef">
+                    <input type="number" id="${coefInputId}" placeholder="Coef" step="0.01" min="0" value="${coefValue || ''}">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/* Generadores concretos para inputs comunes */
+
+function generarInputAmbientes({ inputId = 'ambientesInput', listId = 'ambientesList', label = 'Ambientes', value = '', disabled = false } = {}) {
+    return generarInputAutocompletado({
+        label,
+        inputId,
+        listId,
+        placeholder: 'Seleccionar cantidad',
+        opciones: OPCIONES_AMBIENTES,
+        value,
+        disabled
+    });
+}
+
+function generarInputDormitorios({ inputId = 'dormitoriosInput', listId = 'dormitoriosList', label = 'Dormitorios', value = '', disabled = false } = {}) {
+    return generarInputAutocompletado({
+        label,
+        inputId,
+        listId,
+        placeholder: 'Seleccionar cantidad',
+        opciones: OPCIONES_DORMITORIOS,
+        value,
+        disabled
+    });
+}
+
+function generarInputBanos({ inputId = 'banosInput', listId = 'banosList', label = 'Baños', value = '' } = {}) {
+    return generarInputAutocompletado({
+        label,
+        inputId,
+        listId,
+        placeholder: 'Seleccionar cantidad',
+        opciones: OPCIONES_BANOS,
+        value
+    });
+}
+
+function generarInputSuperficieCubierta({ inputId, listId, coefInputId, label = 'Superficie cubierta propia', placeholder = 'Seleccionar rango', value = '', coefValue = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletadoConCoef({
+        label,
+        inputId,
+        listId,
+        coefInputId,
+        placeholder,
+        opciones: OPCIONES_SUPERFICIE_CUBIERTA,
+        value,
+        coefValue,
+        claseInputGroup
+    });
+}
+
+function generarInputCaracteristicaConstructiva({ inputId, listId, coefInputId, label = 'Característica constructiva', value = '', coefValue = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletadoConCoef({
+        label,
+        inputId,
+        listId,
+        coefInputId,
+        placeholder: 'Seleccionar característica',
+        opciones: OPCIONES_CARACTERISTICA_CONSTRUCTIVA,
+        value,
+        coefValue,
+        claseInputGroup
+    });
+}
+
+function generarInputEstadoConservacion({ inputId, listId, label = 'Estado de conservación', value = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletado({
+        label,
+        inputId,
+        listId,
+        placeholder: 'Seleccionar estado',
+        opciones: OPCIONES_ESTADO_CONSERVACION.map(opcion => ({ ...opcion, attrs: { valor: opcion.valor } })),
+        value,
+        claseInputGroup
+    });
+}
+
 // Get array index from visual step number (step 2 = index 0)
 function getIndexPaso(tipo, stepNumber) {
     return stepNumber - 2;
@@ -345,6 +526,29 @@ function navegarAPaso(step) {
     if (flujo.pasos[currentStepIndex]?.guardar) {
         console.log('[navegarAPaso] Saving current step before navigation');
         flujo.pasos[currentStepIndex].guardar();
+    }
+
+    // Validate current step only when navigating FORWARD (to later steps)
+    if (step > pasoActual && flujo.pasos[currentStepIndex]?.validator) {
+        console.log('[navegarAPaso] Validating current step before forward navigation');
+        const resultadoValidacion = flujo.pasos[currentStepIndex].validator.validar(datosTasacion);
+        console.log('[navegarAPaso] resultadoValidacion:', resultadoValidacion);
+        
+        if (!resultadoValidacion.valido) {
+            console.log('[navegarAPaso] Validation failed, showing errors:', resultadoValidacion.errores);
+            // Show errors
+            if (typeof ValidationUI !== 'undefined') {
+                resultadoValidacion.errores.forEach(error => {
+                    if (error.campo) {
+                        ValidationUI.marcarCampoError(error.campo, error.mensaje);
+                    } else {
+                        // Global errors (no specific field)
+                        alert(error.mensaje);
+                    }
+                });
+            }
+            return; // Don't navigate if validation fails
+        }
     }
 
     // Render new step

@@ -20,7 +20,9 @@ function requireAuth() {
 
 function requireGuest() {
     if (isAuthenticated()) {
-        window.location.href = 'app/index.html';
+        const currentPath = window.location.pathname;
+        const isInApp = currentPath.includes('/app/');
+        window.location.href = isInApp ? 'index.html' : 'app/index.html';
         return false;
     }
     return true;

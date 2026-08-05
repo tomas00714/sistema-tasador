@@ -8,14 +8,24 @@ JWT_SECRET_KEY = getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production"
 JWT_ALGORITHM = getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_HOURS = int(getenv("JWT_ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 
-# Lista de emails administradores desde variables de entorno
+# Lista de emails administradores.
 # Los administradores se determinan únicamente por su email.
 # No existe asociación entre IDs específicos y permisos de administrador.
+# Se cargan desde variables de entorno ADMIN_EMAIL_1 ... ADMIN_EMAIL_99
+# y también se pueden agregar hardcodeados abajo.
 ADMIN_EMAILS = set()
-for i in range(1, 10):  # Soporta hasta 9 administradores
+for i in range(1, 100):  # Soporta hasta 99 administradores por entorno
     email = getenv(f"ADMIN_EMAIL_{i}")
     if email:
         ADMIN_EMAILS.add(email)
+
+# Opcional: hardcodeados para desarrollo local.
+# Forma recomendada: usar el archivo .env con variables ADMIN_EMAIL_1, ADMIN_EMAIL_2, etc.
+# Si querés hardcodear, descomentá los correos de abajo.
+# ADMIN_EMAILS.update({
+#     'tucorreo1@gmail.com',
+#     'tucorreo2@gmail.com',
+# })
 
 
 def hash_password(password: str) -> str:

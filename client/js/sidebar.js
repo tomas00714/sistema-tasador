@@ -24,6 +24,9 @@ function inyectarSidebar(paginaActual) {
 
     // Inicializar funcionalidad del toggle
     inicializarSidebarToggle();
+
+    // Inicializar click en logo para volver a landing
+    inicializarLogoClick();
 }
 
 function inicializarSidebarToggle() {
@@ -53,6 +56,19 @@ function inicializarSidebarToggle() {
 
     // Limpiar la clase inicial después de cargar
     document.documentElement.classList.remove('sidebar-collapsed-initial');
+}
+
+function inicializarLogoClick() {
+    const sidebarLogo = document.querySelector('.sidebar-logo');
+    if (!sidebarLogo) return;
+
+    sidebarLogo.addEventListener('click', () => {
+        // Usar ruta relativa desde app/ a client/
+        window.location.href = '../index.html';
+    });
+
+    // Agregar cursor pointer para indicar que es clickeable
+    sidebarLogo.style.cursor = 'pointer';
 }
 
 function inicializarLogout() {

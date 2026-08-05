@@ -56,7 +56,7 @@ async function abrirModalComparable(tipoInmueble, onGuardar, modo = 'formulario'
     } else {
         // Modo formulario manual o edición
         const esEdicion = modo === 'editar';
-        contenido.innerHTML = generarFormularioComparable(tipoInmueble);
+        contenido.innerHTML = generarFormularioComparable(tipoInmueble, datosEdicion);
         titulo.textContent = `${esEdicion ? 'Editar' : 'Agregar'} Comparable - ${tipoInmueble.charAt(0).toUpperCase() + tipoInmueble.slice(1)}`;
         btnGuardar.textContent = esEdicion ? 'Guardar Edición' : 'Guardar Comparable';
         btnGuardar.style.display = 'block';

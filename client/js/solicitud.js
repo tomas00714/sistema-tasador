@@ -39,7 +39,7 @@ function obtenerUsuarioActual() {
     if (typeof window !== 'undefined' && window.usuarioActual) {
         return window.usuarioActual;
     }
-    return { usuario_id: 1, nombre: 'Usuario' };
+    return { usuario_id: null, nombre: 'Invitado' };
 }
 
 function formatearFechaSimple(fechaStr) {

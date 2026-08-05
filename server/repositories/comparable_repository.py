@@ -12,29 +12,29 @@ class ComparableRepository(BaseRepository):
     def __init__(self):
         super().__init__("comparables")
     
-    def find_by_usuario(self, usuario_id: int, limit: int = None) -> List[Dict[str, Any]]:
+    def find_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca comparables de un usuario."""
-        return self.find_where({"usuario_id": usuario_id}, limit=limit)
+        return self.find_where({"usuario_id": usuario_id}, limit=limit, offset=offset)
     
-    def get_by_usuario(self, usuario_id: int) -> List[Dict[str, Any]]:
-        """Obtiene todos los comparables de un usuario."""
-        return self.find_where({"usuario_id": usuario_id})
+    def get_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene comparables de un usuario, opcionalmente paginados."""
+        return self.find_where({"usuario_id": usuario_id}, limit=limit, offset=offset)
     
-    def get_by_usuario_tipo(self, usuario_id: int, tipo_inmueble: str) -> List[Dict[str, Any]]:
-        """Obtiene comparables de un usuario filtrados por tipo de inmueble."""
-        return self.find_where({"usuario_id": usuario_id, "tipo_inmueble": tipo_inmueble})
+    def get_by_usuario_tipo(self, usuario_id: int, tipo_inmueble: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene comparables de un usuario filtrados por tipo de inmueble, opcionalmente paginados."""
+        return self.find_where({"usuario_id": usuario_id, "tipo_inmueble": tipo_inmueble}, limit=limit, offset=offset)
     
-    def get_by_usuario_tipo_origen(self, usuario_id: int, tipo_inmueble: str, origen: str) -> List[Dict[str, Any]]:
-        """Obtiene comparables de un usuario filtrados por tipo y origen."""
-        return self.find_where({"usuario_id": usuario_id, "tipo_inmueble": tipo_inmueble, "origen": origen})
+    def get_by_usuario_tipo_origen(self, usuario_id: int, tipo_inmueble: str, origen: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene comparables de un usuario filtrados por tipo y origen, opcionalmente paginados."""
+        return self.find_where({"usuario_id": usuario_id, "tipo_inmueble": tipo_inmueble, "origen": origen}, limit=limit, offset=offset)
     
-    def find_by_tasacion_origen(self, tasacion_origen_id: int, limit: int = None) -> List[Dict[str, Any]]:
+    def find_by_tasacion_origen(self, tasacion_origen_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca comparables derivados de una tasación."""
-        return self.find_where({"tasacion_origen_id": tasacion_origen_id}, limit=limit)
+        return self.find_where({"tasacion_origen_id": tasacion_origen_id}, limit=limit, offset=offset)
     
-    def find_by_tipo_inmueble(self, tipo_inmueble: str, limit: int = None) -> List[Dict[str, Any]]:
+    def find_by_tipo_inmueble(self, tipo_inmueble: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca comparables por tipo de inmueble."""
-        return self.find_where({"tipo_inmueble": tipo_inmueble}, limit=limit)
+        return self.find_where({"tipo_inmueble": tipo_inmueble}, limit=limit, offset=offset)
     
     def find_compartidos(self, usuario_id: int, limit: int = None) -> List[Dict[str, Any]]:
         """Busca comparables compartidos con un usuario."""

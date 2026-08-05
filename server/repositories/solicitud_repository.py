@@ -41,21 +41,21 @@ class SolicitudRepository(BaseRepository):
         # Buscar por ID interno
         return self.find_by_id(id_interno)
     
-    def find_by_usuario(self, usuario_id: int, limit: int = None) -> List[Dict[str, Any]]:
+    def find_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca solicitudes de un usuario."""
-        return self.find_where({"usuario_id": usuario_id}, limit=limit)
+        return self.find_where({"usuario_id": usuario_id}, limit=limit, offset=offset)
     
-    def get_by_usuario(self, usuario_id: int) -> List[Dict[str, Any]]:
-        """Obtiene todas las solicitudes de un usuario."""
-        return self.find_where({"usuario_id": usuario_id})
+    def get_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene solicitudes de un usuario, opcionalmente paginadas."""
+        return self.find_where({"usuario_id": usuario_id}, limit=limit, offset=offset)
     
-    def get_by_usuario_and_estado(self, usuario_id: int, estado: str) -> List[Dict[str, Any]]:
-        """Obtiene solicitudes de un usuario filtradas por estado."""
-        return self.find_where({"usuario_id": usuario_id, "estado": estado})
+    def get_by_usuario_and_estado(self, usuario_id: int, estado: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
+        """Obtiene solicitudes de un usuario filtradas por estado, opcionalmente paginadas."""
+        return self.find_where({"usuario_id": usuario_id, "estado": estado}, limit=limit, offset=offset)
     
-    def find_by_estado(self, estado: str, limit: int = None) -> List[Dict[str, Any]]:
+    def find_by_estado(self, estado: str, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca solicitudes por estado."""
-        return self.find_where({"estado": estado}, limit=limit)
+        return self.find_where({"estado": estado}, limit=limit, offset=offset)
     
     def find_expiradas(self) -> List[Dict[str, Any]]:
         """Busca solicitudes expiradas."""
