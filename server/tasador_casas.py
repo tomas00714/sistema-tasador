@@ -54,14 +54,14 @@ def tasar_casa(datos):
         datos.estado_conservacion,
         vida_util
     )
-    coeficiente_calidad = getattr(datos, "calidad_construccion", 1) or 1
+    caracteristica_constructiva = getattr(datos, "caracteristica_constructiva", 1) or 1
 
     if getattr(datos, "valor_m2_referencia", None) is None or datos.valor_m2_referencia is None:
         datos.valor_m2_referencia = _calcular_valor_m2_referencia(datos.comparables, superficie_cubierta)
 
     valor_m2 = datos.valor_m2_referencia
     valor_base = superficie_cubierta * valor_m2
-    valor_final = valor_base * coeficiente_ross * coeficiente_calidad
+    valor_final = valor_base * coeficiente_ross * caracteristica_constructiva
 
     ajuste_final = datos.ajuste_final_porcentaje or 0
     if ajuste_final:
@@ -100,7 +100,7 @@ def tasar_casa(datos):
         "superficie_cubierta": round(superficie_cubierta, 2),
         "valor_m2_referencia": round(valor_m2, 2),
         "rossHeidecke": round(coeficiente_ross, 4),
-        "coeficiente_calidad": round(coeficiente_calidad, 2),
+        "caracteristica_constructiva": round(caracteristica_constructiva, 2),
         "valor_final": round(valor_final, 2),
         "valor_m2": round(valor_final / superficie_cubierta, 2),
         "valor_minimo": round(valor_minimo, 2),

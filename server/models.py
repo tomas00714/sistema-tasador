@@ -132,7 +132,7 @@ class TasacionCasaRequest(BaseModel):
 
     vida_util: Optional[int] = 80
 
-    calidad_construccion: float
+    caracteristica_constructiva: float
 
     valor_m2_referencia: Optional[float] = None
 
