@@ -72,8 +72,8 @@ const CasaValidator = {
             }
 
             // Validate característica constructiva
-            if (!casa.calidadConstruccion || casa.calidadConstruccion === '') {
-                errores.push({ campo: 'calidadConstruccionInput', mensaje: 'Seleccioná la característica constructiva' });
+            if (!casa.caracteristicaConstructiva || casa.caracteristicaConstructiva === '') {
+                errores.push({ campo: 'caracteristicaConstructivaInput', mensaje: 'Seleccioná la característica constructiva' });
             }
 
             return ValidatorBase.crearResultado(errores.length === 0, errores);

@@ -84,9 +84,9 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
     elif tipo == 'departamento':
         depto = datos.get('departamento', {})
         if isinstance(depto, dict):
-            columnas['ambientes'] = extraer_valor(depto, 'ambientes', 'cantAmbientes', default=None, transform=int)
-            columnas['dormitorios'] = extraer_valor(depto, 'dormitorios', 'cantDormitorios', default=None, transform=int)
-            columnas['banos'] = extraer_valor(depto, 'banos', 'cantBanos', 'banios', default=None, transform=int)
+            columnas['ambientes'] = extraer_valor(depto, 'ambientes', 'cantAmbientes', default=None, transform=str)
+            columnas['dormitorios'] = extraer_valor(depto, 'dormitorios', 'cantDormitorios', default=None, transform=str)
+            columnas['banos'] = extraer_valor(depto, 'banos', 'cantBanos', 'banios', default=None, transform=str)
             columnas['cochera'] = extraer_valor(depto, 'cochera', 'tieneCochera', default=None, transform=lambda v: bool(v))
             columnas['baulera'] = extraer_valor(depto, 'baulera', 'tieneBaulera', default=None, transform=lambda v: bool(v))
             columnas['tiene_ascensor'] = extraer_valor(depto, 'tieneAscensor', 'ascensor', default=None, transform=lambda v: bool(v) if isinstance(v, bool) else v in ('si', 'Si', 'SI', 'sí', 'true'))
@@ -113,9 +113,9 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
     elif tipo == 'casa':
         casa = datos.get('casa', {})
         if isinstance(casa, dict):
-            columnas['ambientes'] = extraer_valor(casa, 'ambientes', 'cantAmbientes', default=None, transform=int)
-            columnas['dormitorios'] = extraer_valor(casa, 'dormitorios', 'cantDormitorios', default=None, transform=int)
-            columnas['banos'] = extraer_valor(casa, 'banos', 'cantBanos', 'banios', default=None, transform=int)
+            columnas['ambientes'] = extraer_valor(casa, 'ambientes', 'cantAmbientes', default=None, transform=str)
+            columnas['dormitorios'] = extraer_valor(casa, 'dormitorios', 'cantDormitorios', default=None, transform=str)
+            columnas['banos'] = extraer_valor(casa, 'banos', 'cantBanos', 'banios', default=None, transform=str)
             columnas['cochera'] = extraer_valor(casa, 'cochera', 'tieneCochera', default=None, transform=lambda v: bool(v))
             columnas['tiene_pileta'] = extraer_valor(casa, 'tienePileta', 'pileta', default=None, transform=lambda v: bool(v))
             columnas['tiene_jardin'] = extraer_valor(casa, 'tieneJardin', 'jardin', default=None, transform=lambda v: bool(v))
@@ -188,18 +188,18 @@ def mapear_comparable_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
     elif tipo == 'departamento':
         depto = datos.get('departamento', {})
         if isinstance(depto, dict):
-            columnas['ambientes'] = extraer_valor(depto, 'ambientes', 'cantAmbientes', default=None, transform=int)
-            columnas['dormitorios'] = extraer_valor(depto, 'dormitorios', 'cantDormitorios', default=None, transform=int)
-            columnas['banos'] = extraer_valor(depto, 'banos', 'cantBanos', 'banios', default=None, transform=int)
+            columnas['ambientes'] = extraer_valor(depto, 'ambientes', 'cantAmbientes', default=None, transform=str)
+            columnas['dormitorios'] = extraer_valor(depto, 'dormitorios', 'cantDormitorios', default=None, transform=str)
+            columnas['banos'] = extraer_valor(depto, 'banos', 'cantBanos', 'banios', default=None, transform=str)
             columnas['cochera'] = extraer_valor(depto, 'cochera', 'tieneCochera', default=None, transform=lambda v: bool(v))
             columnas['tiene_ascensor'] = extraer_valor(depto, 'tieneAscensor', 'ascensor', default=None, transform=lambda v: bool(v) if isinstance(v, bool) else v in ('si', 'Si', 'SI', 'sí', 'true'))
     
     elif tipo == 'casa':
         casa = datos.get('casa', {})
         if isinstance(casa, dict):
-            columnas['ambientes'] = extraer_valor(casa, 'ambientes', 'cantAmbientes', default=None, transform=int)
-            columnas['dormitorios'] = extraer_valor(casa, 'dormitorios', 'cantDormitorios', default=None, transform=int)
-            columnas['banos'] = extraer_valor(casa, 'banos', 'cantBanos', 'banios', default=None, transform=int)
+            columnas['ambientes'] = extraer_valor(casa, 'ambientes', 'cantAmbientes', default=None, transform=str)
+            columnas['dormitorios'] = extraer_valor(casa, 'dormitorios', 'cantDormitorios', default=None, transform=str)
+            columnas['banos'] = extraer_valor(casa, 'banos', 'cantBanos', 'banios', default=None, transform=str)
             columnas['tiene_pileta'] = extraer_valor(casa, 'tienePileta', 'pileta', default=None, transform=lambda v: bool(v))
             columnas['tiene_jardin'] = extraer_valor(casa, 'tieneJardin', 'jardin', default=None, transform=lambda v: bool(v))
     

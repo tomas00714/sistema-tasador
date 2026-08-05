@@ -140,8 +140,8 @@ class ResultadosRenderer {
                     superficieCubiertaCoef: inm.superficieCubiertaCoef || comp.superficieCubiertaCoef || casaComp.superficieCubiertaCoef || 1,
                     superficieTotal: comp.superficieTotal || casaComp.superficieTotalTexto || casaComp.superficieTotal || '',
                     superficieTotalCoef: inm.superficieTotalCoef || comp.superficieTotalCoef || casaComp.superficieTotalCoef || 1,
-                    calidadConstruccion: comp.calidadConstruccion || casaComp.calidadConstruccion || '',
-                    calidadConstruccionCoef: inm.calidadConstruccionCoef || comp.calidadConstruccionCoef || casaComp.calidadConstruccionCoef || 1,
+                    caracteristicaConstructiva: comp.caracteristicaConstructiva || casaComp.caracteristicaConstructiva || '',
+                    caracteristicaConstructivaCoef: inm.caracteristicaConstructivaCoef || comp.caracteristicaConstructivaCoef || casaComp.caracteristicaConstructivaCoef || 1,
                     estadoConservacion: comp.estadoConservacion ?? inm.estadoConservacion ?? casaComp.estadoConservacion ?? null,
                     antiguedad: comp.antiguedad ?? inm.antiguedad ?? casaComp.antiguedad ?? null,
                     rossHeidecke

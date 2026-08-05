@@ -209,7 +209,7 @@ var configuracionResultados = {
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
             { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
             { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
-            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
+            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
             { id: "valor_m2_final", label: "Valor m² homogeneizado", tipo: "moneda", fuente: "valor_m2_homogeneizado", destacado: true }
@@ -221,7 +221,7 @@ var configuracionResultados = {
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
             { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
             { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
-            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "calidadConstruccionCoef" },
+            { id: "calidad_construccion", label: "Caract. Const.", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
             { id: "valor", label: "Valor", tipo: "moneda", destacado: true },
@@ -244,7 +244,7 @@ var configuracionResultados = {
                     rossHeidecke,
                     superficieCubiertaCoef: parseFloat(casa.superficieCubiertaCoef) || 1,
                     superficieTotalCoef: parseFloat(casa.superficieTotalCoef) || 1,
-                    calidadConstruccionCoef: parseFloat(casa.calidadConstruccionCoef) || 1
+                    caracteristicaConstructivaCoef: parseFloat(casa.caracteristicaConstructivaCoef) || 1
                 };
             }
         }

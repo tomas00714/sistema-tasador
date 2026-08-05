@@ -67,6 +67,7 @@ function normalizarDesdeTasacion(normalizado, datos, tipo) {
             caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || datosInmueble.caracteristicaConstructivaCoef || null,
             superficieCubiertaCoef: datos.superficieCubiertaCoef || datosInmueble.superficieCubiertaCoef || null,
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || datosInmueble.superficieTotal || 0,
             superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0
@@ -75,8 +76,9 @@ function normalizarDesdeTasacion(normalizado, datos, tipo) {
         normalizado.inmueble = {
             superficieCubiertaCoef: datos.superficieCubiertaCoef || datosInmueble.superficieCubiertaCoef || null,
             superficieTotalCoef: datos.superficieTotalCoef || datosInmueble.superficieTotalCoef || null,
-            calidadConstruccionCoef: datos.calidadConstruccionCoef || datosInmueble.calidadConstruccionCoef || null,
+            caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || datosInmueble.caracteristicaConstructivaCoef || null,
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || 0
         };
@@ -105,6 +107,7 @@ function normalizarDesdeManual(normalizado, datos, tipo) {
             caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || null,
             superficieCubiertaCoef: datos.superficieCubiertaCoef || null,
             antiguedad: datos.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? null,
             superficie: datos.superficie || 0,
             superficieTotal: datos.superficieTotal || datos.superficie || 0
@@ -113,8 +116,9 @@ function normalizarDesdeManual(normalizado, datos, tipo) {
         normalizado.inmueble = {
             superficieCubiertaCoef: datos.superficieCubiertaCoef || null,
             superficieTotalCoef: datos.superficieTotalCoef || null,
-            calidadConstruccionCoef: datos.calidadConstruccionCoef || null,
+            caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || null,
             antiguedad: datos.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? null,
             superficie: datos.superficie || 0
         };
@@ -158,6 +162,7 @@ function normalizarDesdeObjetoAnidado(normalizado, datos, tipo) {
             caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || datosInmueble.caracteristicaConstructivaCoef || null,
             superficieCubiertaCoef: datos.superficieCubiertaCoef || datosInmueble.superficieCubiertaCoef || null,
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || datosInmueble.superficieTotal || 0,
             superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0
@@ -166,8 +171,9 @@ function normalizarDesdeObjetoAnidado(normalizado, datos, tipo) {
         normalizado.inmueble = {
             superficieCubiertaCoef: datos.superficieCubiertaCoef || datosInmueble.superficieCubiertaCoef || null,
             superficieTotalCoef: datos.superficieTotalCoef || datosInmueble.superficieTotalCoef || null,
-            calidadConstruccionCoef: datos.calidadConstruccionCoef || datosInmueble.calidadConstruccionCoef || null,
+            caracteristicaConstructivaCoef: datos.caracteristicaConstructivaCoef || datosInmueble.caracteristicaConstructivaCoef || null,
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
+            vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || 0
         };

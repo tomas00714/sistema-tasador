@@ -124,8 +124,8 @@ function limpiarDatosTasacion() {
             superficieTotalCoef: 0,
             antiguedad: "",
             estadoConservacion: "",
-            calidadConstruccion: "",
-            calidadConstruccionCoef: 0,
+            caracteristicaConstructiva: "",
+            caracteristicaConstructivaCoef: 0,
             superficieHomogeneizada: 0,
             homogeneizacion: {
                 cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },

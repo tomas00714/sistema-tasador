@@ -279,7 +279,7 @@ def _build_tasacion_casa_request(ubicacion, inmueble, comparables, ajuste, manua
         antiguedad=_parse_antiguedad(inmueble),
         estado_conservacion=inmueble.get("estadoConservacion", ""),
         vida_util=int(inmueble.get("vidaUtil", 80) or 80),
-        calidad_construccion=float(inmueble.get("calidadConstruccionCoef", 1) or 1),
+        calidad_construccion=float(inmueble.get("caracteristicaConstructivaCoef", 1) or 1),
         valor_m2_referencia=None,
         ajuste_final_porcentaje=ajuste,
         valor_final_manual=manual,

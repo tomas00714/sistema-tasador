@@ -43,12 +43,8 @@ function inicializarAmbientes(tipo = 'departamento') {
             const dormitoriosInput = document.getElementById("dormitoriosInput");
             if (dormitoriosInput) {
                 if (item.textContent === "Monoambiente") {
-                    if (tipo === 'casa') {
-                        dormitoriosInput.value = "1";
-                    } else {
-                        dormitoriosInput.value = "";
-                        datos.dormitorios = "";
-                    }
+                    dormitoriosInput.value = "";
+                    datos.dormitorios = "";
                     dormitoriosInput.disabled = true;
                 } else {
                     dormitoriosInput.disabled = false;
@@ -333,16 +329,18 @@ function inicializarAntiguedad(tipo = 'departamento') {
 }
 
 /**
- * Inicializa autocomplete de característica constructiva (departamento)
+ * Inicializa autocomplete de característica constructiva
+ * @param {string} tipo - 'departamento' o 'casa'
  */
-function inicializarCaracteristicaConstructiva() {
+function inicializarCaracteristicaConstructiva(tipo = 'departamento') {
+    const datos = datosTasacion[tipo];
     const input = document.getElementById("caracteristicaConstructivaInput");
     const coefInput = document.getElementById("caracteristicaConstructivaCoef");
     const list = document.getElementById("caracteristicaConstructivaList");
 
-    if (!input || !list) return;
+    if (!input || !list || !datos) return;
 
-    let coeficienteSeleccionado = datosTasacion.departamento.caracteristicaConstructivaCoef || 1;
+    let coeficienteSeleccionado = datos.caracteristicaConstructivaCoef || 1;
     let rangoSeleccionado = null;
 
     inicializarAutocomplete("caracteristicaConstructivaInput", "caracteristicaConstructivaList", {
@@ -355,8 +353,8 @@ function inicializarCaracteristicaConstructiva() {
                 coefInput.value = item.dataset.coef;
             }
 
-            datosTasacion.departamento.caracteristicaConstructiva = textSpan ? textSpan.textContent : item.textContent;
-            datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(item.dataset.coef);
+            datos.caracteristicaConstructiva = textSpan ? textSpan.textContent : item.textContent;
+            datos.caracteristicaConstructivaCoef = parseFloat(item.dataset.coef);
             coeficienteSeleccionado = parseFloat(item.dataset.coef);
             rangoSeleccionado = item.dataset.rango;
         }
@@ -367,7 +365,7 @@ function inicializarCaracteristicaConstructiva() {
         coefInput.addEventListener("input", () => {
             const valor = parseFloat(coefInput.value);
             if (!isNaN(valor)) {
-                datosTasacion.departamento.caracteristicaConstructivaCoef = valor;
+                datos.caracteristicaConstructivaCoef = valor;
                 validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado, rangoSeleccionado);
             }
         });
@@ -385,58 +383,6 @@ function inicializarCaracteristicaConstructiva() {
     }
 }
 
-/**
- * Inicializa autocomplete de calidad de construcción (casa)
- */
-function inicializarCalidadConstruccion() {
-    const input = document.getElementById("calidadConstruccionInput");
-    const coefInput = document.getElementById("calidadConstruccionCoef");
-    const list = document.getElementById("calidadConstruccionList");
-
-    if (!input || !list) return;
-
-    let coeficienteSeleccionado = datosTasacion.casa.calidadConstruccionCoef || 1;
-    let rangoSeleccionado = null;
-
-    inicializarAutocomplete("calidadConstruccionInput", "calidadConstruccionList", {
-        onSelect: (item, input) => {
-            const textSpan = item.querySelector('span:first-child');
-            const coefSpan = item.querySelector('.coef-display');
-
-            input.value = textSpan ? textSpan.textContent : item.textContent;
-            if (coefInput && coefSpan) {
-                coefInput.value = item.dataset.coef;
-            }
-
-            datosTasacion.casa.calidadConstruccion = textSpan ? textSpan.textContent : item.textContent;
-            datosTasacion.casa.calidadConstruccionCoef = parseFloat(item.dataset.coef);
-            coeficienteSeleccionado = parseFloat(item.dataset.coef);
-            rangoSeleccionado = item.dataset.rango;
-        }
-    });
-
-    // Validación de coeficiente
-    if (coefInput) {
-        coefInput.addEventListener("input", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                datosTasacion.casa.calidadConstruccionCoef = valor;
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado, rangoSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("focus", () => {
-            const valor = parseFloat(coefInput.value);
-            if (!isNaN(valor)) {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado, rangoSeleccionado);
-            }
-        });
-
-        coefInput.addEventListener("blur", () => {
-            coefInput.classList.remove("fuera-de-rango");
-        });
-    }
-}
 
 /* =========================
    AUTOCOMPLETES ESPECÍFICOS

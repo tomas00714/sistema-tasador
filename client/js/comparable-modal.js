@@ -654,6 +654,7 @@ async function agregarTasacionComoComparable(tasacionId, cerrarModal = true) {
         // Copiar todos los datos del departamento
         datosComparable.departamento = tasacion.departamento || {};
         datosComparable.antiguedad = tasacion.departamento?.antiguedad ?? null;
+        datosComparable.vidaUtil = tasacion.departamento?.vidaUtil ?? null;
         datosComparable.estadoConservacion = tasacion.departamento?.estadoConservacion ?? null;
         datosComparable.ubicacionPlanta = tasacion.departamento?.ubicacionPlanta ?? null;
         datosComparable.ubicacionPlantaCoef = tasacion.departamento?.ubicacionPlantaCoef ?? null;
@@ -669,13 +670,14 @@ async function agregarTasacionComoComparable(tasacionId, cerrarModal = true) {
         // Copiar todos los datos de la casa
         datosComparable.casa = tasacion.casa || {};
         datosComparable.antiguedad = tasacion.casa?.antiguedad ?? null;
+        datosComparable.vidaUtil = tasacion.casa?.vidaUtil ?? null;
         datosComparable.estadoConservacion = tasacion.casa?.estadoConservacion ?? null;
         datosComparable.superficieCubierta = tasacion.casa?.superficieCubierta ?? null;
         datosComparable.superficieCubiertaCoef = tasacion.casa?.superficieCubiertaCoef ?? null;
         datosComparable.superficieTotal = tasacion.casa?.superficieTotal ?? null;
         datosComparable.superficieTotalCoef = tasacion.casa?.superficieTotalCoef ?? null;
-        datosComparable.calidadConstruccion = tasacion.casa?.calidadConstruccion ?? null;
-        datosComparable.calidadConstruccionCoef = tasacion.casa?.calidadConstruccionCoef ?? null;
+        datosComparable.caracteristicaConstructiva = tasacion.casa?.caracteristicaConstructiva ?? null;
+        datosComparable.caracteristicaConstructivaCoef = tasacion.casa?.caracteristicaConstructivaCoef ?? null;
         datosComparable.superficie = tasacion.casa?.homogeneizacion?.totalHomogeneizada || tasacion.casa?.superficie || 0;
     }
 

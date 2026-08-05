@@ -32,21 +32,7 @@ function generarHTMLUbicacionConMapa(opciones = {}) {
 
     let tipoLoteHTML = "";
     if (incluirTipoLote) {
-        tipoLoteHTML = `
-            <div class="input-group">
-                <label>Tipo de lote</label>
-                <div class="autocomplete-container">
-                    <input type="text" id="tipoLoteInput" placeholder="Seleccionar tipo" autocomplete="off" readonly value="${datosTasacion.lote.tipoLote || ""}">
-                    <div class="autocomplete-list" id="tipoLoteList">
-                        <div class="autocomplete-item">Medial</div>
-                        <div class="autocomplete-item">Esquina</div>
-                        <div class="autocomplete-item">Esquina larga (+30m)</div>
-                        <div class="autocomplete-item">Salida a dos calles</div>
-                        <div class="autocomplete-item">Irregular</div>
-                    </div>
-                </div>
-            </div>
-        `;
+        tipoLoteHTML = generarInputTipoLote({ inputId: 'tipoLoteInput', listId: 'tipoLoteList', value: datosTasacion.lote.tipoLote || "" });
     }
 
     return `

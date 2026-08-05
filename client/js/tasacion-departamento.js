@@ -159,25 +159,7 @@ function mostrarCaracteristicasDepartamento() {
         </div>
         <div class="form-grid-2-columnas">
             <div class="columna-departamento">
-                <div class="input-group input-2-3">
-                    <label>Ubicación en planta</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="ubicacionPlantaInput" placeholder="Seleccionar ubicación" autocomplete="off" readonly value="${datosTasacion.departamento.ubicacionPlanta || ""}">
-                                <div class="autocomplete-list" id="ubicacionPlantaList">
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>Frente</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95"><span>Contrafrente</span><span class="coef-display">0.95</span></div>
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Patio interior</span><span class="coef-display">0.90</span></div>
-                                    <div class="autocomplete-item" data-coef="0.93" data-rango="0.93"><span>Lateral</span><span class="coef-display">0.93</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="ubicacionPlantaCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.departamento.ubicacionPlantaCoef || ""}">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputUbicacionPlanta({ inputId: 'ubicacionPlantaInput', listId: 'ubicacionPlantaList', coefInputId: 'ubicacionPlantaCoef', value: datosTasacion.departamento.ubicacionPlanta, coefValue: datosTasacion.departamento.ubicacionPlantaCoef, claseInputGroup: 'input-2-3' })}
 
                 <div class="input-group input-2-3">
                     <label>Ubicación en piso</label>
@@ -218,10 +200,7 @@ function mostrarCaracteristicasDepartamento() {
                     <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.departamento.antiguedad || ""}">
                 </div>
 
-                <div class="input-group input-2-3">
-                    <label>Vida útil (años)</label>
-                    <input type="number" id="vidaUtilInput" placeholder="80" min="1" value="${datosTasacion.departamento.vidaUtil || 80}">
-                </div>
+                ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.departamento.vidaUtil, claseInputGroup: 'input-2-3' })}
 
                 ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.departamento.estadoConservacion, claseInputGroup: 'input-2-3' })}
             </div>
@@ -321,29 +300,9 @@ function actualizarListaPisos(tieneAscensor) {
     const list = document.getElementById("ubicacionPisoList");
     if (!list) return;
 
-    let opciones = [];
-
-    if (tieneAscensor === "si") {
-        opciones = [
-            { texto: "PB", coef: 0.90 },
-            { texto: "PB con patio y jardín al fondo", coef: 1 },
-            { texto: "1ro y 2do", coef: 0.95 },
-            { texto: "3ro y 4to", coef: 1 },
-            { texto: "5to y 6to", coef: 1.05 },
-            { texto: "7mo y 8vo", coef: 1.10 },
-            { texto: "Pisos superiores", coef: 1.5 },
-            { texto: "Último piso", coef: 0.90 }
-        ];
-    } else {
-        opciones = [
-            { texto: "PB", coef: 1 },
-            { texto: "PB con patio y jardín al fondo", coef: 1 },
-            { texto: "1ro", coef: 1 },
-            { texto: "2do", coef: 0.95 },
-            { texto: "3ro y 4to", coef: 0.90 },
-            { texto: "Último piso", coef: 0.90 }
-        ];
-    }
+    const opciones = tieneAscensor === "si"
+        ? OPCIONES_UBICACION_PISO_CON_ASCENSOR
+        : OPCIONES_UBICACION_PISO_SIN_ASCENSOR;
 
     list.innerHTML = opciones.map(op => `
         <div class="autocomplete-item" data-coef="${op.coef}">

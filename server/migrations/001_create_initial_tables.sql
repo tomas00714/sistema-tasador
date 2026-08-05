@@ -99,9 +99,9 @@ CREATE TABLE IF NOT EXISTS tasaciones (
     zonificacion VARCHAR(50),
     
     -- Campos específicos DEPARTAMENTO
-    ambientes INTEGER,
-    dormitorios INTEGER,
-    banos INTEGER,
+    ambientes VARCHAR(20),
+    dormitorios VARCHAR(20),
+    banos VARCHAR(20),
     cochera BOOLEAN,
     baulera BOOLEAN,
     tiene_ascensor BOOLEAN,
@@ -180,9 +180,9 @@ CREATE TABLE IF NOT EXISTS comparables (
     tipo_lote VARCHAR(50),
     
     -- Campos específicos DEPARTAMENTO
-    ambientes INTEGER,
-    dormitorios INTEGER,
-    banos INTEGER,
+    ambientes VARCHAR(20),
+    dormitorios VARCHAR(20),
+    banos VARCHAR(20),
     cochera BOOLEAN,
     tiene_ascensor BOOLEAN,
     

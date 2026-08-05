@@ -598,7 +598,7 @@ window.abrirPerfilTasacion = function(id) {
         ? (tasacion.casa?.superficieCubierta || tasacion.departamento?.superficieCubierta || '—')
         : null;
     const superficieTotal = !esLote ? (tasacion.casa?.superficieTotal || '—') : null;
-    const calidadConstruccion = !esLote ? (tasacion.casa?.calidadConstruccion || '—') : null;
+    const caracteristicaConstructiva = !esLote ? (tasacion.casa?.caracteristicaConstructiva || '—') : null;
 
     // Homogeneization table for departments and houses
     function generarTablaHomogeneizacion(hom) {
@@ -789,7 +789,7 @@ window.abrirPerfilTasacion = function(id) {
                     </div>
                     <div class="perfil-card-item">
                         <div class="perfil-item-label">Calidad de construcción</div>
-                        <div class="perfil-item-value">${calidadConstruccion}</div>
+                        <div class="perfil-item-value">${caracteristicaConstructiva}</div>
                     </div>
                     <div class="perfil-card-item">
                         <div class="perfil-item-label">Cochera</div>

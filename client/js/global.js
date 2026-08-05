@@ -192,6 +192,35 @@ const OPCIONES_ESTADO_CONSERVACION = [
     { label: '5 - Muy malo', valor: '5' }
 ];
 
+const OPCIONES_TIPO_LOTE = ['Medial', 'Esquina', 'Esquina larga (+30m)', 'Salida a dos calles', 'Irregular'];
+
+const OPCIONES_UBICACION_PLANTA = [
+    { label: 'Frente', coef: 1.00, rango: '1', coefDisplay: '1' },
+    { label: 'Contrafrente', coef: 0.95, rango: '0.95', coefDisplay: '0.95' },
+    { label: 'Patio interior', coef: 0.90, rango: '0.90', coefDisplay: '0.90' },
+    { label: 'Lateral', coef: 0.93, rango: '0.93', coefDisplay: '0.93' }
+];
+
+const OPCIONES_UBICACION_PISO_SIN_ASCENSOR = [
+    { texto: 'PB', coef: 1 },
+    { texto: 'PB con patio y jardín al fondo', coef: 1 },
+    { texto: '1ro', coef: 1 },
+    { texto: '2do', coef: 0.95 },
+    { texto: '3ro y 4to', coef: 0.90 },
+    { texto: 'Último piso', coef: 0.90 }
+];
+
+const OPCIONES_UBICACION_PISO_CON_ASCENSOR = [
+    { texto: 'PB', coef: 0.90 },
+    { texto: 'PB con patio y jardín al fondo', coef: 1 },
+    { texto: '1ro y 2do', coef: 0.95 },
+    { texto: '3ro y 4to', coef: 1 },
+    { texto: '5to y 6to', coef: 1.05 },
+    { texto: '7mo y 8vo', coef: 1.10 },
+    { texto: 'Pisos superiores', coef: 1.5 },
+    { texto: 'Último piso', coef: 0.90 }
+];
+
 /**
  * Genera un input simple de autocomplete con las opciones indicadas.
  * @param {Object} p
@@ -256,7 +285,7 @@ function generarInputAutocompletadoConCoef({ label, inputId, listId, coefInputId
                     </div>
                 </div>
                 <div class="input-dividido-coef">
-                    <input type="number" id="${coefInputId}" placeholder="Coef" step="0.01" min="0" value="${coefValue || ''}">
+                    <input type="number" id="${coefInputId}" placeholder="Coef" step="0.01" min="0" value="${coefValue ?? ''}">
                 </div>
             </div>
         </div>
@@ -284,7 +313,7 @@ function generarInputDormitorios({ inputId = 'dormitoriosInput', listId = 'dormi
         listId,
         placeholder: 'Seleccionar cantidad',
         opciones: OPCIONES_DORMITORIOS,
-        value,
+        value: disabled ? '' : value,
         disabled
     });
 }
@@ -298,6 +327,16 @@ function generarInputBanos({ inputId = 'banosInput', listId = 'banosList', label
         opciones: OPCIONES_BANOS,
         value
     });
+}
+
+function generarInputVidaUtil({ inputId = 'vidaUtilInput', label = 'Vida útil (años)', value = '', placeholder = '80', min = 1, step = 1, claseInputGroup = '' } = {}) {
+    const clase = claseInputGroup ? `input-group ${claseInputGroup}` : 'input-group';
+    return `
+        <div class="${clase}">
+            <label>${escapeHtml(label)}</label>
+            <input type="number" id="${inputId}" placeholder="${escapeHtml(placeholder)}" min="${min}" step="${step}" value="${escapeHtml(value || '')}">
+        </div>
+    `;
 }
 
 function generarInputSuperficieCubierta({ inputId, listId, coefInputId, label = 'Superficie cubierta propia', placeholder = 'Seleccionar rango', value = '', coefValue = '', claseInputGroup = '' } = {}) {
@@ -336,6 +375,32 @@ function generarInputEstadoConservacion({ inputId, listId, label = 'Estado de co
         placeholder: 'Seleccionar estado',
         opciones: OPCIONES_ESTADO_CONSERVACION.map(opcion => ({ ...opcion, attrs: { valor: opcion.valor } })),
         value,
+        claseInputGroup
+    });
+}
+
+function generarInputTipoLote({ inputId, listId, label = 'Tipo de lote', value = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletado({
+        label,
+        inputId,
+        listId,
+        placeholder: 'Seleccionar tipo',
+        opciones: OPCIONES_TIPO_LOTE,
+        value,
+        claseInputGroup
+    });
+}
+
+function generarInputUbicacionPlanta({ inputId, listId, coefInputId, label = 'Ubicación en planta', value = '', coefValue = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletadoConCoef({
+        label,
+        inputId,
+        listId,
+        coefInputId,
+        placeholder: 'Seleccionar ubicación',
+        opciones: OPCIONES_UBICACION_PLANTA,
+        value,
+        coefValue,
         claseInputGroup
     });
 }

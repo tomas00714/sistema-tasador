@@ -135,14 +135,11 @@ function mostrarCaracteristicasCasa() {
                     <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.casa.antiguedad || ""}">
                 </div>
 
-                <div class="input-group input-2-3">
-                    <label>Vida útil (años)</label>
-                    <input type="number" id="vidaUtilInput" placeholder="80" min="1" value="${datosTasacion.casa.vidaUtil || 80}">
-                </div>
+                ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.casa.vidaUtil, claseInputGroup: 'input-2-3' })}
             </div>
 
             <div class="columna-departamento">
-                ${generarInputCaracteristicaConstructiva({ inputId: 'calidadConstruccionInput', listId: 'calidadConstruccionList', coefInputId: 'calidadConstruccionCoef', value: datosTasacion.casa.calidadConstruccion, coefValue: datosTasacion.casa.calidadConstruccionCoef, claseInputGroup: 'input-2-3' })}
+                ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.casa.caracteristicaConstructiva, coefValue: datosTasacion.casa.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
             </div>
         </div>
     `;
@@ -155,7 +152,7 @@ function mostrarCaracteristicasCasa() {
         inicializarSuperficieCubierta('casa');
         inicializarEstadoConservacion('casa');
         inicializarAntiguedad('casa');
-        inicializarCalidadConstruccion();
+        inicializarCaracteristicaConstructiva('casa');
     });
 }
 
@@ -410,8 +407,8 @@ function guardarDatosCaracteristicasCasa() {
     const superficieCubiertaCoef = document.getElementById("superficieCubiertaCoef");
     const estadoConservacionInput = document.getElementById("estadoConservacionInput");
     const antiguedadInput = document.getElementById("antiguedadInput");
-    const calidadConstruccionInput = document.getElementById("calidadConstruccionInput");
-    const calidadConstruccionCoef = document.getElementById("calidadConstruccionCoef");
+    const caracteristicaConstructivaInput = document.getElementById("caracteristicaConstructivaInput");
+    const caracteristicaConstructivaCoef = document.getElementById("caracteristicaConstructivaCoef");
 
     if (superficieCubiertaInput) {
         datosTasacion.casa.superficieCubierta = superficieCubiertaInput.value;
@@ -429,11 +426,11 @@ function guardarDatosCaracteristicasCasa() {
     if (vidaUtilInput) {
         datosTasacion.casa.vidaUtil = vidaUtilInput.value;
     }
-    if (calidadConstruccionInput) {
-        datosTasacion.casa.calidadConstruccion = calidadConstruccionInput.value;
+    if (caracteristicaConstructivaInput) {
+        datosTasacion.casa.caracteristicaConstructiva = caracteristicaConstructivaInput.value;
     }
-    if (calidadConstruccionCoef) {
-        datosTasacion.casa.calidadConstruccionCoef = parseFloat(calidadConstruccionCoef.value) || 1;
+    if (caracteristicaConstructivaCoef) {
+        datosTasacion.casa.caracteristicaConstructivaCoef = parseFloat(caracteristicaConstructivaCoef.value) || 1;
     }
 }
 
