@@ -540,9 +540,9 @@ window.abrirPerfilTasacion = function(id) {
         : `<p class="historial-sin-datos">Sin servicios cargados</p>`;
 
     // Amenities (only for departments)
-    const amenidadesHtml =
-        tasacion.departamento?.amenidades && tasacion.departamento.amenidades.length
-            ? tasacion.departamento.amenidades.map(amenidad => `<div class="chip-servicio">${amenidad}</div>`).join("")
+    const amenitiesHtml =
+        tasacion.departamento?.amenities && tasacion.departamento.amenities.length
+            ? tasacion.departamento.amenities.map(amenidad => `<div class="chip-servicio">${amenidad}</div>`).join("")
             : "";
 
     // Infrastructure (departments and houses)
@@ -593,65 +593,38 @@ window.abrirPerfilTasacion = function(id) {
     const estadoConservacion = !esLote
         ? (tasacion.casa?.estadoConservacion || tasacion.departamento?.estadoConservacion || '—')
         : null;
-    const caracteristicaConstructiva = !esLote ? (tasacion.departamento?.caracteristicaConstructiva || '—') : null;
+    const caracteristicaConstructiva = !esLote
+        ? (tasacion.casa?.caracteristicaConstructiva || tasacion.departamento?.caracteristicaConstructiva || '—')
+        : null;
     const superficieCubierta = !esLote
         ? (tasacion.casa?.superficieCubierta || tasacion.departamento?.superficieCubierta || '—')
         : null;
     const superficieTotal = !esLote ? (tasacion.casa?.superficieTotal || '—') : null;
-    const caracteristicaConstructiva = !esLote ? (tasacion.casa?.caracteristicaConstructiva || '—') : null;
 
-    // Homogeneization table for departments and houses
-    function generarTablaHomogeneizacion(hom) {
-        if (!hom) return '';
-        const conceptos = {
-            cubierto: 'Cubierto',
-            semicubierto: 'Semicubierto',
-            balcon: 'Balcón / Terraza',
-            descubierto: 'Descubierto'
-        };
-        const filas = Object.keys(conceptos).map(key => {
-            const item = hom[key] || {};
-            return `
-                <tr>
-                    <td>${conceptos[key]}</td>
-                    <td>${item.superficie !== undefined ? item.superficie + ' m²' : '—'}</td>
-                    <td>${item.coeficiente !== undefined ? item.coeficiente : '—'}</td>
-                    <td>${item.homogeneizada !== undefined ? item.homogeneizada + ' m²' : '—'}</td>
-                </tr>
-            `;
-        }).join('');
-        return `
-            <div class="resultado-tabla-wrap">
-                <h3>Homogeneización de superficies</h3>
-                <div class="resultado-tabla-scroll">
-                    <table class="resultado-tabla">
-                        <thead>
-                            <tr>
-                                <th>Concepto</th>
-                                <th>Superficie</th>
-                                <th>Coef.</th>
-                                <th>Homogeneizada</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${filas}
-                            <tr class="valor-promedio-row">
-                                <td><strong>Total</strong></td>
-                                <td><strong>${hom.totalSuperficie !== undefined ? hom.totalSuperficie + ' m²' : '—'}</strong></td>
-                                <td></td>
-                                <td><strong>${hom.totalHomogeneizada !== undefined ? hom.totalHomogeneizada + ' m²' : '—'}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
+    const zonificacionLote = esLote ? (tasacion.lote?.caracteristicas?.zonificacion || '—') : null;
+    const fotLote = esLote ? (tasacion.lote?.caracteristicas?.fot != null ? tasacion.lote.caracteristicas.fot : '—') : null;
+    const fosLote = esLote ? (tasacion.lote?.caracteristicas?.fos != null ? tasacion.lote.caracteristicas.fos : '—') : null;
+
+    const zonificacionCasa = !esLote && tasacion.casa ? (tasacion.casa.zonificacion || '—') : null;
+    const fotCasa = !esLote && tasacion.casa ? (tasacion.casa.fot != null ? tasacion.casa.fot : '—') : null;
+    const fosCasa = !esLote && tasacion.casa ? (tasacion.casa.fos != null ? tasacion.casa.fos : '—') : null;
+
+    const fotDepto = !esLote && tasacion.departamento ? (tasacion.departamento.fot != null ? tasacion.departamento.fot : '—') : null;
+    const fosDepto = !esLote && tasacion.departamento ? (tasacion.departamento.fos != null ? tasacion.departamento.fos : '—') : null;
 
     const hom = !esLote
         ? (tasacion.casa?.homogeneizacion || tasacion.departamento?.homogeneizacion)
         : null;
-    const tablaHomogeneizacion = hom ? generarTablaHomogeneizacion(hom) : '';
+    const tablaHomogeneizacion = (!esLote && hom)
+        ? `
+            <div class="resultado-tabla-wrap">
+                <h3>Homogeneización de superficies</h3>
+                <div class="resultado-tabla-scroll">
+                    ${generarTablaHomogeneizacion(tipo, hom, '', true)}
+                </div>
+            </div>
+        `
+        : '';
 
     // Additional characteristics section
     let perfilCaracteristicasHtml = '';
@@ -670,6 +643,22 @@ window.abrirPerfilTasacion = function(id) {
                     <div class="perfil-card-item">
                         <div class="perfil-item-label">Zona</div>
                         <div class="perfil-item-value">${zona}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Zonificación</div>
+                        <div class="perfil-item-value">${zonificacionLote}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOT</div>
+                        <div class="perfil-item-value">${fotLote}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOS</div>
+                        <div class="perfil-item-value">${fosLote}</div>
                     </div>
                 </div>
             </div>
@@ -741,9 +730,19 @@ window.abrirPerfilTasacion = function(id) {
                 </div>
             </div>
             <div class="perfil-row">
-                <div class="perfil-card-item perfil-card-full">
-                    <div class="perfil-item-label">Orientación</div>
-                    <div class="perfil-item-value">${orientacion}</div>
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOT</div>
+                        <div class="perfil-item-value">${fotDepto}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOS</div>
+                        <div class="perfil-item-value">${fosDepto}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Orientación</div>
+                        <div class="perfil-item-value">${orientacion}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -788,7 +787,7 @@ window.abrirPerfilTasacion = function(id) {
                         <div class="perfil-item-value">${estadoConservacion}</div>
                     </div>
                     <div class="perfil-card-item">
-                        <div class="perfil-item-label">Calidad de construcción</div>
+                        <div class="perfil-item-label">Características constructivas</div>
                         <div class="perfil-item-value">${caracteristicaConstructiva}</div>
                     </div>
                     <div class="perfil-card-item">
@@ -806,6 +805,22 @@ window.abrirPerfilTasacion = function(id) {
                     <div class="perfil-card-item">
                         <div class="perfil-item-label">Orientación</div>
                         <div class="perfil-item-value">${orientacion}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Zonificación</div>
+                        <div class="perfil-item-value">${zonificacionCasa}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="perfil-row">
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOT</div>
+                        <div class="perfil-item-value">${fotCasa}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">FOS</div>
+                        <div class="perfil-item-value">${fosCasa}</div>
                     </div>
                 </div>
             </div>
@@ -898,7 +913,7 @@ window.abrirPerfilTasacion = function(id) {
                     </div>
                 </div>
 
-                ${!esLote && amenidadesHtml ? `
+                ${!esLote && amenitiesHtml ? `
                 <!-- Row 3b: Amenities (for departments) -->
                 <div class="perfil-row">
                     <div class="perfil-card-item perfil-card-full">
@@ -906,7 +921,7 @@ window.abrirPerfilTasacion = function(id) {
                             Amenidades
                         </div>
                         <div class="perfil-servicios">
-                            ${amenidadesHtml}
+                            ${amenitiesHtml}
                         </div>
                     </div>
                 </div>

@@ -109,23 +109,34 @@ function mostrarCaracteristicasLote() {
             <div class="titulo-seccion">
                 <h1>Características del lote</h1>
             </div>
-            <div class="form-grid">
-                <div class="form-left">
-                    <div class="input-group">
-                        <label>Frente</label>
-                        <input type="number" id="frenteInput" value="${datosTasacion.lote.caracteristicas.frente || ""}">
-                    </div>
-                    <div class="input-group">
-                        <label>Superficie</label>
-                        <input type="number" id="superficieInput" value="${datosTasacion.lote.caracteristicas.superficie || ""}">
-                    </div>
-                    <div class="input-group">
-                        <label>Fondo ficticio</label>
-                        <input type="number" id="fondoFicticioInput" value="${datosTasacion.lote.caracteristicas.fondoFicticio || ""}">
-                    </div>
+            <div class="form-grid-caracteristicas" id="caracteristicasLoteGrid">
+                <div class="input-group">
+                    <label>Frente</label>
+                    <input type="number" id="frenteInput" value="${datosTasacion.lote.caracteristicas.frente || ""}">
+                </div>
+                <div class="input-group">
+                    <label>Superficie</label>
+                    <input type="number" id="superficieInput" value="${datosTasacion.lote.caracteristicas.superficie || ""}">
+                </div>
+                <div class="input-group">
+                    <label>Fondo ficticio</label>
+                    <input type="number" id="fondoFicticioInput" value="${datosTasacion.lote.caracteristicas.fondoFicticio || ""}">
+                </div>
+                <div class="input-group">
+                    <label>FOT</label>
+                    <input type="number" id="fotLoteInput" placeholder="Factor de ocupación total" step="0.01" min="0" value="${datosTasacion.lote.caracteristicas.fot != null ? datosTasacion.lote.caracteristicas.fot : ''}">
+                </div>
+                <div class="input-group">
+                    <label>FOS</label>
+                    <input type="number" id="fosLoteInput" placeholder="Factor de ocupación de suelo" step="0.01" min="0" value="${datosTasacion.lote.caracteristicas.fos != null ? datosTasacion.lote.caracteristicas.fos : ''}">
+                </div>
+                <div class="input-group">
+                    <label>Zonificación</label>
+                    <input type="text" id="zonificacionLoteInput" placeholder="Ej: Residencial R1" value="${datosTasacion.lote.caracteristicas.zonificacion || ''}">
                 </div>
             </div>
         `;
+        ajustarDistribucionCaracteristicas('#caracteristicasLoteGrid');
         inicializarCalculosLote();
         return;
     }
@@ -135,60 +146,69 @@ function mostrarCaracteristicasLote() {
         <div class="titulo-seccion">
             <h1>Características del lote</h1>
         </div>
-        <div class="form-grid">
-            <div class="form-left">
-                <div class="input-group">
-                    <label>Frente</label>
-                    <input type="number" id="frenteInput" value="${datosTasacion.lote.caracteristicas.frente || ""}">
-                </div>
-                <div class="input-group">
-                    <label>Fondo</label>
-                    <input type="number" id="fondoInput" value="${datosTasacion.lote.caracteristicas.fondo || ""}">
-                </div>
-                <div class="input-group">
-                    <label>Superficie</label>
-                    <input type="number" id="superficieInput" value="${datosTasacion.lote.caracteristicas.superficie || ""}">
-                </div>
-                ${camposExtra}
-                <div class="input-group">
-                    <label>Orientación</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="orientacionLoteInput" placeholder="Seleccionar orientación" autocomplete="off" readonly value="${datosTasacion.ubicacion.orientacion || ""}">
-                        <div class="autocomplete-list" id="orientacionLoteList">
-                            <div class="autocomplete-item">Norte</div>
-                            <div class="autocomplete-item">Noreste</div>
-                            <div class="autocomplete-item">Este</div>
-                            <div class="autocomplete-item">Sureste</div>
-                            <div class="autocomplete-item">Sur</div>
-                            <div class="autocomplete-item">Suroeste</div>
-                            <div class="autocomplete-item">Oeste</div>
-                            <div class="autocomplete-item">Noroeste</div>
-                        </div>
+        <div class="form-grid-caracteristicas" id="caracteristicasLoteGrid">
+            <div class="input-group">
+                <label>Frente</label>
+                <input type="number" id="frenteInput" value="${datosTasacion.lote.caracteristicas.frente || ""}">
+            </div>
+            <div class="input-group">
+                <label>Fondo</label>
+                <input type="number" id="fondoInput" value="${datosTasacion.lote.caracteristicas.fondo || ""}">
+            </div>
+            <div class="input-group">
+                <label>Superficie</label>
+                <input type="number" id="superficieInput" value="${datosTasacion.lote.caracteristicas.superficie || ""}">
+            </div>
+            ${camposExtra}
+            <div class="input-group">
+                <label>Orientación</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="orientacionLoteInput" placeholder="Seleccionar orientación" autocomplete="off" readonly value="${datosTasacion.ubicacion.orientacion || ""}">
+                    <div class="autocomplete-list" id="orientacionLoteList">
+                        <div class="autocomplete-item">Norte</div>
+                        <div class="autocomplete-item">Noreste</div>
+                        <div class="autocomplete-item">Este</div>
+                        <div class="autocomplete-item">Sureste</div>
+                        <div class="autocomplete-item">Sur</div>
+                        <div class="autocomplete-item">Suroeste</div>
+                        <div class="autocomplete-item">Oeste</div>
+                        <div class="autocomplete-item">Noroeste</div>
                     </div>
                 </div>
             </div>
             ${tipo === "Esquina" || tipo === "Esquina larga (+30m)" || tipo === "Salida a dos calles" ? `
-            <div class="form-right">
-                <div class="input-group">
-                    <label>Calle principal</label>
-                    <input type="text" id="callePrincipalInput" value="${datosTasacion.ubicacion.direccion || ""}" readonly disabled>
-                </div>
-                <div class="input-group">
-                    <label>Calle secundaria</label>
-                    <input type="text" id="segundaCalleInput" value="${datosTasacion.lote.caracteristicas.segundaCalle || ""}">
-                </div>
-                <div class="input-group">
-                    <label>¿Qué lado corresponde a la calle de MAYOR valor?</label>
-                    <select id="ladoMayorValorInput">
-                        <option value="frente" ${datosTasacion.lote.caracteristicas.ladoMayorValor === "frente" || !datosTasacion.lote.caracteristicas.ladoMayorValor ? "selected" : ""}>Frente</option>
-                        <option value="fondo" ${datosTasacion.lote.caracteristicas.ladoMayorValor === "fondo" ? "selected" : ""}>Fondo</option>
-                    </select>
-                </div>
+            <div class="input-group">
+                <label>Calle principal</label>
+                <input type="text" id="callePrincipalInput" value="${datosTasacion.ubicacion.direccion || ""}" readonly disabled>
+            </div>
+            <div class="input-group">
+                <label>Calle secundaria</label>
+                <input type="text" id="segundaCalleInput" value="${datosTasacion.lote.caracteristicas.segundaCalle || ""}">
+            </div>
+            <div class="input-group">
+                <label>¿Qué lado corresponde a la calle de MAYOR valor?</label>
+                <select id="ladoMayorValorInput">
+                    <option value="frente" ${datosTasacion.lote.caracteristicas.ladoMayorValor === "frente" || !datosTasacion.lote.caracteristicas.ladoMayorValor ? "selected" : ""}>Frente</option>
+                    <option value="fondo" ${datosTasacion.lote.caracteristicas.ladoMayorValor === "fondo" ? "selected" : ""}>Fondo</option>
+                </select>
             </div>
             ` : ""}
+            <div class="input-group">
+                <label>FOT</label>
+                <input type="number" id="fotLoteInput" placeholder="Factor de ocupación total" step="0.01" min="0" value="${datosTasacion.lote.caracteristicas.fot != null ? datosTasacion.lote.caracteristicas.fot : ''}">
+            </div>
+            <div class="input-group">
+                <label>FOS</label>
+                <input type="number" id="fosLoteInput" placeholder="Factor de ocupación de suelo" step="0.01" min="0" value="${datosTasacion.lote.caracteristicas.fos != null ? datosTasacion.lote.caracteristicas.fos : ''}">
+            </div>
+            <div class="input-group">
+                <label>Zonificación</label>
+                <input type="text" id="zonificacionLoteInput" placeholder="Ej: Residencial R1" value="${datosTasacion.lote.caracteristicas.zonificacion || ''}">
+            </div>
         </div>
     `;
 
+    ajustarDistribucionCaracteristicas('#caracteristicasLoteGrid');
     inicializarCalculosLote();
     inicializarOrientacionLote();
 

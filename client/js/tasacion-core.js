@@ -19,6 +19,20 @@ function getContenidoTasacion() {
     return contenido;
 }
 
+function ajustarDistribucionCaracteristicas(contenedorSelector) {
+    const grid = typeof contenedorSelector === 'string'
+        ? document.querySelector(contenedorSelector)
+        : contenedorSelector;
+    if (!grid) return;
+
+    const inputs = grid.querySelectorAll(':scope > .input-group');
+    const total = inputs.length;
+    if (total === 0) return;
+
+    const filas = Math.ceil(total / 2);
+    grid.style.gridTemplateRows = `repeat(${filas}, auto)`;
+}
+
 // Estado global
 let pasoActual = 1;
 let tipoSeleccionado = null;

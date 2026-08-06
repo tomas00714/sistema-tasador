@@ -568,16 +568,25 @@ async function editarComparableDesdeLista(idx) {
             tipo,
             async (datosForm) => {
                 const actualizado = { ...original, ...datosForm, id: original.id, fuente: original.fuente || 'manual' };
-                datosTasacion.comparables[idx] = actualizado;
 
-                if (actualizado.id) {
-                    try {
+                try {
+                    if (actualizado.id) {
+                        // Actualizar comparable existente
                         await actualizarComparable(actualizado.id, actualizado);
-                    } catch (e) {
-                        console.error('Error actualizando comparable:', e);
-                        alert('No se pudo guardar el comparable. Revisá la consola.');
-                        return;
+                        datosTasacion.comparables[idx] = actualizado;
+                    } else {
+                        // Si no tiene id, persistir primero como nuevo comparable
+                        const persistido = await crearComparable({
+                            tipoInmueble: tipo,
+                            fuente: 'manual',
+                            ...actualizado
+                        });
+                        datosTasacion.comparables[idx] = persistido;
                     }
+                } catch (e) {
+                    console.error('Error actualizando comparable:', e);
+                    alert('No se pudo guardar el comparable. Revisá la consola.');
+                    return;
                 }
 
                 resultadoCalculado = false;

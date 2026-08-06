@@ -179,7 +179,7 @@ function generarSeccionCaracteristicasDepartamento() {
                     <label>Antigüedad (años)</label>
                     <input type="number" id="compFormAntiguedadInput" placeholder="0" min="0" step="1">
                 </div>
-                ${generarInputVidaUtil({ inputId: 'compFormVidaUtilInput', label: 'Vida útil (años)', value: '' })}
+                ${generarInputVidaUtil({ inputId: 'compFormVidaUtilInput', label: 'Vida útil (años)' })}
                 ${generarInputEstadoConservacion({ inputId: 'compFormEstadoConservacionInput', listId: 'compFormEstadoConservacionList' })}
                 ${generarInputAmbientes({ inputId: 'compFormAmbientesInput', listId: 'compFormAmbientesList' })}
 
@@ -254,7 +254,7 @@ function generarSeccionCaracteristicasCasa() {
                     <label>Antigüedad (años)</label>
                     <input type="number" id="compFormAntiguedadInput" placeholder="0" min="0" step="1">
                 </div>
-                ${generarInputVidaUtil({ inputId: 'compFormVidaUtilInput', label: 'Vida útil (años)', value: '' })}
+                ${generarInputVidaUtil({ inputId: 'compFormVidaUtilInput', label: 'Vida útil (años)' })}
                 ${generarInputEstadoConservacion({ inputId: 'compFormEstadoConservacionInput', listId: 'compFormEstadoConservacionList' })}
                 ${generarInputAmbientes({ inputId: 'compFormAmbientesInput', listId: 'compFormAmbientesList' })}
 
@@ -444,15 +444,18 @@ async function cargarDatosEnFormularioComparable(datos) {
     if (tipo === 'lote') {
         const lote = datos.lote || {};
         const car = lote.caracteristicas || {};
-        setVal('compFormTipoLoteInput', datos.tipoLote ?? lote.tipoLote);
+        const tipoLote = datos.tipoLote ?? lote.tipoLote;
+        const esIrregular = tipoLote === 'Irregular';
+        setVal('compFormTipoLoteInput', tipoLote);
         setVal('compFormFrenteInput', datos.frente ?? car.frente);
-        setVal('compFormFondoInput', datos.fondo ?? car.fondo);
-        setVal('compFormSuperficieInput', datos.superficie ?? car.superficie);
+        setVal('compFormFondoInput', esIrregular ? (datos.superficie ?? car.superficie) : (datos.fondo ?? car.fondo));
+        setVal('compFormSuperficieInput', esIrregular ? (datos.fondo ?? car.fondo) : (datos.superficie ?? car.superficie));
+        actualizarLabelsMedidasLoteForm(tipoLote ?? '');
     } else if (tipo === 'departamento') {
         const depto = datos.departamento || {};
         setVal('compFormSuperficieInput', datos.superficie ?? depto.superficie ?? depto.superficieTotal);
         setVal('compFormAntiguedadInput', datos.antiguedad ?? depto.antiguedad);
-        setVal('compFormVidaUtilInput', datos.vidaUtil ?? depto.vidaUtil);
+        setVal('compFormVidaUtilInput', datos.vidaUtil || depto.vidaUtil || 80);
         setVal('compFormEstadoConservacionInput', datos.estadoConservacion ?? depto.estadoConservacion);
         setVal('compFormAmbientesInput', datos.ambientes ?? depto.ambientes);
         setVal('compFormDormitoriosInput', datos.dormitorios ?? depto.dormitorios);
@@ -474,7 +477,7 @@ async function cargarDatosEnFormularioComparable(datos) {
         setVal('compFormSuperficieInput', datos.superficie ?? casa.superficie);
         setVal('compFormSuperficieTerrenoInput', datos.superficieTerreno ?? casa.superficieTerreno);
         setVal('compFormAntiguedadInput', datos.antiguedad ?? casa.antiguedad);
-        setVal('compFormVidaUtilInput', datos.vidaUtil ?? casa.vidaUtil);
+        setVal('compFormVidaUtilInput', datos.vidaUtil || casa.vidaUtil || 80);
         setVal('compFormEstadoConservacionInput', datos.estadoConservacion ?? casa.estadoConservacion);
         setVal('compFormAmbientesInput', datos.ambientes ?? casa.ambientes);
         setVal('compFormDormitoriosInput', datos.dormitorios ?? casa.dormitorios);
@@ -640,7 +643,7 @@ function inicializarAutocompleteLocalidadComparable() {
     input.addEventListener("input", () => {
         if (!input.disabled) {
             renderLista(input.value);
-            
+
             // Auto-select if there's an exact match (case-insensitive, sin acentos)
             const valorInput = input.value.trim();
             if (valorInput) {
@@ -652,6 +655,14 @@ function inicializarAutocompleteLocalidadComparable() {
             }
         }
     });
+
+    const cerrar = e => {
+        if (!input.parentElement.contains(e.target)) {
+            list.style.display = "none";
+        }
+    };
+
+    document.addEventListener("click", cerrar);
 }
 
 /**
@@ -701,6 +712,7 @@ function inicializarTipoLoteComparable() {
             input.value = item.textContent.trim();
             list.style.display = "none";
             input.dispatchEvent(new Event("input"));
+            actualizarLabelsMedidasLoteForm(item.textContent.trim());
         });
     });
     
@@ -711,6 +723,25 @@ function inicializarTipoLoteComparable() {
     };
     
     document.addEventListener("click", cerrar);
+}
+
+function actualizarLabelsMedidasLoteForm(tipoLote) {
+    const fondoInput = document.getElementById('compFormFondoInput');
+    const superficieInput = document.getElementById('compFormSuperficieInput');
+    if (!fondoInput || !superficieInput) return;
+
+    const esIrregular = tipoLote === 'Irregular';
+    const fondoLabel = fondoInput.previousElementSibling;
+    const superficieLabel = superficieInput.previousElementSibling;
+    if (!fondoLabel || !superficieLabel) return;
+
+    if (esIrregular) {
+        fondoLabel.textContent = 'Superficie (m²)';
+        superficieLabel.textContent = 'Fondo ficticio (m)';
+    } else {
+        fondoLabel.textContent = 'Fondo (m)';
+        superficieLabel.textContent = 'Superficie (m²)';
+    }
 }
 
 /**
@@ -822,21 +853,28 @@ function inicializarCalculosLoteComparable() {
     const frenteInput = document.getElementById("compFormFrenteInput");
     const fondoInput = document.getElementById("compFormFondoInput");
     const superficieInput = document.getElementById("compFormSuperficieInput");
+    const tipoInput = document.getElementById("compFormTipoLoteInput");
     
-    if (!frenteInput || !fondoInput || !superficieInput) return;
+    if (!frenteInput || !fondoInput || !superficieInput || !tipoInput) return;
     
-    function calcularSuperficie() {
+    function calcular() {
+        const esIrregular = tipoInput.value.trim() === 'Irregular';
         const frente = parseFloat(frenteInput.value) || 0;
-        const fondo = parseFloat(fondoInput.value) || 0;
+        const otro = parseFloat(fondoInput.value) || 0;
 
-        if (frente > 0 && fondo > 0) {
-            superficieInput.value = (frente * fondo).toFixed(2);
+        if (frente > 0 && otro > 0) {
+            if (esIrregular) {
+                // fondoInput contiene la superficie; superficieInput es el fondo ficticio
+                superficieInput.value = (otro / frente).toFixed(2);
+            } else {
+                superficieInput.value = (frente * otro).toFixed(2);
+            }
             superficieInput.dispatchEvent(new Event("input"));
         }
     }
     
-    frenteInput.addEventListener("input", calcularSuperficie);
-    fondoInput.addEventListener("input", calcularSuperficie);
+    frenteInput.addEventListener("input", calcular);
+    fondoInput.addEventListener("input", calcular);
 }
 
 /**
@@ -882,9 +920,13 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
     
     if (tipoInmueble === 'lote') {
         datos.tipoLote = document.getElementById("compFormTipoLoteInput")?.value.trim() || "";
-        datos.frente = parseFloat(document.getElementById("compFormFrenteInput")?.value) || 0;
-        datos.fondo = parseFloat(document.getElementById("compFormFondoInput")?.value) || 0;
-        datos.superficie = parseFloat(document.getElementById("compFormSuperficieInput")?.value) || 0;
+        const esIrregular = datos.tipoLote === 'Irregular';
+        const frente = parseFloat(document.getElementById("compFormFrenteInput")?.value) || 0;
+        const fondoInput = parseFloat(document.getElementById("compFormFondoInput")?.value) || 0;
+        const superficieInput = parseFloat(document.getElementById("compFormSuperficieInput")?.value) || 0;
+        datos.frente = frente;
+        datos.fondo = esIrregular ? superficieInput : fondoInput;
+        datos.superficie = esIrregular ? fondoInput : superficieInput;
         datos.lote = {
             tipoLote: datos.tipoLote,
             caracteristicas: {
@@ -896,7 +938,7 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
     } else if (tipoInmueble === 'departamento' || tipoInmueble === 'casa') {
         const superficie = parseFloat(document.getElementById("compFormSuperficieInput")?.value) || 0;
         const antiguedad = parseInt(document.getElementById("compFormAntiguedadInput")?.value) || 0;
-        const vidaUtil = parseInt(document.getElementById("compFormVidaUtilInput")?.value) || 0;
+        const vidaUtil = parseInt(document.getElementById("compFormVidaUtilInput")?.value) || 80;
         const estadoConservacion = document.getElementById("compFormEstadoConservacionInput")?.value || "";
         const ambientes = document.getElementById("compFormAmbientesInput")?.value || "";
         const dormitorios = document.getElementById("compFormDormitoriosInput")?.value || "";
@@ -1041,6 +1083,9 @@ function validarFormularioComparable(tipoInmueble) {
         }
         if (datos.frente <= 0) {
             errores.push("El frente debe ser mayor a 0");
+        }
+        if (datos.tipoLote === 'Irregular' && datos.fondo <= 0) {
+            errores.push("El fondo ficticio debe ser mayor a 0");
         }
     }
 

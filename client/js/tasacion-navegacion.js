@@ -252,23 +252,49 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+/**
+ * Convierte un array de comparables (IDs u objetos) en objetos completos
+ * @param {Array} comparables - IDs u objetos de comparables
+ * @returns {Promise<Array>} Array de comparables completos
+ */
+async function cargarComparablesDesdeIds(comparables) {
+    if (!Array.isArray(comparables) || comparables.length === 0) return [];
+
+    // Si ya son objetos con id, usarlos directamente
+    if (typeof comparables[0] === 'object' && comparables[0] && comparables[0].id) {
+        return JSON.parse(JSON.stringify(comparables));
+    }
+
+    // Si son IDs, obtener los objetos completos por batch
+    try {
+        const comparablesAPI = await obtenerComparablesBatchAPI(comparables);
+        return comparablesAPI.map(c => ({
+            id: c.id,
+            ...c.datos
+        }));
+    } catch (e) {
+        console.error('Error al cargar comparables batch:', e);
+        return [];
+    }
+}
+
 // Verificar si estamos en modo edición
-function verificarModoEdicion() {
+async function verificarModoEdicion() {
     try {
         const tasacionEnEdicion = localStorage.getItem("tasacionEnEdicion");
         if (tasacionEnEdicion) {
             const tasacion = JSON.parse(tasacionEnEdicion);
-            
+
             tasacionId = 1; // 1 indica que es una edición
             tasacionIdReal = tasacion.id; // Guardar el ID real para usar al guardar
-            
+
             if (tasacion.datosCompletos) {
-                cargarDatosCompletos(tasacion.datosCompletos);
+                await cargarDatosCompletos(tasacion.datosCompletos);
             } else {
                 datosTasacion.tipo = tasacion.tipo;
                 datosTasacion.cantDeEdiciones = tasacion.cantDeEdiciones || 0;
                 datosTasacion.ubicacion = tasacion.ubicacion || { direccion: "", provincia: "", localidad: "", lat: null, lon: null, orientacion: "" };
-                
+
                 if (tasacion.tipo === 'lote') {
                     datosTasacion.lote = tasacion.lote || { tipoLote: "", servicios: [], caracteristicas: {}, observaciones: "" };
                 } else if (tasacion.tipo === 'departamento') {
@@ -276,13 +302,14 @@ function verificarModoEdicion() {
                 } else if (tasacion.tipo === 'casa') {
                     datosTasacion.casa = tasacion.casa || {};
                 }
-                
-                datosTasacion.comparables = tasacion.comparables || [];
+
+                // Cargar comparables completos (por si vienen solo como IDs)
+                datosTasacion.comparables = await cargarComparablesDesdeIds(tasacion.comparables || []);
                 resultadoTasacion = tasacion.resultado || null;
                 pasoActual = 2;
                 tipoSeleccionado = tasacion.tipo;
             }
-            
+
             localStorage.removeItem("tasacionEnEdicion");
 
             if (tipoSeleccionado) {

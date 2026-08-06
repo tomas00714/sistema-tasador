@@ -116,10 +116,14 @@ class ComparableEditor {
             const fondo = document.getElementById('compFondo');
             const superficie = document.getElementById('compSuperficie');
             const tipoLote = document.getElementById('compTipoLote');
+            const esIrregular = lote.tipoLote === 'Irregular';
             if (frente) frente.value = lote.frente != null ? lote.frente : '';
-            if (fondo) fondo.value = lote.fondo != null ? lote.fondo : '';
-            if (superficie) superficie.value = lote.superficie != null ? lote.superficie : (this.datos.superficie ?? '');
-            if (tipoLote) tipoLote.value = lote.tipoLote || '';
+            if (fondo) fondo.value = esIrregular ? (lote.superficie != null ? lote.superficie : '') : (lote.fondo != null ? lote.fondo : '');
+            if (superficie) superficie.value = esIrregular ? (lote.fondo != null ? lote.fondo : '') : (lote.superficie != null ? lote.superficie : (this.datos.superficie ?? ''));
+            if (tipoLote) {
+                tipoLote.value = lote.tipoLote || '';
+                this.actualizarLabelsMedidasLote(lote.tipoLote || '');
+            }
         } else if (this.tipo === 'casa') {
             const casa = this.datos.casa || {};
             const cubierta = document.getElementById('compSuperficieCubierta');
@@ -476,6 +480,7 @@ class ComparableEditor {
             item.addEventListener('click', () => {
                 input.value = item.textContent;
                 list.style.display = 'none';
+                this.actualizarLabelsMedidasLote(item.textContent);
             });
         });
         
@@ -486,6 +491,25 @@ class ComparableEditor {
         });
     }
     
+    actualizarLabelsMedidasLote(tipoLote) {
+        const fondoInput = document.getElementById('compFondo');
+        const superficieInput = document.getElementById('compSuperficie');
+        if (!fondoInput || !superficieInput) return;
+
+        const esIrregular = tipoLote === 'Irregular';
+        const fondoLabel = fondoInput.previousElementSibling;
+        const superficieLabel = superficieInput.previousElementSibling;
+        if (!fondoLabel || !superficieLabel) return;
+
+        if (esIrregular) {
+            fondoLabel.textContent = 'Superficie (m²)';
+            superficieLabel.textContent = 'Fondo ficticio (m)';
+        } else {
+            fondoLabel.textContent = 'Fondo (m)';
+            superficieLabel.textContent = 'Superficie (m²)';
+        }
+    }
+
     renderizarAutocomplete(list, datos, input, filtro = '') {
         list.innerHTML = '';
         
@@ -641,11 +665,16 @@ class ComparableEditor {
         }
         
         if (this.tipo === 'lote') {
+            const tipoLote = document.getElementById('compTipoLote')?.value?.trim() || '';
+            const esIrregular = tipoLote === 'Irregular';
+            const frente = parseFloat(document.getElementById('compFrente')?.value) || 0;
+            const fondoInput = parseFloat(document.getElementById('compFondo')?.value) || 0;
+            const superficieInput = parseFloat(document.getElementById('compSuperficie')?.value) || 0;
             datos.lote = {
-                frente: parseFloat(document.getElementById('compFrente')?.value) || 0,
-                fondo: parseFloat(document.getElementById('compFondo')?.value) || 0,
-                superficie: parseFloat(document.getElementById('compSuperficie')?.value) || 0,
-                tipoLote: document.getElementById('compTipoLote')?.value?.trim() || ''
+                frente: frente,
+                fondo: esIrregular ? superficieInput : fondoInput,
+                superficie: esIrregular ? fondoInput : superficieInput,
+                tipoLote: tipoLote
             };
         } else if (this.tipo === 'casa') {
             datos.casa = {
@@ -684,6 +713,10 @@ class ComparableEditor {
             }
             if (!datos.lote?.superficie || datos.lote.superficie <= 0) {
                 alert('Completá la superficie del lote.');
+                return false;
+            }
+            if (datos.lote?.tipoLote === 'Irregular' && (!datos.lote?.fondo || datos.lote.fondo <= 0)) {
+                alert('Completá el fondo ficticio del lote.');
                 return false;
             }
         }

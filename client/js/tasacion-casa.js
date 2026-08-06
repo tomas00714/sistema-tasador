@@ -124,25 +124,38 @@ function mostrarCaracteristicasCasa() {
             <h1>Características de la casa</h1>
         </div>
 
-        <div class="form-grid-departamento">
-            <div class="columna-departamento">
-                ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta', value: datosTasacion.casa.superficieCubierta, coefValue: datosTasacion.casa.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
+        <div class="form-grid-caracteristicas" id="caracteristicasCasaGrid">
+            ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta', value: datosTasacion.casa.superficieCubierta, coefValue: datosTasacion.casa.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
 
-                ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.casa.estadoConservacion, claseInputGroup: 'input-2-3' })}
+            ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.casa.caracteristicaConstructiva, coefValue: datosTasacion.casa.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
 
-                <div class="input-group input-2-3">
-                    <label>Antigüedad (años)</label>
-                    <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.casa.antiguedad || ""}">
-                </div>
+            ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.casa.estadoConservacion, claseInputGroup: 'input-2-3' })}
 
-                ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.casa.vidaUtil, claseInputGroup: 'input-2-3' })}
+            <div class="input-group input-2-3">
+                <label>Antigüedad (años)</label>
+                <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.casa.antiguedad || ""}">
             </div>
 
-            <div class="columna-departamento">
-                ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.casa.caracteristicaConstructiva, coefValue: datosTasacion.casa.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
+            ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.casa.vidaUtil, claseInputGroup: 'input-2-3' })}
+
+            <div class="input-group input-2-3">
+                <label>FOT</label>
+                <input type="number" id="fotCasaInput" placeholder="Factor de ocupación total" step="0.01" min="0" value="${datosTasacion.casa.fot != null ? datosTasacion.casa.fot : ''}">
+            </div>
+
+            <div class="input-group input-2-3">
+                <label>FOS</label>
+                <input type="number" id="fosCasaInput" placeholder="Factor de ocupación de suelo" step="0.01" min="0" value="${datosTasacion.casa.fos != null ? datosTasacion.casa.fos : ''}">
+            </div>
+
+            <div class="input-group input-2-3">
+                <label>Zonificación</label>
+                <input type="text" id="zonificacionCasaInput" placeholder="Ej: Residencial R1" value="${datosTasacion.casa.zonificacion || ''}">
             </div>
         </div>
     `;
+
+    ajustarDistribucionCaracteristicas('#caracteristicasCasaGrid');
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {
         actualizarEstadoBotonSiguiente();
@@ -424,13 +437,27 @@ function guardarDatosCaracteristicasCasa() {
     }
     const vidaUtilInput = document.getElementById("vidaUtilInput");
     if (vidaUtilInput) {
-        datosTasacion.casa.vidaUtil = vidaUtilInput.value;
+        datosTasacion.casa.vidaUtil = vidaUtilInput.value || 80;
     }
     if (caracteristicaConstructivaInput) {
         datosTasacion.casa.caracteristicaConstructiva = caracteristicaConstructivaInput.value;
     }
     if (caracteristicaConstructivaCoef) {
         datosTasacion.casa.caracteristicaConstructivaCoef = parseFloat(caracteristicaConstructivaCoef.value) || 1;
+    }
+
+    const zonificacionCasaInput = document.getElementById("zonificacionCasaInput");
+    const fotCasaInput = document.getElementById("fotCasaInput");
+    const fosCasaInput = document.getElementById("fosCasaInput");
+
+    if (zonificacionCasaInput) {
+        datosTasacion.casa.zonificacion = zonificacionCasaInput.value || null;
+    }
+    if (fotCasaInput) {
+        datosTasacion.casa.fot = fotCasaInput.value ? parseFloat(fotCasaInput.value) : null;
+    }
+    if (fosCasaInput) {
+        datosTasacion.casa.fos = fosCasaInput.value ? parseFloat(fosCasaInput.value) : null;
     }
 }
 

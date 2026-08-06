@@ -100,6 +100,8 @@ function limpiarDatosTasacion() {
             estadoConservacionCoef: 0,
             caracteristicaConstructiva: "",
             caracteristicaConstructivaCoef: 0,
+            fot: null,
+            fos: null,
             homogeneizacion: {
                 cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
                 semicubierto: { superficie: 0, coeficiente: 0.50, homogeneizada: 0 },
@@ -126,6 +128,9 @@ function limpiarDatosTasacion() {
             estadoConservacion: "",
             caracteristicaConstructiva: "",
             caracteristicaConstructivaCoef: 0,
+            zonificacion: "",
+            fot: null,
+            fos: null,
             superficieHomogeneizada: 0,
             homogeneizacion: {
                 cubierto: { superficie: 0, coeficiente: 1, homogeneizada: 0 },
@@ -246,15 +251,18 @@ async function guardarTasacion(estado = 'completada') {
     for (const comparable of datosTasacion.comparables) {
         try {
             // Verificar si el comparable ya existe en la API
-            const comparableExistente = await obtenerComparablePorId(comparable.id);
+            const comparableExistente = comparable.id ? await obtenerComparablePorId(comparable.id) : null;
             if (!comparableExistente) {
                 // Crear nuevo comparable
                 const nuevoComparable = await crearComparable({
                     tipoInmueble: datosTasacion.tipo,
-                    fuente: 'manual',
+                    fuente: comparable.fuente || 'manual',
                     ...comparable
                 });
                 comparablesIds.push(nuevoComparable.id);
+                // Sincronizar el id en memoria para futuras guardadas
+                comparable.id = nuevoComparable.id;
+                comparable.fechaCreacion = nuevoComparable.fechaCreacion;
             } else {
                 // Ya existe, usar su ID
                 comparablesIds.push(comparable.id);
@@ -367,29 +375,26 @@ function guardarDatosPantallaDepartamento() {
     const bauleraSwitch = document.getElementById("bauleraSwitch");
     datosTasacion.departamento.baulera = bauleraSwitch ? bauleraSwitch.checked : false;
 
-    const serviciosSeleccionados = [];
-    document.querySelectorAll('.servicios-grid input:checked').forEach(check => {
-        if (check.closest('div').previousElementSibling?.textContent === "Servicios") {
-            serviciosSeleccionados.push(check.value);
+    datosTasacion.departamento.servicios = [];
+    document.querySelectorAll('.servicios-grid input[type="checkbox"][data-servicio]:checked').forEach(checkbox => {
+        if (checkbox.dataset.servicio) {
+            datosTasacion.departamento.servicios.push(checkbox.dataset.servicio);
         }
     });
-    datosTasacion.departamento.servicios = serviciosSeleccionados;
 
-    const infraestructuraSeleccionados = [];
-    document.querySelectorAll('.servicios-grid input:checked').forEach(check => {
-        if (check.closest('div').previousElementSibling?.textContent === "Infraestructura") {
-            infraestructuraSeleccionados.push(check.value);
+    datosTasacion.departamento.infraestructura = [];
+    document.querySelectorAll('.servicios-grid input[type="checkbox"][data-infraestructura]:checked').forEach(checkbox => {
+        if (checkbox.dataset.infraestructura) {
+            datosTasacion.departamento.infraestructura.push(checkbox.dataset.infraestructura);
         }
     });
-    datosTasacion.departamento.infraestructura = infraestructuraSeleccionados;
 
-    const amenitiesSeleccionados = [];
-    document.querySelectorAll('.servicios-grid input:checked').forEach(check => {
-        if (check.closest('div').previousElementSibling?.textContent === "Amenities") {
-            amenitiesSeleccionados.push(check.value);
+    datosTasacion.departamento.amenities = [];
+    document.querySelectorAll('.servicios-grid input[type="checkbox"][data-amenity]:checked').forEach(checkbox => {
+        if (checkbox.dataset.amenity) {
+            datosTasacion.departamento.amenities.push(checkbox.dataset.amenity);
         }
     });
-    datosTasacion.departamento.amenities = amenitiesSeleccionados;
 
     datosTasacion.departamento.observaciones = document.getElementById("observacionesInput").value;
 
@@ -422,6 +427,15 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.superficieCubiertaCoef = parseFloat(document.getElementById("superficieCubiertaCoef").value) || 1;
     datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(document.getElementById("caracteristicaConstructivaCoef").value) || 1;
 
+    const fotDeptoInput = document.getElementById("fotDeptoInput");
+    const fosDeptoInput = document.getElementById("fosDeptoInput");
+    if (fotDeptoInput) {
+        datosTasacion.departamento.fot = fotDeptoInput.value ? parseFloat(fotDeptoInput.value) : null;
+    }
+    if (fosDeptoInput) {
+        datosTasacion.departamento.fos = fosDeptoInput.value ? parseFloat(fosDeptoInput.value) : null;
+    }
+
     // El cálculo de Ross-Heidecke ahora es responsabilidad exclusiva del backend
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
@@ -436,7 +450,10 @@ function guardarDatosPantalla3() {
         superficie: document.getElementById("superficieInput")?.value || "",
         fondoFicticio: document.getElementById("fondoFicticioInput")?.value || "",
         segundaCalle: document.getElementById("segundaCalleInput")?.value || "",
-        zona: document.getElementById("zonaInput")?.value || ""
+        zona: document.getElementById("zonaInput")?.value || "",
+        zonificacion: document.getElementById("zonificacionLoteInput")?.value || "",
+        fot: document.getElementById("fotLoteInput")?.value ? parseFloat(document.getElementById("fotLoteInput").value) : null,
+        fos: document.getElementById("fosLoteInput")?.value ? parseFloat(document.getElementById("fosLoteInput").value) : null
     };
 
     resultadoCalculado = false;

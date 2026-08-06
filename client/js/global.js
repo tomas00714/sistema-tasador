@@ -329,12 +329,12 @@ function generarInputBanos({ inputId = 'banosInput', listId = 'banosList', label
     });
 }
 
-function generarInputVidaUtil({ inputId = 'vidaUtilInput', label = 'Vida útil (años)', value = '', placeholder = '80', min = 1, step = 1, claseInputGroup = '' } = {}) {
+function generarInputVidaUtil({ inputId = 'vidaUtilInput', label = 'Vida útil (años)', value = '80', placeholder = '80', min = 1, step = 1, claseInputGroup = '' } = {}) {
     const clase = claseInputGroup ? `input-group ${claseInputGroup}` : 'input-group';
     return `
         <div class="${clase}">
             <label>${escapeHtml(label)}</label>
-            <input type="number" id="${inputId}" placeholder="${escapeHtml(placeholder)}" min="${min}" step="${step}" value="${escapeHtml(value || '')}">
+            <input type="number" id="${inputId}" placeholder="${escapeHtml(placeholder)}" min="${min}" step="${step}" value="${escapeHtml(value || '80')}">
         </div>
     `;
 }

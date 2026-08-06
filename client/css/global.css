@@ -590,6 +590,7 @@ body.dark-mode .leaflet-tile {
     border-right: none;
     overflow-x: hidden;
     overflow-y: auto;
+    border: 1.5px solid var(--color-border);
 }
 
 .sidebar.collapsed {

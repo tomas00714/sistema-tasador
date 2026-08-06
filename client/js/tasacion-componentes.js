@@ -94,7 +94,7 @@ function generarHTMLAmenities(amenitiesActuales = []) {
         return opcionesAmenities.map(amenity => `
             <div class="check-servicio">
                 <label>
-                    <input type="checkbox" value="${amenity}" ${amenitiesActuales.includes(amenity) ? "checked" : ""}>
+                    <input type="checkbox" data-amenity="${amenity}" value="${amenity}" ${amenitiesActuales.includes(amenity) ? "checked" : ""}>
                     ${amenity}
                 </label>
             </div>

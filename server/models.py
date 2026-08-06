@@ -111,6 +111,9 @@ class TasacionDepartamentoRequest(BaseModel):
 
     valor_m2_referencia: Optional[float] = None
 
+    fot: Optional[float] = None
+    fos: Optional[float] = None
+
     ajuste_final_porcentaje: float = 0
 
     valor_final_manual: Optional[float] = None
@@ -133,6 +136,10 @@ class TasacionCasaRequest(BaseModel):
     vida_util: Optional[int] = 80
 
     caracteristica_constructiva: float
+
+    fot: Optional[float] = None
+    fos: Optional[float] = None
+    zonificacion: Optional[str] = None
 
     valor_m2_referencia: Optional[float] = None
 

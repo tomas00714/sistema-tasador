@@ -535,6 +535,12 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
     const fondoLabel = esIrregular ? 'Fondo Ficticio' : 'Fondo';
     const fondoValor = esIrregular ? (car.fondoFicticio || resultado.fondo || '-') : (resultado.fondo || '-');
 
+    // Calcular superficie a mostrar
+    const superficieResultado = resultado.superficie != null ? parseFloat(resultado.superficie) : null;
+    const superficieInput = parseFloat(car.superficie) || null;
+    const superficieCalculada = (resultado.frente && resultado.fondo) ? (parseFloat(resultado.frente) * parseFloat(resultado.fondo)) : null;
+    const superficieValor = superficieResultado ?? superficieInput ?? superficieCalculada ?? '-';
+
     // Initialize fixed coefficients for this type
     inicializarCoeficientesFijos(tipo);
 
@@ -557,6 +563,7 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
                                 <th>Dirección</th>
                                 <th>Frente</th>
                                 <th>${fondoLabel}</th>
+                                <th>Superficie</th>
                                 <th>Valor promedio de comp.</th>
                                 <th>F&C</th>
                                 ${valvanoColumna}
@@ -573,6 +580,7 @@ function generarCuadroDetalleLote(resultado, tipo, datosTasacion, car, esEsquina
                                 <td><strong>${formatearDireccion(datosTasacion.ubicacion.direccion || 'Lote a tasar')}</strong></td>
                                 <td><strong>${resultado.frente || '-'}</strong></td>
                                 <td><strong>${fondoValor}</strong></td>
+                                <td><strong>${superficieValor}</strong></td>
                                 <td><strong>${formatearMoneda(resultado.valor_promedio_m2)}</strong></td>
                                 <td><strong>${truncarDosDecimales(resultado.coeficiente_fitto_lote).toFixed(2)}</strong></td>
                                 ${valvanoCelda}
@@ -885,7 +893,13 @@ async function calcularYMostrarResultado(
             // Calcular valor por m² del lote a tasar:
             const valorM2Lote = valorFinalLote / superficie;
 
+            const fondoObjetivo = (!fondo || fondo <= 0) && frente > 0 && superficie > 0
+                ? superficie / frente
+                : fondo;
+
             resultadoTasacion = {
+                frente: frente,
+                fondo: fondoObjetivo,
                 valor_final: valorFinalLote,
                 valor_m2: valorM2Lote,
                 superficie: superficie,

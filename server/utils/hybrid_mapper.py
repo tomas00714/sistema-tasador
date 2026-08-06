@@ -109,6 +109,8 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
                 default=None,
                 transform=float
             )
+            columnas['fot'] = extraer_valor(depto, 'fot', 'FOT', default=None, transform=float)
+            columnas['fos'] = extraer_valor(depto, 'fos', 'FOS', default=None, transform=float)
     
     elif tipo == 'casa':
         casa = datos.get('casa', {})
@@ -137,6 +139,9 @@ def mapear_tasacion_a_columnas(datos: Dict[str, Any]) -> Dict[str, Any]:
                 default=None,
                 transform=float
             )
+            columnas['fot'] = extraer_valor(casa, 'fot', 'FOT', default=None, transform=float)
+            columnas['fos'] = extraer_valor(casa, 'fos', 'FOS', default=None, transform=float)
+            columnas['zonificacion'] = extraer_valor(casa, 'zonificacion', 'Zonificacion', default=None, transform=str)
     
     # Limpiar valores vacíos para evitar conflictos con NOT NULL
     columnas_limpias = {}

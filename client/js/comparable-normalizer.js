@@ -60,6 +60,14 @@ function normalizarDesdeTasacion(normalizado, datos, tipo) {
             fos: datos.fos || datosInmueble.caracteristicas?.fos || datosInmueble.fos || null,
             fot: datos.fot || datosInmueble.caracteristicas?.fot || datosInmueble.fot || null
         };
+
+        // Asegurar que los campos también estén en la raíz para crearComparable
+        normalizado.frente = normalizado.inmueble.frente;
+        normalizado.fondo = normalizado.inmueble.fondo;
+        normalizado.superficie = normalizado.inmueble.superficie;
+        normalizado.tipoLote = normalizado.inmueble.tipoLote;
+        normalizado.fos = normalizado.inmueble.fos;
+        normalizado.fot = normalizado.inmueble.fot;
     } else if (tipo === 'departamento') {
         normalizado.inmueble = {
             ubicacionPlantaCoef: datos.ubicacionPlantaCoef || datosInmueble.ubicacionPlantaCoef || null,

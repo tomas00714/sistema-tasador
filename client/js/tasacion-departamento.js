@@ -157,55 +157,60 @@ function mostrarCaracteristicasDepartamento() {
         <div class="titulo-seccion">
             <h1>Características del departamento</h1>
         </div>
-        <div class="form-grid-2-columnas">
-            <div class="columna-departamento">
-                ${generarInputUbicacionPlanta({ inputId: 'ubicacionPlantaInput', listId: 'ubicacionPlantaList', coefInputId: 'ubicacionPlantaCoef', value: datosTasacion.departamento.ubicacionPlanta, coefValue: datosTasacion.departamento.ubicacionPlantaCoef, claseInputGroup: 'input-2-3' })}
+        <div class="form-grid-caracteristicas" id="caracteristicasDepartamentoGrid">
+            ${generarInputUbicacionPlanta({ inputId: 'ubicacionPlantaInput', listId: 'ubicacionPlantaList', coefInputId: 'ubicacionPlantaCoef', value: datosTasacion.departamento.ubicacionPlanta, coefValue: datosTasacion.departamento.ubicacionPlantaCoef, claseInputGroup: 'input-2-3' })}
 
-                <div class="input-group input-2-3">
-                    <label>Ubicación en piso</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="ubicacionPisoInput" placeholder="Seleccionar piso" autocomplete="off" readonly value="${datosTasacion.departamento.ubicacionPiso || ""}">
-                                <div class="autocomplete-list" id="ubicacionPisoList"></div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="ubicacionPisoCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.departamento.ubicacionPisoCoef || ""}">
-                        </div>
-                    </div>
-                </div>
-
-                ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.departamento.caracteristicaConstructiva, coefValue: datosTasacion.departamento.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
-
-                ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta propia', value: datosTasacion.departamento.superficieCubierta, coefValue: datosTasacion.departamento.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
-
+            <div class="input-group input-2-3">
+                <label>Antigüedad (años)</label>
+                <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.departamento.antiguedad || ""}">
             </div>
 
-            <div class="columna-departamento-centro">
-                <div class="input-group input-2-3">
-                    <label>Tiene ascensor</label>
-                    <div class="switch-container-ascensor">
-                        <label class="switch">
-                            <input type="checkbox" id="tieneAscensorSwitch" ${datosTasacion.departamento.tieneAscensor === "si" || !datosTasacion.departamento.tieneAscensor ? "checked" : ""}>
-                            <span class="slider"></span>
-                        </label>
+            <div class="input-group input-2-3">
+                <label>Ubicación en piso</label>
+                <div class="input-dividido-container">
+                    <div class="input-dividido-principal">
+                        <div class="autocomplete-container">
+                            <input type="text" id="ubicacionPisoInput" placeholder="Seleccionar piso" autocomplete="off" readonly value="${datosTasacion.departamento.ubicacionPiso || ""}">
+                            <div class="autocomplete-list" id="ubicacionPisoList"></div>
+                        </div>
+                    </div>
+                    <div class="input-dividido-coef">
+                        <input type="number" id="ubicacionPisoCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.departamento.ubicacionPisoCoef || ""}">
                     </div>
                 </div>
             </div>
 
-            <div class="columna-departamento">
-                <div class="input-group input-2-3">
-                    <label>Antigüedad (años)</label>
-                    <input type="number" id="antiguedadInput" placeholder="Ingresar antigüedad" value="${datosTasacion.departamento.antiguedad || ""}">
+            ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.departamento.vidaUtil, claseInputGroup: 'input-2-3' })}
+
+            ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.departamento.caracteristicaConstructiva, coefValue: datosTasacion.departamento.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
+
+            ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.departamento.estadoConservacion, claseInputGroup: 'input-2-3' })}
+
+            ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta propia', value: datosTasacion.departamento.superficieCubierta, coefValue: datosTasacion.departamento.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
+
+            <div class="input-group input-2-3">
+                <label>Tiene ascensor</label>
+                <div class="switch-container-ascensor">
+                    <label class="switch">
+                        <input type="checkbox" id="tieneAscensorSwitch" ${datosTasacion.departamento.tieneAscensor === "si" || !datosTasacion.departamento.tieneAscensor ? "checked" : ""}>
+                        <span class="slider"></span>
+                    </label>
                 </div>
+            </div>
 
-                ${generarInputVidaUtil({ inputId: 'vidaUtilInput', value: datosTasacion.departamento.vidaUtil, claseInputGroup: 'input-2-3' })}
+            <div class="input-group input-2-3">
+                <label>FOT</label>
+                <input type="number" id="fotDeptoInput" placeholder="Factor de ocupación total" step="0.01" min="0" value="${datosTasacion.departamento.fot != null ? datosTasacion.departamento.fot : ''}">
+            </div>
 
-                ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.departamento.estadoConservacion, claseInputGroup: 'input-2-3' })}
+            <div class="input-group input-2-3">
+                <label>FOS</label>
+                <input type="number" id="fosDeptoInput" placeholder="Factor de ocupación de suelo" step="0.01" min="0" value="${datosTasacion.departamento.fos != null ? datosTasacion.departamento.fos : ''}">
             </div>
         </div>
     `;
+
+    ajustarDistribucionCaracteristicas('#caracteristicasDepartamentoGrid');
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {
         actualizarEstadoBotonSiguiente();
@@ -235,7 +240,7 @@ function mostrarCaracteristicasDepartamento() {
     if (vidaUtilInput) {
         vidaUtilInput.addEventListener("input", () => {
             if (typeof datosTasacion !== 'undefined' && datosTasacion.departamento) {
-                datosTasacion.departamento.vidaUtil = vidaUtilInput.value;
+                datosTasacion.departamento.vidaUtil = vidaUtilInput.value || 80;
             }
         });
     }

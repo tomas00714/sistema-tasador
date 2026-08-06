@@ -179,14 +179,16 @@ def _tasar_lote_normal(datos):
     # Calcular coeficiente Fitto y Cervini para el lote objetivo
     # Para salida a dos calles, no se usa coeficiente Fitto-Cervini
     tipologia = normalizar_tipologia(datos.tipologia)
+
+    # Determinar el fondo objetivo: el ingresado si existe, o el calculado desde superficie/frente
+    fondo_objetivo = datos.fondo
+    if fondo_objetivo is None and datos.superficie and datos.frente:
+        fondo_objetivo = datos.superficie / datos.frente
+
     if tipologia == "dos_calles":
         coeficiente_fitto_lote = 1.0
         logger.debug("Salida a dos calles - no se aplica coeficiente Fitto-Cervini")
     else:
-        fondo_objetivo = datos.fondo
-        if fondo_objetivo is None and datos.superficie and datos.frente:
-            fondo_objetivo = datos.superficie / datos.frente
-
         coeficiente_fitto_lote = 1.0
         if fondo_objetivo and datos.frente:
             try:
@@ -223,6 +225,8 @@ def _tasar_lote_normal(datos):
     return {
         "direccion": datos.direccion,
         "tipologia": normalizar_tipologia(datos.tipologia),
+        "frente": round(datos.frente, 2) if datos.frente else None,
+        "fondo": round(fondo_objetivo, 2) if fondo_objetivo else None,
         "superficie": round(superficie, 2),
         "valor_promedio_m2": round(valor_promedio_m2, 2),
         "valor_final": round(valor_final, 2),

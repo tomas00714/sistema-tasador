@@ -466,7 +466,7 @@ html.modal-open {
 
 .perfil-row {
 
-    padding: 20px 24px;
+    padding: 10px 24px;
 
     box-sizing: border-box;
 }
@@ -940,7 +940,7 @@ html.modal-open {
 
 .resultado-tabla {
 
-    width: auto;
+    width: 100%;
 
     min-width: 800px;
 

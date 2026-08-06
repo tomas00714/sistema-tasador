@@ -38,6 +38,8 @@ function asegurarEstructuraHomogeneizacion(homData, config) {
     config.filas.forEach(fila => {
         if (!homData[fila.tipo]) {
             homData[fila.tipo] = { superficie: 0, homogeneizada: 0, coef: fila.defaultCoef };
+        } else if (homData[fila.tipo].coeficiente !== undefined && homData[fila.tipo].coef === undefined) {
+            homData[fila.tipo].coef = homData[fila.tipo].coeficiente;
         }
     });
     if (homData.totalSuperficie === undefined) homData.totalSuperficie = 0;
@@ -45,36 +47,53 @@ function asegurarEstructuraHomogeneizacion(homData, config) {
     return homData;
 }
 
-function generarTablaHomogeneizacion(tipo, homData, prefijo = '') {
+function generarTablaHomogeneizacion(tipo, homData, prefijo = '', lectura = false) {
     const config = HOMOGENEIZACION_SUPERFICIE_CONFIG[tipo];
     if (!config) return '';
     asegurarEstructuraHomogeneizacion(homData, config);
 
     const filasHTML = config.filas.map((fila, idx) => {
         const h = homData[fila.tipo];
+        const coef = h?.coef ?? h?.coeficiente ?? fila.defaultCoef;
         const separador = (idx === config.separador) ? `<tr class="fila-separador"><td colspan="4" class="celda-separador">Otras superficies</td></tr>` : '';
         const supId = idConPrefijo(prefijo, fila.idSuperficie);
         const coefId = idConPrefijo(prefijo, fila.idCoef);
         const homId = idConPrefijo(prefijo, fila.idHomogeneizada);
+        const celdaSuperficie = lectura
+            ? `<td>${parseFloat(h?.superficie) > 0 ? parseFloat(h.superficie).toFixed(2) + ' m²' : '—'}</td>`
+            : `<td><input type="number" id="${supId}" class="input-tabla" placeholder="${fila.placeholder}" value="${h.superficie || ''}"></td>`;
+        const celdaCoef = lectura
+            ? `<td>${coef}</td>`
+            : `<td>
+                    <input type="number" id="${coefId}" class="input-tabla-coef" step="0.01" value="${coef}">
+                    <div class="coef-placeholder">${fila.rango}</div>
+               </td>`;
+        const celdaHom = lectura
+            ? `<td>${parseFloat(h?.homogeneizada) > 0 ? parseFloat(h.homogeneizada).toFixed(2) + ' m²' : '—'}</td>`
+            : `<td><input type="number" id="${homId}" class="input-tabla" value="${h.homogeneizada || 0}" disabled></td>`;
+
         return `
             ${separador}
             <tr>
                 <td>${fila.label}</td>
-                <td><input type="number" id="${supId}" class="input-tabla" placeholder="${fila.placeholder}" value="${h.superficie || ''}"></td>
-                <td>
-                    <input type="number" id="${coefId}" class="input-tabla-coef" step="0.01" value="${h.coef || fila.defaultCoef}">
-                    <div class="coef-placeholder">${fila.rango}</div>
-                </td>
-                <td><input type="number" id="${homId}" class="input-tabla" value="${h.homogeneizada || 0}" disabled></td>
+                ${celdaSuperficie}
+                ${celdaCoef}
+                ${celdaHom}
             </tr>
         `;
     }).join('');
 
     const totalSupId = idConPrefijo(prefijo, 'totalSuperficie');
     const totalHomId = idConPrefijo(prefijo, 'totalHomogeneizada');
+    const celdaTotalSup = lectura
+        ? `<td><strong>${parseFloat(homData.totalSuperficie) > 0 ? parseFloat(homData.totalSuperficie).toFixed(2) + ' m²' : '—'}</strong></td>`
+        : `<td><input type="number" id="${totalSupId}" class="input-tabla" value="${homData.totalSuperficie || 0}" disabled></td>`;
+    const celdaTotalHom = lectura
+        ? `<td><strong>${parseFloat(homData.totalHomogeneizada) > 0 ? parseFloat(homData.totalHomogeneizada).toFixed(2) + ' m²' : '—'}</strong></td>`
+        : `<td><input type="number" id="${totalHomId}" class="input-tabla" value="${homData.totalHomogeneizada || 0}" disabled></td>`;
 
     return `
-        <table class="tabla-homogeneizacion">
+        <table class="tabla-homogeneizacion resultado-tabla">
             <thead>
                 <tr>
                     <th>Tipo de Superficie</th>
@@ -86,10 +105,10 @@ function generarTablaHomogeneizacion(tipo, homData, prefijo = '') {
             <tbody>
                 ${filasHTML}
                 <tr class="fila-total">
-                    <td>Total</td>
-                    <td><input type="number" id="${totalSupId}" class="input-tabla" value="${homData.totalSuperficie || 0}" disabled></td>
+                    <td><strong>Total</strong></td>
+                    ${celdaTotalSup}
                     <td></td>
-                    <td><input type="number" id="${totalHomId}" class="input-tabla" value="${homData.totalHomogeneizada || 0}" disabled></td>
+                    ${celdaTotalHom}
                 </tr>
             </tbody>
         </table>

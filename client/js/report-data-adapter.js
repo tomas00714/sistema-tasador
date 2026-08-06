@@ -202,7 +202,27 @@ function mapearCaracteristicas(tasacion) {
             windows: '—',
             extra: [
                 { label: 'Ubicación en planta', value: valorSeguro(d.ubicacionPlanta) },
-                { label: 'Ascensor', value: d.tieneAscensor === 'si' ? 'Sí' : d.tieneAscensor === 'no' ? 'No' : '—' }
+                { label: 'Ascensor', value: d.tieneAscensor === 'si' ? 'Sí' : d.tieneAscensor === 'no' ? 'No' : '—' },
+                { label: 'FOT', value: valorSeguro(d.fot) },
+                { label: 'FOS', value: valorSeguro(d.fos) }
+            ]
+        };
+    }
+
+    if (tasacion.tipo === 'casa') {
+        const c = tasacion.casa || {};
+        return {
+            constructionQuality: valorSeguro(c.caracteristicaConstructiva),
+            state: valorSeguro(c.estadoConservacion),
+            heating: '—',
+            cooling: '—',
+            flooring: '—',
+            kitchen: '—',
+            windows: '—',
+            extra: [
+                { label: 'Zonificación', value: valorSeguro(c.zonificacion) },
+                { label: 'FOT', value: valorSeguro(c.fot) },
+                { label: 'FOS', value: valorSeguro(c.fos) }
             ]
         };
     }
