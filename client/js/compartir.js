@@ -138,7 +138,7 @@ async function initCompartirPublico() {
 
         const remitente = [preview.remitente_nombre, preview.remitente_apellido].filter(Boolean).join(' ');
 
-        const acciones = isAuthenticated() && typeof isAuthenticated === 'function' && isAuthenticated()
+        const acciones = typeof isAuthenticated === 'function' && isAuthenticated()
             ? `<button type="button" class="compartir-btn-principal" id="btnGuardarTasacionCompartida">Guardar tasación</button>`
             : `<a class="compartir-btn-principal" href="login.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}">Iniciar sesión</a>
                <a class="compartir-btn-secundario" href="registro.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}">Crear cuenta</a>`;

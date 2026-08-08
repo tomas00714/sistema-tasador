@@ -1,5 +1,3 @@
-const API_BASE_URL = localStorage.getItem('apiUrl') || 'http://127.0.0.1:8080';
-
 const TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = 'auth_user';
 
@@ -33,10 +31,9 @@ function appendAuthParams(url) {
 function getApiUrl() {
     const stored = localStorage.getItem('apiUrl');
     if (stored) return stored;
-    const defaultUrl = window.location.hostname === 'localhost' 
-        ? 'http://127.0.0.1:8080' 
-        : 'https://sistema-tasador.onrender.com';
-    return defaultUrl;
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '';
+    return isLocal ? 'http://127.0.0.1:8080' : 'https://sistema-tasador.onrender.com';
 }
 
 function setToken(token) {
