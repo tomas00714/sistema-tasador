@@ -3,6 +3,8 @@
    Guardado/carga de datos y localStorage
 ========================= */
 
+let guardandoTasacion = false;
+
 function guardarTodosLosDatos() {
     if (pasoActual === 2) {
         if (datosTasacion.tipo === 'lote') {
@@ -190,10 +192,16 @@ async function cargarDatosCompletos(datosCompletos) {
             // Son IDs, obtener todos de la API en una sola llamada
             try {
                 const comparables = await obtenerComparablesBatchAPI(datosCompletos.comparables);
-                datosTasacion.comparables = comparables.map(c => ({
-                    id: c.id,
-                    ...c.datos
-                }));
+                datosTasacion.comparables = comparables.map(c => {
+                    const datosSinId = { ...c.datos };
+                    delete datosSinId.id;
+                    return {
+                        ...datosSinId,
+                        id: c.id,
+                        fechaCreacion: c.fecha_creacion,
+                        fechaModificacion: c.fecha_modificacion
+                    };
+                });
             } catch (e) {
                 console.error('Error al cargar comparables batch:', e);
                 datosTasacion.comparables = [];
@@ -221,9 +229,16 @@ async function cargarDatosCompletos(datosCompletos) {
 }
 
 async function guardarTasacion(estado = 'completada') {
-    guardarTodosLosDatos();
+    if (guardandoTasacion) {
+        console.warn('[guardarTasacion] Guardado ya en progreso; ignorando doble llamada.');
+        return;
+    }
+    guardandoTasacion = true;
 
-    if (datosTasacion.ubicacion && datosTasacion.ubicacion.direccion) {
+    try {
+        guardarTodosLosDatos();
+
+        if (datosTasacion.ubicacion && datosTasacion.ubicacion.direccion) {
         datosTasacion.ubicacion.direccion = formatearDireccion(
             datosTasacion.ubicacion.direccion
         );
@@ -247,13 +262,15 @@ async function guardarTasacion(estado = 'completada') {
     }
 
     // Guardar comparables en la API
+    // Regla: si tiene id, ya existe; si no, se crea exactamente una vez.
     const comparablesIds = [];
     for (const comparable of datosTasacion.comparables) {
         try {
-            // Verificar si el comparable ya existe en la API
-            const comparableExistente = comparable.id ? await obtenerComparablePorId(comparable.id) : null;
-            if (!comparableExistente) {
-                // Crear nuevo comparable
+            if (comparable.id) {
+                // Comparable ya persistido: reutilizar su id
+                comparablesIds.push(comparable.id);
+            } else {
+                // Nuevo comparable: crearlo una sola vez
                 const nuevoComparable = await crearComparable({
                     tipoInmueble: datosTasacion.tipo,
                     fuente: comparable.fuente || 'manual',
@@ -263,9 +280,6 @@ async function guardarTasacion(estado = 'completada') {
                 // Sincronizar el id en memoria para futuras guardadas
                 comparable.id = nuevoComparable.id;
                 comparable.fechaCreacion = nuevoComparable.fechaCreacion;
-            } else {
-                // Ya existe, usar su ID
-                comparablesIds.push(comparable.id);
             }
         } catch (e) {
             console.error(`Error al guardar comparable ${comparable.id}:`, e);
@@ -308,6 +322,9 @@ async function guardarTasacion(estado = 'completada') {
     tasacionIdReal = idFinal;
 
     return idFinal;
+    } finally {
+        guardandoTasacion = false;
+    }
 }
 
 function formatearDireccion(direccion) {

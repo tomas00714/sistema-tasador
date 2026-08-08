@@ -196,7 +196,9 @@ async function crearComparableAPI(comparable) {
 
 async function obtenerComparableAPI(comparableId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/comparables/${comparableId}`);
+        const response = await fetch(`${API_BASE_URL}/api/comparables/${comparableId}`, {
+            headers: getAuthHeaders()
+        });
         
         if (!response.ok) {
             if (response.status === 404) {
@@ -344,7 +346,9 @@ async function crearSolicitudAPI(solicitud) {
 
 async function obtenerSolicitudAPI(solicitudId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/solicitudes/${solicitudId}`);
+        const response = await fetch(`${API_BASE_URL}/api/solicitudes/${solicitudId}`, {
+            headers: getAuthHeaders()
+        });
         
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
