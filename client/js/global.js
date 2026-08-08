@@ -44,8 +44,12 @@ function construirCardMinimizada({
         || item?.datos?.origen === 'compartida'
         || item?.origen === 'compartida';
 
-    const iconos = mostrarIconos && esCompartida
-        ? `<div class="card-minimizada-icons"><i class="fa-solid fa-share-nodes card-minimizada-icono-compartido" title="Recibida por compartir"></i></div>`
+    const iconoHtml = esCompartida
+        ? `<i class="fa-solid fa-link card-minimizada-icono-compartido" title="Recibida por compartir"></i>`
+        : `<i class="fa-solid fa-link card-minimizada-icono-compartido card-minimizada-icono-oculto"></i>`;
+
+    const iconos = mostrarIconos
+        ? `<div class="card-minimizada-icons">${iconoHtml}</div>`
         : "";
 
     const dataAttrs = Object.entries(dataAttributes)

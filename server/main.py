@@ -415,7 +415,12 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
         # Obtener comparables desde la tabla relacional
         comparables = repo.obtener_comparables(tasacion['id'])
         comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
-        
+
+        # Obtener datos del remitente si la tasación fue recibida por compartir
+        compartido_por = None
+        if tasacion.get('origen') == 'compartida' and tasacion.get('origen_id'):
+            compartido_por = CompartirService().obtener_remitente(tasacion['origen_id'])
+
         return TasacionResponse(
             id=tasacion_id,
             usuario_id=tasacion['usuario_id'],
@@ -424,7 +429,8 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
             datos=tasacion['datos'],
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion['fecha_creacion'],
-            fecha_modificacion=tasacion['fecha_modificacion']
+            fecha_modificacion=tasacion['fecha_modificacion'],
+            compartido_por=compartido_por
         )
     except HTTPException:
         raise

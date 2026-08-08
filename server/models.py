@@ -185,6 +185,7 @@ class TasacionResponse(BaseModel):
     comparables_ids: List[str]
     fecha_creacion: datetime
     fecha_modificacion: datetime
+    compartido_por: Optional[Dict[str, Any]] = None
 
 
 # Modelos para CRUD de Comparables

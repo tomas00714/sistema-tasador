@@ -592,6 +592,31 @@ html.modal-open {
     font-weight: 500;
 }
 
+.perfil-compartido-pill {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    background: var(--color-info-light);
+
+    color: var(--color-info);
+
+    padding: 4px 12px;
+
+    border-radius: 999px;
+
+    font-size: 0.75rem;
+
+    font-weight: 500;
+
+    align-self: center;
+
+    margin-bottom: 8px;
+}
+
 .perfil-valor {
 
     font-size: 1.75rem;

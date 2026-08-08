@@ -833,6 +833,13 @@ window.abrirPerfilTasacion = function(id) {
            </button>`
         : '';
 
+    const compartidoPillHtml = tasacion.compartido_por
+        ? `<div class="perfil-compartido-pill">
+                <i class="fa-solid fa-link"></i>
+                Compartido por ${escapeHtml(tasacion.compartido_por.nombre || '')} ${escapeHtml(tasacion.compartido_por.apellido || '')} (${escapeHtml(tasacion.compartido_por.inmobiliaria || '-')})
+           </div>`
+        : '';
+
     contenidoModal.innerHTML = `
 
         <div class="perfil-card-container">
@@ -864,6 +871,7 @@ window.abrirPerfilTasacion = function(id) {
                             </div>
                         </div>
                         <div class="perfil-card-azul-right">
+                            ${compartidoPillHtml}
                             <div class="perfil-valor-titulo">
                                 Valor de tasación
                             </div>

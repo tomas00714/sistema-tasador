@@ -82,8 +82,13 @@ body {
 }
 
 .card-minimizada-icono-compartido {
-    color: #8b5cf6;
+    color: var(--color-text-secondary);
     font-size: 1rem;
+}
+
+.card-minimizada-icono-oculto {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .card-minimizada-date-time {

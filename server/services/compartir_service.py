@@ -9,7 +9,7 @@ from repositories.tasacion_repository import TasacionRepository
 from repositories.comparable_repository import ComparableRepository
 from repositories.usuario_repository import UsuarioRepository
 from utils.hybrid_mapper import mapear_tasacion_a_columnas, mapear_comparable_a_columnas
-from utils.id_encoder import generar_codigo_publico, TIPO_TASACION
+from utils.id_encoder import generar_codigo_publico, obtener_id_desde_codigo, TIPO_TASACION
 
 SHARE_DIAS_DEFAULT = 7
 SHARE_USOS_DEFAULT = 1
@@ -223,3 +223,27 @@ class CompartirService:
 
         TasacionCompartirRepository().update(record['id'], {'estado': 'revocado'})
         return True
+
+    def obtener_remitente(self, origen_id: str) -> Optional[Dict[str, Any]]:
+        """Obtiene los datos del usuario que originó una tasación compartida a partir de origen_id."""
+        if not origen_id:
+            return None
+
+        try:
+            original_id = obtener_id_desde_codigo(origen_id)
+        except Exception:
+            return None
+
+        original = TasacionRepository().find_by_id(original_id)
+        if not original:
+            return None
+
+        usuario = UsuarioRepository().find_by_id(original['usuario_id'])
+        if not usuario:
+            return None
+
+        return {
+            'nombre': usuario.get('nombre', ''),
+            'apellido': usuario.get('apellido', ''),
+            'inmobiliaria': '-'
+        }
