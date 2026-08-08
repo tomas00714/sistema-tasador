@@ -45,7 +45,10 @@ def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
     """Crea un comparable nuevo. Retorna el registro recién creado."""
     repo = ComparableRepository()
 
-    columnas = mapear_comparable_a_columnas(datos)
+    # Asegurar que el id nunca se guarde dentro del JSON datos
+    datos_limpios = dict(datos)
+    datos_limpios.pop('id', None)
+    columnas = mapear_comparable_a_columnas(datos_limpios)
 
     # Validar campos obligatorios de la tabla comparables
     obligatorios = ['direccion', 'provincia', 'localidad', 'lat', 'lon', 'valor']
@@ -60,7 +63,7 @@ def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
         'usuario_id': usuario_id,
         'tipo_inmueble': tipo_inmueble,
         'fuente': fuente,
-        'datos': datos
+        'datos': datos_limpios
     }
     if solicitud_origen_id is not None:
         datos_comparable['solicitud_origen_id'] = solicitud_origen_id
@@ -873,9 +876,13 @@ def actualizar_comparable(comparable_id: str, comparable: ComparableUpdate, usua
         if comparable.datos is None:
             raise HTTPException(status_code=400, detail="No se proporcionaron campos para actualizar")
         
+        # Asegurar que el id nunca se guarde dentro del JSON datos
+        datos_limpios = dict(comparable.datos)
+        datos_limpios.pop('id', None)
+        
         # Actualizar datos y columnas específicas extraídas del JSON
-        datos_actualizacion = {'datos': comparable.datos}
-        datos_actualizacion.update(mapear_comparable_a_columnas(comparable.datos))
+        datos_actualizacion = {'datos': datos_limpios}
+        datos_actualizacion.update(mapear_comparable_a_columnas(datos_limpios))
         
         comparable_actualizado = repo.update(comparable_id_interno, datos_actualizacion)
         

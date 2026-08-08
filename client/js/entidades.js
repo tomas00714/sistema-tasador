@@ -51,12 +51,16 @@ async function leerComparables() {
     try {
         const comparables = await listarComparablesAPI();
         // Convertir formato de API al formato esperado por el frontend
-        return comparables.map(c => ({
-            id: c.id,
-            fechaCreacion: c.fecha_creacion,
-            fechaModificacion: c.fecha_modificacion,
-            ...c.datos
-        }));
+        return comparables.map(c => {
+            const datosSinId = { ...c.datos };
+            delete datosSinId.id;
+            return {
+                ...datosSinId,
+                id: c.id,
+                fechaCreacion: c.fecha_creacion,
+                fechaModificacion: c.fecha_modificacion
+            };
+        });
     } catch (e) {
         console.error('Error al leer comparables:', e);
         return [];
@@ -427,7 +431,9 @@ async function obtenerTasacionPorID(id) {
  */
 async function guardarComparableEntidad(comparable) {
     try {
-        await actualizarComparableAPI(comparable.id, { datos: comparable });
+        const datosSinId = { ...comparable };
+        delete datosSinId.id;
+        await actualizarComparableAPI(comparable.id, { datos: datosSinId });
     } catch (error) {
         console.error('Error al guardar comparable:', error);
         throw error;
@@ -572,11 +578,14 @@ async function compartirComparable(comparableId) {
     copia.fechaCreacion = new Date().toISOString();
     copia.fechaModificacion = new Date().toISOString();
     
-    // Crear nueva copia en la API
+    // Crear nueva copia en la API (nunca enviar el id dentro de datos)
+    const datosSinId = { ...copia };
+    delete datosSinId.id;
+    
     const nuevoComparable = await crearComparableAPI({
         tipo_inmueble: copia.tipoInmueble || copia.tipo || 'lote',
         fuente: 'compartido',
-        datos: copia
+        datos: datosSinId
     });
     
     copia.id = nuevoComparable.id;
@@ -623,6 +632,7 @@ async function responderSolicitud(solicitudId, datosRespuesta) {
  */
 async function guardarComparableTemporalComoGuardado(comparableTemporal) {
     const datos = JSON.parse(JSON.stringify(comparableTemporal.datos || comparableTemporal));
+    delete datos.id;
     datos.fuente = comparableTemporal.fuente || 'manual';
     datos.tipoInmueble = comparableTemporal.tipoInmueble || comparableTemporal.tipo || datos.tipoInmueble || 'lote';
     if (comparableTemporal.origen) datos.origen = comparableTemporal.origen;

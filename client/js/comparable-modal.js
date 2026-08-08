@@ -438,9 +438,12 @@ async function renderizarListaItems(categoria) {
         const comparables = await leerComparables();
         
         // Filtrar por tipo de inmueble y excluir comparables cuya tasación origen ya se muestra en la pestaña Tasaciones
+        const idsVistos = new Set();
         const comparablesFiltrados = comparables.filter(c => {
             if (c.tipoInmueble !== tipoInmueble) return false;
             if (c.tasacionOrigenId && tasacionesIds.has(c.tasacionOrigenId)) return false;
+            if (idsVistos.has(c.id)) return false;
+            idsVistos.add(c.id);
             return true;
         });
         
