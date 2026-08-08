@@ -53,19 +53,4 @@ class UsuarioRepository(BaseRepository):
             "fecha_expiracion_recuperacion": None
         }) is not None
     
-    def get_plan_limit_compartidos(self, usuario_id: int) -> Optional[int]:
-        """Obtiene el límite mensual de compartidos del plan del usuario."""
-        query = """
-            SELECT p.limite_compartidos_mensuales
-            FROM usuarios u
-            JOIN planes p ON u.plan_id = p.id
-            WHERE u.id = %s
-        """
-        try:
-            results = self.execute_query(query, (usuario_id,))
-            if not results:
-                return None
-            return results[0].get('limite_compartidos_mensuales')
-        except Exception as e:
-            logger.error(f"Error al obtener límite de compartidos: {e}")
-            return None
+

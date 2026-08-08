@@ -596,7 +596,7 @@ async function guardarTasacionCompartidaAPI(token) {
             headers: getAuthHeaders()
         });
 
-        if (handleAuthError(response)) {
+        if (response.status === 401) {
             throw new Error('Sesión expirada');
         }
 

@@ -600,7 +600,6 @@ def crear_compartir_tasacion(
             raise HTTPException(status_code=404, detail="Tasación no encontrada")
 
         service = CompartirService()
-        service.verificar_limite_compartidos(usuario_id)
 
         record = service.crear_compartir(
             tasacion_id_interno,

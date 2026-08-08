@@ -188,6 +188,8 @@ async function guardarTasacionPublica(token) {
         window.location.href = 'app/historial.html';
     } catch (e) {
         if (e.message === 'Sesión expirada') {
+            removeToken();
+            removeUserData();
             window.location.href = `login.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}`;
         } else {
             alert(e.message || 'No se pudo guardar la tasación');

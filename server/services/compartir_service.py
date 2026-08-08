@@ -36,16 +36,6 @@ class CompartirService:
         if record['usos_maximos'] is not None and record['usos_realizados'] >= record['usos_maximos']:
             raise HTTPException(status_code=404, detail="Enlace no encontrado")
 
-    def verificar_limite_compartidos(self, usuario_id: int) -> None:
-        limite = UsuarioRepository().get_plan_limit_compartidos(usuario_id)
-        if limite is None:
-            return
-        if limite <= 0:
-            raise HTTPException(status_code=403, detail="Tu plan no permite compartir tasaciones")
-        usados = TasacionCompartirRepository().count_by_usuario_this_month(usuario_id)
-        if usados >= limite:
-            raise HTTPException(status_code=403, detail="Alcanzaste el límite mensual de compartidos")
-
     def crear_compartir(self, tasacion_id: int, usuario_id: int, usos_maximos: Optional[int] = None, dias_expiracion: Optional[int] = None) -> Dict[str, Any]:
         repo_tasacion = TasacionRepository()
         tasacion = repo_tasacion.find_by_id(tasacion_id)

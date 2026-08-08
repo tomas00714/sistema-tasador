@@ -32,27 +32,6 @@ class TasacionCompartirRepository(BaseRepository):
             query += f" LIMIT {limit}"
         return self.execute_query(query, (tasacion_id,))
 
-    def count_by_usuario_this_month(self, usuario_id: int) -> int:
-        """Cuenta enlaces creados por el usuario en el mes actual."""
-        query = f"""
-            SELECT COUNT(*) FROM {self.table_name}
-            WHERE usuario_id = %s
-            AND fecha_creacion >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
-        """
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute(query, (usuario_id,))
-            result = cursor.fetchone()
-            return result[0] if result else 0
-        except Exception as e:
-            logger.error(f"Error al contar compartidos del mes: {e}")
-            return 0
-        finally:
-            cursor.close()
-            release_connection(conn)
-
     def create_compartir(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Crea un nuevo enlace de compartir."""
         return self.create(data)
