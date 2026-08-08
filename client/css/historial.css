@@ -129,38 +129,81 @@
 
 .historial-filtros {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-end;
+    gap: 14px;
     flex-wrap: nowrap;
     margin-top: 6px;
 }
 
-.registro-tabs {
+.segmented-control {
+    position: relative;
     display: flex;
-    gap: 8px;
+    align-items: center;
+    width: 260px;
+    height: 42px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 4px;
+    box-sizing: border-box;
+    align-self: center;
+    flex-shrink: 0;
 }
 
-.registro-tabs .btn-tab {
-    padding: 9px 18px;
-    border-radius: 20px;
-    border: 1px solid var(--color-border);
-    background: var(--color-white);
+.segmented-pill {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: var(--color-primary);
+    border-radius: 999px;
+    z-index: 0;
+    transition: transform 0.25s ease;
+    pointer-events: none;
+}
+
+.btn-segment {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
     color: var(--color-text-secondary);
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     font-size: 0.9rem;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    font-weight: 500;
+    z-index: 1;
+    border-radius: 999px;
+    transition: color 0.25s ease;
     white-space: nowrap;
+    padding: 0;
 }
 
-.registro-tabs .btn-tab:hover {
-    background: var(--color-bg-light);
+.btn-segment:hover {
+    color: var(--color-text-primary);
 }
 
-.registro-tabs .btn-tab.active {
-    background: var(--color-primary);
+.btn-segment.active {
     color: var(--color-white);
-    border-color: var(--color-primary);
+    font-weight: 600;
+}
+
+.filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 120px;
+}
+
+.filtro-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin: 0 0 0 2px;
+    line-height: 1;
 }
 
 .filtro-select {

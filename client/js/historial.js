@@ -393,13 +393,24 @@ function actualizarEstadoFiltro() {
     }
 }
 
+function actualizarPillSegmented() {
+    const pill = document.querySelector(".segmented-pill");
+    if (!pill) return;
+
+    if (registroActual === "comparables") {
+        pill.style.transform = "translateX(100%)";
+    } else {
+        pill.style.transform = "translateX(0)";
+    }
+}
+
 function inicializarFiltrosHistorial() {
-    const tabsRegistro = document.querySelectorAll("[data-registro]");
+    const tabsRegistro = document.querySelectorAll(".btn-segment");
     const selectTipo = document.getElementById("historialFiltroTipo");
     const selectEstado = document.getElementById("historialFiltroEstado");
     const inputBusqueda = document.querySelector(".input-busqueda");
 
-    const tabActivo = document.querySelector("[data-registro].active");
+    const tabActivo = document.querySelector(".btn-segment.active");
     if (tabActivo) {
         registroActual = tabActivo.dataset.registro || "tasaciones";
     }
@@ -413,6 +424,7 @@ function inicializarFiltrosHistorial() {
     }
 
     actualizarEstadoFiltro();
+    actualizarPillSegmented();
 
     if (inputBusqueda) {
         busquedaActual = inputBusqueda.value.trim().toLowerCase();
@@ -433,6 +445,7 @@ function inicializarFiltrosHistorial() {
             }
 
             actualizarEstadoFiltro();
+            actualizarPillSegmented();
             renderHistorial();
         });
     });

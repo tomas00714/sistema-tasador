@@ -95,23 +95,30 @@
                             class="input-busqueda">
 
                         <div class="historial-filtros">
-                            <div class="registro-tabs" role="tablist" aria-label="Tipo de registro">
-                                <button type="button" class="btn-tab active" data-registro="tasaciones">Tasaciones</button>
-                                <button type="button" class="btn-tab" data-registro="comparables">Comparables</button>
+                            <div class="segmented-control" role="tablist" aria-label="Tipo de registro">
+                                <div class="segmented-pill"></div>
+                                <button type="button" class="btn-segment active" data-registro="tasaciones">Tasaciones</button>
+                                <button type="button" class="btn-segment" data-registro="comparables">Comparables</button>
                             </div>
 
-                            <select class="filtro-select" id="historialFiltroTipo" aria-label="Tipo de propiedad">
-                                <option value="todos" selected>Todos</option>
-                                <option value="lote">Lotes</option>
-                                <option value="ph">PH</option>
-                                <option value="casa">Casas</option>
-                            </select>
+                            <div class="filtro-grupo">
+                                <label for="historialFiltroTipo" class="filtro-label">Tipo</label>
+                                <select class="filtro-select" id="historialFiltroTipo" aria-label="Tipo de propiedad">
+                                    <option value="todos" selected>Todos</option>
+                                    <option value="lote">Lotes</option>
+                                    <option value="ph">PH</option>
+                                    <option value="casa">Casas</option>
+                                </select>
+                            </div>
 
-                            <select class="filtro-select" id="historialFiltroEstado" aria-label="Estado de la tasación">
-                                <option value="todos" selected>Todos</option>
-                                <option value="completada">Completadas</option>
-                                <option value="borrador">Borradores</option>
-                            </select>
+                            <div class="filtro-grupo">
+                                <label for="historialFiltroEstado" class="filtro-label">Estado</label>
+                                <select class="filtro-select" id="historialFiltroEstado" aria-label="Estado de la tasación">
+                                    <option value="todos" selected>Todos</option>
+                                    <option value="completada">Completadas</option>
+                                    <option value="borrador">Borradores</option>
+                                </select>
+                            </div>
                         </div>
 
                     </div>
