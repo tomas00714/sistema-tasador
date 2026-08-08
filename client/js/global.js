@@ -40,12 +40,12 @@ function construirCardMinimizada({
         ? `<span class="card-minimizada-badge ${origenBadgeClass}">${escapeHtml(origenLabel)}</span>`
         : "";
 
-    const iconos = mostrarIconos
-        ? `<div class="card-minimizada-icons">
-                <i class="fa-solid fa-house"></i>
-                <i class="fa-solid fa-ruler-combined"></i>
-                <i class="fa-solid fa-layer-group"></i>
-            </div>`
+    const esCompartida = item?.datosCompletos?.origen === 'compartida'
+        || item?.datos?.origen === 'compartida'
+        || item?.origen === 'compartida';
+
+    const iconos = mostrarIconos && esCompartida
+        ? `<div class="card-minimizada-icons"><i class="fa-solid fa-share-nodes card-minimizada-icono-compartido" title="Recibida por compartir"></i></div>`
         : "";
 
     const dataAttrs = Object.entries(dataAttributes)
