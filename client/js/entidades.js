@@ -23,6 +23,8 @@ async function leerTasaciones() {
             fechaCreacion: t.fecha_creacion,
             fechaModificacion: t.fecha_modificacion,
             ...t.datos,
+            origen: t.origen || 'propia',
+            compartido_por: t.compartido_por || null,
             comparables: t.comparables_ids || [],
             datosCompletos: t.datos
         }));

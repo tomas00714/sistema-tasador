@@ -40,9 +40,7 @@ function construirCardMinimizada({
         ? `<span class="card-minimizada-badge ${origenBadgeClass}">${escapeHtml(origenLabel)}</span>`
         : "";
 
-    const esCompartida = item?.datosCompletos?.origen === 'compartida'
-        || item?.datos?.origen === 'compartida'
-        || item?.origen === 'compartida';
+    const esCompartida = item?.origen === 'compartida';
 
     const iconoHtml = esCompartida
         ? `<i class="fa-solid fa-link card-minimizada-icono-compartido" title="Recibida por compartir"></i>`

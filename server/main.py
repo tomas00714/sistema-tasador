@@ -352,12 +352,16 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         repo = TasacionRepository()
         
         # Construir datos de tasación con columnas específicas extraídas del JSON
+        datos_limpios = dict(tasacion.datos)
+        datos_limpios.pop('origen', None)
+        datos_limpios.pop('origenId', None)
+        
         datos_tasacion = {
             'usuario_id': usuario_id,
             'estado': tasacion.estado,
-            'datos': tasacion.datos
+            'datos': datos_limpios
         }
-        datos_tasacion.update(mapear_tasacion_a_columnas(tasacion.datos))
+        datos_tasacion.update(mapear_tasacion_a_columnas(datos_limpios))
         
         tasacion_creada = repo.create(datos_tasacion)
         
@@ -381,6 +385,7 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
             usuario_id=tasacion_creada['usuario_id'],
             tipo=tasacion_creada['tipo_inmueble'],
             estado=tasacion_creada['estado'],
+            origen=tasacion_creada.get('origen', 'propia'),
             datos=tasacion_creada['datos'],
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_creada['fecha_creacion'],
@@ -426,6 +431,7 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
             usuario_id=tasacion['usuario_id'],
             tipo=tasacion['tipo_inmueble'],
             estado=tasacion['estado'],
+            origen=tasacion.get('origen', 'propia'),
             datos=tasacion['datos'],
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion['fecha_creacion'],
@@ -463,6 +469,7 @@ def listar_tasaciones(
                 usuario_id=t['usuario_id'],
                 tipo=t['tipo_inmueble'],
                 estado=t['estado'],
+                origen=t.get('origen', 'propia'),
                 datos=t['datos'],
                 comparables_ids=[generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in repo.obtener_comparables(t['id'])],
                 fecha_creacion=t['fecha_creacion'],
@@ -501,9 +508,13 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         if tasacion.estado is not None:
             datos_actualizacion['estado'] = tasacion.estado
         if tasacion.datos is not None:
-            datos_actualizacion['datos'] = tasacion.datos
+            # Limpiar metadatos de procedencia del JSON; esos viven en columnas
+            datos_limpios = dict(tasacion.datos)
+            datos_limpios.pop('origen', None)
+            datos_limpios.pop('origenId', None)
+            datos_actualizacion['datos'] = datos_limpios
             # Extraer y actualizar columnas específicas desde JSON
-            datos_actualizacion.update(mapear_tasacion_a_columnas(tasacion.datos))
+            datos_actualizacion.update(mapear_tasacion_a_columnas(datos_limpios))
         
         if not datos_actualizacion and tasacion.comparables_ids is None:
             raise HTTPException(status_code=400, detail="No se proporcionaron campos para actualizar")
@@ -535,6 +546,7 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
             usuario_id=tasacion_actualizada['usuario_id'],
             tipo=tasacion_actualizada['tipo_inmueble'],
             estado=tasacion_actualizada['estado'],
+            origen=tasacion_actualizada.get('origen', 'propia'),
             datos=tasacion_actualizada['datos'],
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_actualizada['fecha_creacion'],
@@ -660,6 +672,7 @@ def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware
             usuario_id=nueva_tasacion['usuario_id'],
             tipo=nueva_tasacion['tipo_inmueble'],
             estado=nueva_tasacion['estado'],
+            origen=nueva_tasacion.get('origen', 'propia'),
             datos=nueva_tasacion['datos'],
             comparables_ids=comparables_ids,
             fecha_creacion=nueva_tasacion['fecha_creacion'],

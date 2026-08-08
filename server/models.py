@@ -181,6 +181,7 @@ class TasacionResponse(BaseModel):
     usuario_id: int
     tipo: str
     estado: str
+    origen: str = 'propia'
     datos: Dict[str, Any]
     comparables_ids: List[str]
     fecha_creacion: datetime

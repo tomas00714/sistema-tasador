@@ -16,6 +16,7 @@ async function obtenerTasacionParaInforme() {
             id: tasacion.id,
             tipo: tasacion.tipo,
             estado: tasacion.estado,
+            origen: tasacion.origen || 'propia',
             ...tasacion.datos,
             comparables: tasacion.comparables_ids || [],
             datosCompletos: tasacion.datos,

@@ -114,8 +114,9 @@ class CompartirService:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         nuevos_datos = deepcopy(original.get('datos') or {})
-        nuevos_datos['origen'] = 'compartida'
-        nuevos_datos['origenId'] = generar_codigo_publico(TIPO_TASACION, original['id'])
+        # La procedencia vive en columnas, no en el JSON datos
+        nuevos_datos.pop('origen', None)
+        nuevos_datos.pop('origenId', None)
 
         columnas = mapear_tasacion_a_columnas(nuevos_datos)
 
