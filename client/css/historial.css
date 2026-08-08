@@ -127,6 +127,70 @@
     border-color: var(--color-primary);
 }
 
+.historial-filtros {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    margin-top: 6px;
+}
+
+.registro-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.registro-tabs .btn-tab {
+    padding: 9px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.registro-tabs .btn-tab:hover {
+    background: var(--color-bg-light);
+}
+
+.registro-tabs .btn-tab.active {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+}
+
+.filtro-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 9px 28px 9px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    min-width: 120px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.filtro-select:disabled,
+.filtro-select.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--color-bg-light);
+    color: var(--color-text-secondary);
+}
+
 .historial-content {
     display: grid;
     grid-template-columns: minmax(310px, 1fr) minmax(0, 2fr);

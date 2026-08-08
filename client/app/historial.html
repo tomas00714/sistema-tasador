@@ -94,17 +94,24 @@
                             placeholder="Dirección o código de propiedad"
                             class="input-busqueda">
 
-                        <div class="tabs-container" role="tablist" aria-label="Estado de las tasaciones">
-                            <button type="button" class="btn-tab active" data-tab="todas">Todas</button>
-                            <button type="button" class="btn-tab" data-tab="completadas">Completadas</button>
-                            <button type="button" class="btn-tab" data-tab="borradores">Borradores</button>
-                        </div>
+                        <div class="historial-filtros">
+                            <div class="registro-tabs" role="tablist" aria-label="Tipo de registro">
+                                <button type="button" class="btn-tab active" data-registro="tasaciones">Tasaciones</button>
+                                <button type="button" class="btn-tab" data-registro="comparables">Comparables</button>
+                            </div>
 
-                        <div class="filtros-tipo" role="group" aria-label="Filtrar por tipo de inmueble">
-                            <button type="button" class="btn-filtro-tipo active" data-tipo-filtro="todos">Todos</button>
-                            <button type="button" class="btn-filtro-tipo" data-tipo-filtro="lote">Lote</button>
-                            <button type="button" class="btn-filtro-tipo" data-tipo-filtro="ph">PH</button>
-                            <button type="button" class="btn-filtro-tipo" data-tipo-filtro="casa">Casa</button>
+                            <select class="filtro-select" id="historialFiltroTipo" aria-label="Tipo de propiedad">
+                                <option value="todos" selected>Todos</option>
+                                <option value="lote">Lotes</option>
+                                <option value="ph">PH</option>
+                                <option value="casa">Casas</option>
+                            </select>
+
+                            <select class="filtro-select" id="historialFiltroEstado" aria-label="Estado de la tasación">
+                                <option value="todos" selected>Todos</option>
+                                <option value="completada">Completadas</option>
+                                <option value="borrador">Borradores</option>
+                            </select>
                         </div>
 
                     </div>

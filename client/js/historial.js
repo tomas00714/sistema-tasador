@@ -12,6 +12,19 @@ async function cargarHistorialDesdeAPI() {
     }
 }
 
+async function cargarComparablesDesdeAPI() {
+    try {
+        comparables = await leerComparables();
+        if (!Array.isArray(comparables)) {
+            comparables = [];
+        }
+        comparablesCargados = true;
+    } catch (e) {
+        console.error('Error al cargar comparables desde API:', e);
+        comparables = [];
+    }
+}
+
 function leerHistorialDesdeStorage() {
     // Esta función está deprecada, usar cargarHistorialDesdeAPI() en su lugar
     console.warn('leerHistorialDesdeStorage está deprecado, usar cargarHistorialDesdeAPI');
@@ -30,9 +43,12 @@ let historialInicializado = false;
 
 let lista = null;
 
-let tabActual = "todas";
+let registroActual = "tasaciones";
+let estadoFiltroActual = "todos";
 let tipoFiltroActual = "todos";
 let busquedaActual = "";
+let comparables = [];
+let comparablesCargados = false;
 
 const TILE_URLS = {
     light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -229,26 +245,50 @@ function getTipoInmuebleHistorial(tasacion) {
     return "ph";
 }
 
-function filtrarTasacionesHistorial() {
-    let resultado = [...tasaciones];
+function getTipoInmuebleComparable(comparable) {
+    const tipo = String(comparable?.tipoInmueble || comparable?.tipo || "").toLowerCase();
 
-    if (tabActual === "completadas") {
-        resultado = resultado.filter(t => t.estado === "completada");
-    } else if (tabActual === "borradores") {
-        resultado = resultado.filter(t => t.estado === "borrador");
+    if (tipo === "lote") {
+        return "lote";
+    }
+
+    if (tipo === "casa") {
+        return "casa";
+    }
+
+    if (tipo === "departamento" || tipo === "ph") {
+        return "ph";
+    }
+
+    return "ph";
+}
+
+function filtrarItemsHistorial() {
+    let resultado = registroActual === "comparables" ? [...comparables] : [...tasaciones];
+
+    if (registroActual === "tasaciones") {
+        if (estadoFiltroActual === "completada") {
+            resultado = resultado.filter(t => t.estado === "completada");
+        } else if (estadoFiltroActual === "borrador") {
+            resultado = resultado.filter(t => t.estado === "borrador");
+        }
     }
 
     if (tipoFiltroActual !== "todos") {
-        resultado = resultado.filter(t => getTipoInmuebleHistorial(t) === tipoFiltroActual);
+        if (registroActual === "comparables") {
+            resultado = resultado.filter(c => getTipoInmuebleComparable(c) === tipoFiltroActual);
+        } else {
+            resultado = resultado.filter(t => getTipoInmuebleHistorial(t) === tipoFiltroActual);
+        }
     }
 
     if (busquedaActual.trim()) {
         const termino = busquedaActual.trim().toLowerCase();
-        resultado = resultado.filter(t => {
-            const direccion = String(t.ubicacion?.direccion || "").toLowerCase();
-            const localidad = String(t.ubicacion?.localidad || "").toLowerCase();
-            const provincia = String(t.ubicacion?.provincia || "").toLowerCase();
-            const codigo = String(t.codigo || t.id || "").toLowerCase();
+        resultado = resultado.filter(item => {
+            const direccion = String(item.ubicacion?.direccion || "").toLowerCase();
+            const localidad = String(item.ubicacion?.localidad || "").toLowerCase();
+            const provincia = String(item.ubicacion?.provincia || "").toLowerCase();
+            const codigo = String(item.codigo || item.id || "").toLowerCase();
             return direccion.includes(termino) || localidad.includes(termino) || provincia.includes(termino) || codigo.includes(termino);
         });
     }
@@ -257,7 +297,6 @@ function filtrarTasacionesHistorial() {
 }
 
 function renderHistorial() {
-
     if (!lista) {
         return;
     }
@@ -265,95 +304,74 @@ function renderHistorial() {
     lista.innerHTML = "";
 
     if (capaMarcadores) {
-
         capaMarcadores.clearLayers();
     }
 
-    const tasacionesFiltradas = filtrarTasacionesHistorial().sort((a, b) => {
+    const itemsFiltrados = filtrarItemsHistorial().sort((a, b) => {
         const fechaA = a.fechaCreacion ? new Date(a.fechaCreacion) : new Date(0);
         const fechaB = b.fechaCreacion ? new Date(b.fechaCreacion) : new Date(0);
         return fechaB - fechaA;
     });
 
-    if (!tasacionesFiltradas.length) {
+    if (!itemsFiltrados.length) {
+        const hayFiltrosActivos = (registroActual === "tasaciones" && estadoFiltroActual !== "todos") || tipoFiltroActual !== "todos" || busquedaActual.trim();
+        const mensajeVacio = hayFiltrosActivos
+            ? `No hay ${registroActual} que coincidan con los filtros aplicados.`
+            : `No hay ${registroActual} en esta categoría.`;
 
-        const hayFiltrosActivos = tabActual !== "todas" || tipoFiltroActual !== "todos" || busquedaActual.trim();
-
-        lista.innerHTML = `
-
-            <p class="historial-vacio">
-                ${hayFiltrosActivos
-                    ? "No hay tasaciones que coincidan con los filtros aplicados."
-                    : "No hay tasaciones en esta categoría."}
-            </p>
-
-        `;
-
+        lista.innerHTML = `<p class="historial-vacio">${mensajeVacio}</p>`;
         return;
     }
 
-    tasacionesFiltradas.forEach(tasacion => {
-
+    itemsFiltrados.forEach(item => {
         let precio = "—";
-        if (tasacion.resultado?.valor_final) {
-            precio = `USD ${(tasacion.resultado.valor_final).toLocaleString('es-AR')}`;
-        } else if (tasacion.datosCompletos?.resultado?.valor_final) {
-            precio = `USD ${(tasacion.datosCompletos.resultado.valor_final).toLocaleString('es-AR')}`;
+        let tipoLabel = "";
+        let estadoLabel = "";
+        let estadoBadgeClass = "";
+        let onClick = "";
+
+        if (registroActual === "tasaciones") {
+            if (item.resultado?.valor_final) {
+                precio = `USD ${(item.resultado.valor_final).toLocaleString('es-AR')}`;
+            } else if (item.datosCompletos?.resultado?.valor_final) {
+                precio = `USD ${(item.datosCompletos.resultado.valor_final).toLocaleString('es-AR')}`;
+            }
+            tipoLabel = item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1);
+            estadoLabel = item.estado === "borrador" ? "Borrador" : "Completada";
+            estadoBadgeClass = item.estado === "borrador"
+                ? "card-minimizada-badge-borrador"
+                : "card-minimizada-badge-completada";
+            onClick = `abrirPerfilTasacion('${item.id}')`;
+        } else {
+            if (item.valor) {
+                precio = `USD ${(item.valor).toLocaleString('es-AR')}`;
+            }
+            tipoLabel = (item.tipoInmueble || "comparable").charAt(0).toUpperCase() + (item.tipoInmueble || "comparable").slice(1);
+            estadoLabel = "";
+            estadoBadgeClass = "card-minimizada-badge-completada";
         }
 
         lista.innerHTML += construirCardMinimizada({
-            item: tasacion,
+            item,
             precio,
-            fecha: formatearFecha(tasacion.fechaCreacion),
-            tipoLabel: tasacion.tipo.charAt(0).toUpperCase() + tasacion.tipo.slice(1),
-            estadoLabel: tasacion.estado === "borrador" ? "Borrador" : "Completada",
-            estadoBadgeClass: tasacion.estado === "borrador"
-                ? "card-minimizada-badge-borrador"
-                : "card-minimizada-badge-completada",
-            onClick: `abrirPerfilTasacion('${tasacion.id}')`
+            fecha: formatearFecha(item.fechaCreacion),
+            tipoLabel,
+            estadoLabel,
+            estadoBadgeClass,
+            onClick,
+            mostrarEstado: registroActual === "tasaciones"
         });
 
-
-        const mostrarEnMapa = tabActual === "borradores"
-            ? (tasacion.ubicacion.lat && tasacion.ubicacion.lon)
-            : (tasacion.ubicacion.lat && tasacion.ubicacion.lon);
-
-        if (
-            capaMarcadores &&
-            mostrarEnMapa
-        ) {
-
-            L.marker([
-
-                tasacion.ubicacion.lat,
-                tasacion.ubicacion.lon
-
-            ])
-
-            .addTo(capaMarcadores)
-
-            .bindPopup(`
-
-                <b>
-                    ${tasacion.ubicacion.direccion}
-                </b>
-
-                <br>
-
-                ${tasacion.ubicacion.localidad},
-                ${tasacion.ubicacion.provincia}
-
-                <br>
-
-                Tipo:
-                ${tasacion.tipo}
-
-                <br>
-
-                Estado:
-                ${tasacion.estado || "completada"}
-
-            `);
+        if (capaMarcadores && item.ubicacion?.lat && item.ubicacion?.lon) {
+            const esComparable = registroActual === "comparables";
+            L.marker([item.ubicacion.lat, item.ubicacion.lon])
+                .addTo(capaMarcadores)
+                .bindPopup(`
+                    <b>${item.ubicacion.direccion}</b><br>
+                    ${item.ubicacion.localidad}, ${item.ubicacion.provincia}<br>
+                    Tipo: ${esComparable ? (item.tipoInmueble || "comparable") : item.tipo}<br>
+                    ${esComparable ? `Valor: ${precio}` : `Estado: ${item.estado || "completada"}`}
+                `);
         }
     });
 }
@@ -362,21 +380,39 @@ function renderHistorial() {
    FILTROS
 ========================= */
 
-function inicializarFiltrosHistorial() {
+function actualizarEstadoFiltro() {
+    const selectEstado = document.getElementById("historialFiltroEstado");
+    if (!selectEstado) return;
 
-    const tabs = document.querySelectorAll(".btn-tab");
-    const filtrosTipo = document.querySelectorAll(".btn-filtro-tipo");
+    if (registroActual === "comparables") {
+        selectEstado.disabled = true;
+        selectEstado.classList.add("disabled");
+    } else {
+        selectEstado.disabled = false;
+        selectEstado.classList.remove("disabled");
+    }
+}
+
+function inicializarFiltrosHistorial() {
+    const tabsRegistro = document.querySelectorAll("[data-registro]");
+    const selectTipo = document.getElementById("historialFiltroTipo");
+    const selectEstado = document.getElementById("historialFiltroEstado");
     const inputBusqueda = document.querySelector(".input-busqueda");
 
-    const tabActivo = document.querySelector(".btn-tab.active");
+    const tabActivo = document.querySelector("[data-registro].active");
     if (tabActivo) {
-        tabActual = tabActivo.dataset.tab || "todas";
+        registroActual = tabActivo.dataset.registro || "tasaciones";
     }
 
-    const filtroActivo = document.querySelector(".btn-filtro-tipo.active");
-    if (filtroActivo) {
-        tipoFiltroActual = filtroActivo.dataset.tipoFiltro || "todos";
+    if (selectTipo) {
+        tipoFiltroActual = selectTipo.value || "todos";
     }
+
+    if (selectEstado) {
+        estadoFiltroActual = selectEstado.value || "todos";
+    }
+
+    actualizarEstadoFiltro();
 
     if (inputBusqueda) {
         busquedaActual = inputBusqueda.value.trim().toLowerCase();
@@ -386,28 +422,34 @@ function inicializarFiltrosHistorial() {
         });
     }
 
-    tabs.forEach(tab => {
-
-        tab.addEventListener("click", () => {
-
-            tabs.forEach(t => t.classList.remove("active"));
-
+    tabsRegistro.forEach(tab => {
+        tab.addEventListener("click", async () => {
+            tabsRegistro.forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
+            registroActual = tab.dataset.registro || "tasaciones";
 
-            tabActual = tab.dataset.tab;
+            if (registroActual === "comparables" && !comparablesCargados) {
+                await cargarComparablesDesdeAPI();
+            }
 
+            actualizarEstadoFiltro();
             renderHistorial();
         });
     });
 
-    filtrosTipo.forEach(filtro => {
-        filtro.addEventListener("click", () => {
-            filtrosTipo.forEach(item => item.classList.remove("active"));
-            filtro.classList.add("active");
-            tipoFiltroActual = filtro.dataset.tipoFiltro || "todos";
+    if (selectTipo) {
+        selectTipo.addEventListener("change", (event) => {
+            tipoFiltroActual = event.target.value || "todos";
             renderHistorial();
         });
-    });
+    }
+
+    if (selectEstado) {
+        selectEstado.addEventListener("change", (event) => {
+            estadoFiltroActual = event.target.value || "todos";
+            renderHistorial();
+        });
+    }
 }
 
 /* =========================
