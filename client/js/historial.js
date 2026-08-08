@@ -467,7 +467,7 @@ function eliminarTasacion(id) {
     });
 }
 
-window.abrirPerfilTasacion = function(id) {
+window.abrirPerfilTasacion = async function(id) {
     try {
         const modalOverlay =
             document.getElementById("modalOverlay");
@@ -475,11 +475,17 @@ window.abrirPerfilTasacion = function(id) {
         const contenidoModal =
             document.getElementById("contenidoModal");
 
-        const tasacion =
+        let tasacion =
             tasaciones.find(t => t.id === id);
 
         if (!tasacion || !contenidoModal) {
             return;
+        }
+
+        // Traer detalles completos (compartido_por, etc.)
+        const remota = await obtenerTasacionAPI(id);
+        if (remota) {
+            tasacion.compartido_por = remota.compartido_por;
         }
 
     tasacionPerfilAbiertaId = id;
