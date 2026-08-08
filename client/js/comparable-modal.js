@@ -111,8 +111,8 @@ function agregarListenersValidacionFormulario(tipoInmueble, btnGuardar) {
         );
     } else if (tipoInmueble === 'departamento' || tipoInmueble === 'casa') {
         inputIds.push(
-            'compFormSuperficieInput',
-            'compFormAntiguedadInput'
+            'compFormSuperficieInput'
+            // ambientes, dormitorios, baños y antigüedad son descriptivos, no obligatorios
         );
     }
     

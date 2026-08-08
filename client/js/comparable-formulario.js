@@ -949,9 +949,9 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
         datos.antiguedad = antiguedad;
         datos.vidaUtil = vidaUtil;
         datos.estadoConservacion = estadoConservacion;
-        datos.ambientes = ambientes;
-        datos.dormitorios = dormitorios;
-        datos.banos = banos;
+        datos.ambientes = ambientes ? ambientes : null;
+        datos.dormitorios = dormitorios ? dormitorios : null;
+        datos.banos = banos ? banos : null;
         datos.cochera = cochera;
 
         // Crear estructura departamento para consistencia con lotes
@@ -960,9 +960,9 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
             antiguedad: antiguedad,
             vidaUtil: vidaUtil,
             estadoConservacion: estadoConservacion,
-            ambientes: ambientes,
-            dormitorios: dormitorios,
-            banos: banos,
+            ambientes: datos.ambientes,
+            dormitorios: datos.dormitorios,
+            banos: datos.banos,
             cochera: cochera
         };
 
@@ -985,9 +985,9 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
                 antiguedad: antiguedad,
                 vidaUtil: vidaUtil,
                 estadoConservacion: estadoConservacion,
-                ambientes: ambientes,
-                dormitorios: dormitorios,
-                banos: banos,
+                ambientes: datos.ambientes,
+                dormitorios: datos.dormitorios,
+                banos: datos.banos,
                 cochera: cochera,
                 tieneAscensor: datos.tieneAscensor,
                 ubicacionPlanta: datos.ubicacionPlanta,
@@ -1020,9 +1020,9 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
                 antiguedad: antiguedad,
                 vidaUtil: vidaUtil,
                 estadoConservacion: estadoConservacion,
-                ambientes: ambientes,
-                dormitorios: dormitorios,
-                banos: banos,
+                ambientes: datos.ambientes,
+                dormitorios: datos.dormitorios,
+                banos: datos.banos,
                 cochera: cochera,
                 tienePileta: datos.tienePileta,
                 tieneJardin: datos.tieneJardin,
