@@ -72,7 +72,13 @@ async function crearTasacionAPI(tasacion) {
 
 async function obtenerTasacionAPI(tasacionId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/tasaciones/${tasacionId}`);
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/${tasacionId}`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
         
         if (!response.ok) {
             if (response.status === 404) {
