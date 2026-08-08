@@ -127,6 +127,8 @@ async function initCompartirPublico() {
         return;
     }
 
+    const redirectPath = window.location.pathname.slice(1) || 'compartir.html';
+
     try {
         const preview = await obtenerVistaPreviaCompartirAPI(token);
         if (!preview) {
@@ -138,8 +140,8 @@ async function initCompartirPublico() {
 
         const acciones = isAuthenticated() && typeof isAuthenticated === 'function' && isAuthenticated()
             ? `<button type="button" class="compartir-btn-principal" id="btnGuardarTasacionCompartida">Guardar tasación</button>`
-            : `<a class="compartir-btn-principal" href="login.html?redirect=compartir.html&share_token=${encodeURIComponent(token)}">Iniciar sesión</a>
-               <a class="compartir-btn-secundario" href="registro.html?redirect=compartir.html&share_token=${encodeURIComponent(token)}">Crear cuenta</a>`;
+            : `<a class="compartir-btn-principal" href="login.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}">Iniciar sesión</a>
+               <a class="compartir-btn-secundario" href="registro.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}">Crear cuenta</a>`;
 
         const html = `
             <div class="compartir-card">
@@ -179,12 +181,14 @@ async function guardarTasacionPublica(token) {
         btn.textContent = 'Guardando...';
     }
 
+    const redirectPath = window.location.pathname.slice(1) || 'compartir.html';
+
     try {
         await guardarTasacionCompartidaAPI(token);
         window.location.href = 'app/historial.html';
     } catch (e) {
         if (e.message === 'Sesión expirada') {
-            window.location.href = `login.html?redirect=compartir.html&share_token=${encodeURIComponent(token)}`;
+            window.location.href = `login.html?redirect=${encodeURIComponent(redirectPath)}&share_token=${encodeURIComponent(token)}`;
         } else {
             alert(e.message || 'No se pudo guardar la tasación');
             if (btn) {
