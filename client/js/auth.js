@@ -3,6 +3,33 @@ const API_BASE_URL = localStorage.getItem('apiUrl') || 'http://127.0.0.1:8080';
 const TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = 'auth_user';
 
+function getAuthRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    const shareToken = params.get('share_token');
+    if (redirect && shareToken) {
+        return `${redirect}?token=${encodeURIComponent(shareToken)}`;
+    }
+    if (redirect) {
+        return redirect;
+    }
+    return 'app/index.html';
+}
+
+function appendAuthParams(url) {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    const shareToken = params.get('share_token');
+    if (!redirect && !shareToken) return url;
+
+    const newParams = new URLSearchParams();
+    if (redirect) newParams.set('redirect', redirect);
+    if (shareToken) newParams.set('share_token', shareToken);
+
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}${newParams.toString()}`;
+}
+
 function getApiUrl() {
     const stored = localStorage.getItem('apiUrl');
     if (stored) return stored;
@@ -181,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 await login(email, password);
-                window.location.href = 'app/index.html';
+                window.location.href = getAuthRedirect();
             } catch (error) {
                 showError('authError', error.message);
                 loginBtn.disabled = false;
@@ -275,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 await register(nombre, apellido, email, password);
-                window.location.href = 'app/index.html';
+                window.location.href = getAuthRedirect();
             } catch (error) {
                 showError('authError', error.message);
                 registerBtn.disabled = false;
@@ -322,6 +349,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (isAuthenticated() && (loginForm || registerForm)) {
-        window.location.href = 'app/index.html';
+        window.location.href = getAuthRedirect();
     }
+
+    document.querySelectorAll('.auth-footer a').forEach(enlace => {
+        enlace.href = appendAuthParams(enlace.getAttribute('href') || enlace.href);
+    });
 });

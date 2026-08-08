@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/shell.css">
     <link rel="stylesheet" href="../css/tasacion.css">
     <link rel="stylesheet" href="../css/historial.css">
+    <link rel="stylesheet" href="../css/compartir.css">
 
     <script>
         // Aplicar estado del sidebar antes del primer render para evitar salto visual
@@ -169,6 +170,37 @@
         </div>
     </div>
 
+    <!-- Modal para compartir tasación -->
+    <div class="modal-overlay" id="modalCompartir">
+        <div class="modal-confirmacion-salir modal-compartir">
+            <h2 class="modal-titulo">Compartir tasación</h2>
+            <p class="modal-mensaje" id="compartirMensaje">Compartí esta tasación mediante un enlace.</p>
+
+            <div class="compartir-contenido" id="compartirContenido" style="display: none;">
+                <input type="text" id="compartirLink" class="compartir-input" readonly>
+                <div class="compartir-acciones">
+                    <button type="button" class="compartir-btn compartir-btn-copiar" id="btnCopiarLink">
+                        <i class="fa-solid fa-copy"></i> Copiar enlace
+                    </button>
+                    <a class="compartir-btn compartir-btn-whatsapp" id="btnCompartirWhatsapp" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a class="compartir-btn compartir-btn-email" id="btnCompartirEmail">
+                        <i class="fa-solid fa-envelope"></i> Email
+                    </a>
+                </div>
+                <button type="button" class="compartir-btn-revocar" id="btnRevocarLink">
+                    Revocar enlace
+                </button>
+            </div>
+
+            <div class="modal-confirmacion-botones modal-botones" id="compartirBotonesInicio">
+                <button type="button" class="btn-cancelar" id="btnCerrarCompartir">Cerrar</button>
+                <button type="button" class="btn-confirmar" id="btnGenerarLink">Generar enlace</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -189,6 +221,7 @@
     <script src="../js/resultados-renderer.js"></script>
     <script src="../js/homogeneizacion-superficie.js"></script>
     <script src="../js/historial.js"></script>
+    <script src="../js/compartir.js"></script>
     <script src="../js/theme.js"></script>
 
     <!-- Modal de selección de tema -->

@@ -1,0 +1,186 @@
+/* =========================
+   ESTILOS DE COMPARTIR
+========================= */
+
+.modal-compartir {
+    max-width: 480px;
+    width: 90%;
+}
+
+.compartir-contenido {
+    margin: 1.25rem 0;
+}
+
+.compartir-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: #f9fafb;
+    font-size: 0.9rem;
+    color: #1f2937;
+    word-break: break-all;
+    margin-bottom: 1rem;
+}
+
+.compartir-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.compartir-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+.compartir-btn-copiar {
+    background: #2563eb;
+    color: #fff;
+}
+
+.compartir-btn-copiar:hover {
+    background: #1d4ed8;
+}
+
+.compartir-btn-whatsapp {
+    background: #25d366;
+    color: #fff;
+}
+
+.compartir-btn-whatsapp:hover {
+    background: #128c7e;
+}
+
+.compartir-btn-email {
+    background: #6b7280;
+    color: #fff;
+}
+
+.compartir-btn-email:hover {
+    background: #4b5563;
+}
+
+.compartir-btn-revocar {
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.compartir-btn-revocar:hover {
+    background: #fee2e2;
+}
+
+/* Página pública de compartir */
+.compartir-publico {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #f3f4f6;
+}
+
+.compartir-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.compartir-card h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.compartir-card .compartir-remitente {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.compartir-datos {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.compartir-dato {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.compartir-dato span:first-child {
+    color: #6b7280;
+}
+
+.compartir-dato span:last-child {
+    font-weight: 500;
+    color: #111827;
+    text-align: right;
+}
+
+.compartir-acciones-publico {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.compartir-btn-principal {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 0.9rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.compartir-btn-principal:hover {
+    background: #1d4ed8;
+}
+
+.compartir-btn-secundario {
+    background: #fff;
+    color: #2563eb;
+    border: 1px solid #2563eb;
+    padding: 0.9rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.compartir-btn-secundario:hover {
+    background: #eff6ff;
+}
+
+.compartir-mensaje-error {
+    color: #dc2626;
+    text-align: center;
+    padding: 1rem 0;
+}

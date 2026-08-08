@@ -827,6 +827,12 @@ window.abrirPerfilTasacion = function(id) {
         `;
     }
 
+    const compartirBtnHtml = tasacion.estado === 'completada'
+        ? `<button type="button" class="perfil-btn-accion" id="btnCompartirPerfil">
+                <i class="fa-solid fa-share-nodes"></i> Compartir
+           </button>`
+        : '';
+
     contenidoModal.innerHTML = `
 
         <div class="perfil-card-container">
@@ -992,6 +998,7 @@ window.abrirPerfilTasacion = function(id) {
                     <button type="button" class="perfil-btn-accion" id="btnEditarPerfil">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>
+                    ${compartirBtnHtml}
                     <button type="button" class="perfil-btn-accion perfil-btn-eliminar" id="btnEliminarPerfil">
                         <i class="fa-solid fa-trash"></i> Eliminar
                     </button>
@@ -1031,6 +1038,15 @@ window.abrirPerfilTasacion = function(id) {
     document
         .getElementById("btnEliminarPerfil")
         ?.addEventListener("click", () => eliminarTasacion(id));
+
+    // Share button event listener
+    document
+        .getElementById("btnCompartirPerfil")
+        ?.addEventListener("click", () => {
+            if (window.abrirModalCompartir) {
+                window.abrirModalCompartir(tasacion.id);
+            }
+        });
 
     // Add perfil-modal class to override modal-tasacion styles
     const modalTasacion = document.getElementById("modalTasacion");

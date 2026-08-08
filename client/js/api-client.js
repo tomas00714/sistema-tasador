@@ -511,3 +511,97 @@ async function tasarAPI(payload) {
         throw error;
     }
 }
+
+// =========================
+//   COMPARTIR
+// =========================
+
+async function compartirTasacionAPI(tasacionId, opciones = {}) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/${encodeURIComponent(tasacionId)}/compartir`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                usos_maximos: opciones.usos_maximos,
+                dias_expiracion: opciones.dias_expiracion
+            })
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error al generar enlace');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en compartirTasacionAPI:', error);
+        throw error;
+    }
+}
+
+async function revocarTasacionCompartidaAPI(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/compartir/${encodeURIComponent(token)}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            throw new Error('Error al revocar enlace');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en revocarTasacionCompartidaAPI:', error);
+        throw error;
+    }
+}
+
+async function obtenerVistaPreviaCompartirAPI(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/compartir/${encodeURIComponent(token)}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return null;
+            }
+            throw new Error(`Error al obtener vista previa: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en obtenerVistaPreviaCompartirAPI:', error);
+        throw error;
+    }
+}
+
+async function guardarTasacionCompartidaAPI(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/compartir/${encodeURIComponent(token)}/guardar`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error al guardar tasación');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en guardarTasacionCompartidaAPI:', error);
+        throw error;
+    }
+}

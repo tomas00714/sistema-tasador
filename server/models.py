@@ -249,6 +249,38 @@ class SolicitudContribuirRequest(BaseModel):
     colaborador: Optional[Dict[str, Any]] = None
 
 
+# Modelos para compartir tasaciones
+class TasacionCompartirResponse(BaseModel):
+    token: str
+    link: str
+    estado: str
+    usos_maximos: Optional[int] = None
+    usos_realizados: int
+    fecha_creacion: datetime
+    fecha_expiracion: Optional[datetime] = None
+
+
+class TasacionCompartirRequest(BaseModel):
+    usos_maximos: Optional[int] = 1
+    dias_expiracion: Optional[int] = 7
+
+
+class VistaPreviaTasacionResponse(BaseModel):
+    remitente_nombre: Optional[str] = None
+    remitente_apellido: Optional[str] = None
+    tipo_inmueble: str
+    direccion: str
+    localidad: str
+    provincia: str
+    valor_final: Optional[float] = None
+    fecha_creacion: Optional[datetime] = None
+    estado: str
+
+
+class RevocarTasacionCompartidaResponse(BaseModel):
+    mensaje: str
+
+
 # Modelos para Autenticación
 class LoginRequest(BaseModel):
     email: str

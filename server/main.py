@@ -11,8 +11,11 @@ from models import (
     TasacionCreate, TasacionUpdate, TasacionResponse,
     Comparable, ComparableCreate, ComparableUpdate, ComparableBatchRequest, ComparableResponse,
     SolicitudCreate, SolicitudUpdate, SolicitudResponse, SolicitudContribuirRequest,
+    TasacionCompartirRequest, TasacionCompartirResponse, VistaPreviaTasacionResponse,
+    RevocarTasacionCompartidaResponse,
     LoginRequest, RegisterRequest, TokenResponse, ForgotPasswordRequest
 )
+from services.compartir_service import CompartirService
 from tasador_lotes import tasar_lote
 from tasador_departamentos import tasar_departamento
 from tasador_casas import tasar_casa
@@ -33,6 +36,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+SHARE_BASE_URL = os.getenv("SHARE_BASE_URL", "https://tasador.app/compartir/")
 
 
 def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
@@ -567,6 +572,114 @@ def eliminar_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get
         raise
     except Exception as e:
         logger.error(f"Error al eliminar tasación: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================
+# ENDPOINTS PARA COMPARTIR TASACIONES
+# =========================
+
+@app.post("/api/tasaciones/{tasacion_id}/compartir", response_model=TasacionCompartirResponse)
+def crear_compartir_tasacion(
+    tasacion_id: str,
+    request: TasacionCompartirRequest,
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Crea un enlace público para compartir una tasación."""
+    logger.info(f"Creando enlace para compartir tasación: {tasacion_id}")
+
+    try:
+        tasacion_id_interno = obtener_id_desde_codigo(tasacion_id)
+        if not tasacion_id_interno:
+            raise HTTPException(status_code=404, detail="Tasación no encontrada")
+
+        service = CompartirService()
+        service.verificar_limite_compartidos(usuario_id)
+
+        record = service.crear_compartir(
+            tasacion_id_interno,
+            usuario_id,
+            usos_maximos=request.usos_maximos,
+            dias_expiracion=request.dias_expiracion
+        )
+
+        link = f"{SHARE_BASE_URL}{record['token']}"
+
+        return TasacionCompartirResponse(
+            token=record['token'],
+            link=link,
+            estado=record['estado'],
+            usos_maximos=record['usos_maximos'],
+            usos_realizados=record['usos_realizados'],
+            fecha_creacion=record['fecha_creacion'],
+            fecha_expiracion=record['fecha_expiracion']
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al crear enlace de compartir: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/tasaciones/compartir/{token}", response_model=VistaPreviaTasacionResponse)
+def obtener_vista_previa_compartir(token: str):
+    """Obtiene la vista previa pública de una tasación compartida."""
+    logger.info(f"Obteniendo vista previa de enlace: {token}")
+
+    try:
+        service = CompartirService()
+        preview = service.obtener_vista_previa(token)
+        return VistaPreviaTasacionResponse(**preview)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al obtener vista previa: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/tasaciones/compartir/{token}/guardar", response_model=TasacionResponse)
+def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Guarda una copia de la tasación compartida en la cuenta del usuario autenticado."""
+    logger.info(f"Guardando tasación compartida: {token}")
+
+    try:
+        service = CompartirService()
+        nueva_tasacion = service.guardar_tasacion_compartida(token, usuario_id)
+
+        repo = TasacionRepository()
+        comparables = repo.obtener_comparables(nueva_tasacion['id'])
+        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+
+        return TasacionResponse(
+            id=generar_codigo_publico(TIPO_TASACION, nueva_tasacion['id']),
+            usuario_id=nueva_tasacion['usuario_id'],
+            tipo=nueva_tasacion['tipo_inmueble'],
+            estado=nueva_tasacion['estado'],
+            datos=nueva_tasacion['datos'],
+            comparables_ids=comparables_ids,
+            fecha_creacion=nueva_tasacion['fecha_creacion'],
+            fecha_modificacion=nueva_tasacion['fecha_modificacion']
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al guardar tasación compartida: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/tasaciones/compartir/{token}", response_model=RevocarTasacionCompartidaResponse)
+def revocar_compartir_tasacion(token: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Revoca un enlace de compartir activo."""
+    logger.info(f"Revocando enlace: {token}")
+
+    try:
+        service = CompartirService()
+        service.revocar_compartir(token, usuario_id)
+        return RevocarTasacionCompartidaResponse(mensaje="Enlace revocado correctamente")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al revocar enlace: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
