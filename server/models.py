@@ -209,6 +209,7 @@ class ComparableResponse(BaseModel):
     usuario_id: int
     tipo_inmueble: str
     fuente: str
+    tasacion_origen_id: Optional[str] = None
     datos: Dict[str, Any]
     fecha_creacion: datetime
     fecha_modificacion: datetime

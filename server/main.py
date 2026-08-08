@@ -803,6 +803,7 @@ def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int =
                 usuario_id=c['usuario_id'],
                 tipo_inmueble=c['tipo_inmueble'],
                 fuente=c['fuente'],
+                tasacion_origen_id=None if c.get('tasacion_origen_id') is None else generar_codigo_publico(TIPO_TASACION, c['tasacion_origen_id']),
                 datos=c['datos'],
                 fecha_creacion=c['fecha_creacion'],
                 fecha_modificacion=c['fecha_modificacion']
@@ -841,6 +842,7 @@ def listar_comparables(
                 usuario_id=c['usuario_id'],
                 tipo_inmueble=c['tipo_inmueble'],
                 fuente=c['fuente'],
+                tasacion_origen_id=None if c.get('tasacion_origen_id') is None else generar_codigo_publico(TIPO_TASACION, c['tasacion_origen_id']),
                 datos=c['datos'],
                 fecha_creacion=c['fecha_creacion'],
                 fecha_modificacion=c['fecha_modificacion']
@@ -1092,6 +1094,7 @@ def obtener_comparables_de_solicitud(link_publico: str):
                 usuario_id=c['usuario_id'],
                 tipo_inmueble=c['tipo_inmueble'],
                 fuente=c['fuente'],
+                tasacion_origen_id=None if c.get('tasacion_origen_id') is None else generar_codigo_publico(TIPO_TASACION, c['tasacion_origen_id']),
                 datos=c['datos'],
                 fecha_creacion=c['fecha_creacion'],
                 fecha_modificacion=c['fecha_modificacion']

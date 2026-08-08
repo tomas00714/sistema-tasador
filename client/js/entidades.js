@@ -57,6 +57,8 @@ async function leerComparables() {
             return {
                 ...datosSinId,
                 id: c.id,
+                fuente: c.fuente || datosSinId.fuente || null,
+                tasacionOrigenId: c.tasacion_origen_id || datosSinId.tasacionOrigenId || null,
                 fechaCreacion: c.fecha_creacion,
                 fechaModificacion: c.fecha_modificacion
             };

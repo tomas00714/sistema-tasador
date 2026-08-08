@@ -450,6 +450,21 @@ async function renderizarListaItems(categoria) {
         // Ordenar por fecha (más reciente al más antiguo)
         comparablesFiltrados.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
         
+        // DEBUG: mostrar en consola los comparables listados para auditoría de duplicados
+        console.table(comparablesFiltrados.map(c => ({
+            id: c.id,
+            fuente: c.fuente,
+            flujo: c.fuente === 'compartido'
+                ? `compartido (origen ${c.origenId || '-'}, enviador ${c.idEnviador || '-'}, creador ${c.idCreador || '-'}, nombre ${c.nombreCreador || '-'})`
+                : c.fuente === 'de_tasacion'
+                    ? `de_tasacion (${c.tasacionOrigenId || '-'})`
+                    : (c.fuente || 'manual'),
+            tasacionOrigenId: c.tasacionOrigenId || '-',
+            origenId: c.origenId || '-',
+            direccion: c.ubicacion?.direccion || '-',
+            valor: c.valor || '-'
+        })));
+        
         if (comparablesFiltrados.length === 0) {
             listaContainer.innerHTML = `
                 <div class="lista-vacia">
@@ -506,6 +521,17 @@ function generarCardHistorial(item, tipo) {
     const localidad = item.ubicacion?.localidad || '';
     const provincia = item.ubicacion?.provincia || '';
     
+    // DEBUG: título con metadatos del comparable para identificar duplicados
+    let debugTitle = '';
+    if (tipo === 'comparable') {
+        const flujo = item.fuente === 'compartido'
+            ? `compartido (origen ${item.origenId || '-'}, enviador ${item.idEnviador || '-'}, creador ${item.idCreador || '-'}, nombre ${item.nombreCreador || '-'})`
+            : item.fuente === 'de_tasacion'
+                ? `de_tasacion (${item.tasacionOrigenId || '-'})`
+                : (item.fuente || 'manual');
+        debugTitle = `ID: ${item.id} | fuente: ${item.fuente || '-'} | flujo: ${flujo} | tasacionOrigenId: ${item.tasacionOrigenId || '-'} | origenId: ${item.origenId || '-'}`;
+    }
+    
     return construirCardMinimizada({
         item,
         precio,
@@ -517,7 +543,8 @@ function generarCardHistorial(item, tipo) {
             : 'card-minimizada-badge-completada',
         dataAttributes: {
             'data-id': item.id,
-            'data-tipo': tipo
+            'data-tipo': tipo,
+            ...(debugTitle ? { title: debugTitle } : {})
         }
     });
 }
