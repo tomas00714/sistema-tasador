@@ -381,15 +381,15 @@ function renderHistorial() {
 ========================= */
 
 function actualizarEstadoFiltro() {
-    const selectEstado = document.getElementById("historialFiltroEstado");
-    if (!selectEstado) return;
+    const inputEstado = document.getElementById("historialFiltroEstado");
+    if (!inputEstado) return;
 
     if (registroActual === "comparables") {
-        selectEstado.disabled = true;
-        selectEstado.classList.add("disabled");
+        inputEstado.disabled = true;
+        inputEstado.classList.add("disabled");
     } else {
-        selectEstado.disabled = false;
-        selectEstado.classList.remove("disabled");
+        inputEstado.disabled = false;
+        inputEstado.classList.remove("disabled");
     }
 }
 
@@ -406,8 +406,8 @@ function actualizarPillSegmented() {
 
 function inicializarFiltrosHistorial() {
     const tabsRegistro = document.querySelectorAll(".btn-segment");
-    const selectTipo = document.getElementById("historialFiltroTipo");
-    const selectEstado = document.getElementById("historialFiltroEstado");
+    const inputTipo = document.getElementById("historialFiltroTipo");
+    const inputEstado = document.getElementById("historialFiltroEstado");
     const inputBusqueda = document.querySelector(".input-busqueda");
 
     const tabActivo = document.querySelector(".btn-segment.active");
@@ -415,12 +415,12 @@ function inicializarFiltrosHistorial() {
         registroActual = tabActivo.dataset.registro || "tasaciones";
     }
 
-    if (selectTipo) {
-        tipoFiltroActual = selectTipo.value || "todos";
+    if (inputTipo) {
+        tipoFiltroActual = inputTipo.dataset.value || "todos";
     }
 
-    if (selectEstado) {
-        estadoFiltroActual = selectEstado.value || "todos";
+    if (inputEstado) {
+        estadoFiltroActual = inputEstado.dataset.value || "todos";
     }
 
     actualizarEstadoFiltro();
@@ -450,17 +450,25 @@ function inicializarFiltrosHistorial() {
         });
     });
 
-    if (selectTipo) {
-        selectTipo.addEventListener("change", (event) => {
-            tipoFiltroActual = event.target.value || "todos";
-            renderHistorial();
+    if (inputTipo && typeof inicializarAutocomplete === 'function') {
+        inicializarAutocomplete("historialFiltroTipo", "historialFiltroTipoList", {
+            onSelect: (item) => {
+                const value = item.dataset.value || "todos";
+                tipoFiltroActual = value;
+                inputTipo.dataset.value = value;
+                renderHistorial();
+            }
         });
     }
 
-    if (selectEstado) {
-        selectEstado.addEventListener("change", (event) => {
-            estadoFiltroActual = event.target.value || "todos";
-            renderHistorial();
+    if (inputEstado && typeof inicializarAutocomplete === 'function') {
+        inicializarAutocomplete("historialFiltroEstado", "historialFiltroEstadoList", {
+            onSelect: (item) => {
+                const value = item.dataset.value || "todos";
+                estadoFiltroActual = value;
+                inputEstado.dataset.value = value;
+                renderHistorial();
+            }
         });
     }
 }

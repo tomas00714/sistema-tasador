@@ -104,21 +104,27 @@
                             <div class="filtros-derecha">
                                 <div class="filtro-grupo">
                                     <label for="historialFiltroTipo" class="filtro-label">Tipo:</label>
-                                    <select class="filtro-select" id="historialFiltroTipo" aria-label="Tipo de propiedad">
-                                        <option value="todos" selected>Todos</option>
-                                        <option value="lote">Lotes</option>
-                                        <option value="ph">PH</option>
-                                        <option value="casa">Casas</option>
-                                    </select>
+                                    <div class="autocomplete-container" style="width: 100%;">
+                                        <input type="text" class="filtro-select" id="historialFiltroTipo" value="Todos" data-value="todos" readonly>
+                                        <div class="autocomplete-list" id="historialFiltroTipoList">
+                                            <div class="autocomplete-item" data-value="todos">Todos</div>
+                                            <div class="autocomplete-item" data-value="lote">Lotes</div>
+                                            <div class="autocomplete-item" data-value="ph">PH</div>
+                                            <div class="autocomplete-item" data-value="casa">Casas</div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="filtro-grupo">
                                     <label for="historialFiltroEstado" class="filtro-label">Estado:</label>
-                                    <select class="filtro-select" id="historialFiltroEstado" aria-label="Estado de la tasación">
-                                        <option value="todos" selected>Todos</option>
-                                        <option value="completada">Completadas</option>
-                                        <option value="borrador">Borradores</option>
-                                    </select>
+                                    <div class="autocomplete-container" style="width: 100%;">
+                                        <input type="text" class="filtro-select" id="historialFiltroEstado" value="Todos" data-value="todos" readonly>
+                                        <div class="autocomplete-list" id="historialFiltroEstadoList">
+                                            <div class="autocomplete-item" data-value="todos">Todos</div>
+                                            <div class="autocomplete-item" data-value="completada">Completadas</div>
+                                            <div class="autocomplete-item" data-value="borrador">Borradores</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -236,6 +242,7 @@
     <script src="../js/config/resultados-config.js"></script>
     <script src="../js/resultados-renderer.js"></script>
     <script src="../js/homogeneizacion-superficie.js"></script>
+    <script src="../js/event-manager.js"></script>
     <script src="../js/historial.js"></script>
     <script src="../js/compartir.js"></script>
     <script src="../js/theme.js"></script>

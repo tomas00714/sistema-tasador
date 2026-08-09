@@ -232,41 +232,11 @@
     font-size: 0.9rem;
     cursor: pointer;
     min-width: 100px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 14px;
-    transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.filtro-select:hover:not(:disabled) {
-    border-color: var(--color-primary);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-.filtro-select:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
-}
-
-.filtro-select option {
-    background: var(--color-white);
-    color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    padding: 8px 14px;
-}
-
-.filtro-select option:checked {
-    background: var(--color-primary);
-    color: var(--color-white);
-}
-
-.filtro-select option:hover {
-    background: var(--color-bg-light);
-    color: var(--color-text-primary);
+    transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .filtro-select:disabled,
