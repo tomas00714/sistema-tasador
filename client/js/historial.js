@@ -450,8 +450,19 @@ function inicializarFiltrosHistorial() {
         });
     });
 
+    function posicionarListaFiltro(input, list) {
+        const rect = input.getBoundingClientRect();
+        list.style.position = "fixed";
+        list.style.top = `${rect.bottom + 6}px`;
+        list.style.left = `${rect.left}px`;
+        list.style.width = `${rect.width}px`;
+        list.style.right = "auto";
+        list.style.zIndex = "100000";
+    }
+
     if (inputTipo && typeof inicializarAutocomplete === 'function') {
         inicializarAutocomplete("historialFiltroTipo", "historialFiltroTipoList", {
+            onOpen: posicionarListaFiltro,
             onSelect: (item) => {
                 const value = item.dataset.value || "todos";
                 tipoFiltroActual = value;
@@ -463,6 +474,7 @@ function inicializarFiltrosHistorial() {
 
     if (inputEstado && typeof inicializarAutocomplete === 'function') {
         inicializarAutocomplete("historialFiltroEstado", "historialFiltroEstadoList", {
+            onOpen: posicionarListaFiltro,
             onSelect: (item) => {
                 const value = item.dataset.value || "todos";
                 estadoFiltroActual = value;
