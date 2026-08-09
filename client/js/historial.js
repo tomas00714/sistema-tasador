@@ -398,9 +398,9 @@ function actualizarPillSegmented() {
     if (!pill) return;
 
     if (registroActual === "comparables") {
-        pill.style.transform = "translateX(100%)";
+        pill.style.transform = "translateY(100%)";
     } else {
-        pill.style.transform = "translateX(0)";
+        pill.style.transform = "translateY(0)";
     }
 }
 
