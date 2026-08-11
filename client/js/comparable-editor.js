@@ -3,11 +3,6 @@
    Vista reutilizable para crear/editar/visualizar comparables
 ========================= */
 
-window.TILE_URLS = window.TILE_URLS || {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-};
-
 class ComparableEditor {
     constructor(config = {}) {
         this.modo = config.modo || 'crear';
@@ -554,67 +549,31 @@ class ComparableEditor {
     }
     
     async inicializarMapa(lat = -34.6037, lng = -58.3816) {
-        const mapContainer = document.getElementById('compMap');
-        if (!mapContainer) return;
+        const usarUbicacionUsuario = (lat === -34.6037 && lng === -58.3816);
+        const latInicial = usarUbicacionUsuario ? null : lat;
+        const lonInicial = usarUbicacionUsuario ? null : lng;
+        const zoom = usarUbicacionUsuario ? null : 15;
 
-        if (this.mapa) {
-            this.mapa.remove();
-            this.mapa = null;
-        }
-
-        let zoom = 13;
-        if (lat === -34.6037 && lng === -58.3816) {
-            const ubicacionUsuario = await obtenerUbicacionUsuario();
-            if (ubicacionUsuario) {
-                lat = ubicacionUsuario.lat;
-                lng = ubicacionUsuario.lon;
-                zoom = 12;
-            }
-        }
-
-        this.mapa = L.map('compMap').setView([lat, lng], zoom);
-
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        const tileUrl = isDarkMode ? window.TILE_URLS.dark : window.TILE_URLS.light;
-
-        this.tilesLayer = L.tileLayer(tileUrl, {
-            attribution: '© CartoDB, © OpenStreetMap'
-        }).addTo(this.mapa);
-
-        this.marcador = L.marker([lat, lng], {
-            draggable: true
-        }).addTo(this.mapa);
-
-        this.marcador.on('dragend', (e) => {
-            const { lat, lng } = e.target.getLatLng();
-            console.log('Marcador movido a:', lat, lng);
+        const resultado = await MapaCore.inicializarEdicion('compMap', {
+            lat: latInicial,
+            lon: lonInicial,
+            zoom,
+            draggable: true,
+            onMarkerDrag: (pos) => console.log('Marcador movido a:', pos.lat, pos.lng)
         });
 
-        this.mapa.on('click', (e) => {
-            const { lat, lng } = e.latlng;
-            this.marcador.setLatLng([lat, lng]);
-        });
-
-        setTimeout(() => {
-            this.mapa.invalidateSize();
-        }, 100);
+        if (resultado) {
+            this.mapa = resultado.mapa;
+            this.marcador = resultado.marcador;
+            this.tilesLayer = resultado.tiles;
+        }
     }
     
     limpiarMapa() {
-        if (this.marcador) {
-            this.mapa.removeLayer(this.marcador);
-            this.marcador = null;
-        }
-        
-        if (this.tilesLayer) {
-            this.mapa.removeLayer(this.tilesLayer);
-            this.tilesLayer = null;
-        }
-        
-        if (this.mapa) {
-            this.mapa.remove();
-            this.mapa = null;
-        }
+        MapaCore.limpiar('compMap');
+        this.mapa = null;
+        this.marcador = null;
+        this.tilesLayer = null;
     }
     
     guardar() {

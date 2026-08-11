@@ -33,12 +33,6 @@ function leerHistorialDesdeStorage() {
 
 let tasacionPerfilAbiertaId = null;
 
-let mapa = null;
-
-let tilesLayerHistorial = null;
-
-let capaMarcadores = null;
-
 let historialInicializado = false;
 
 let lista = null;
@@ -49,26 +43,6 @@ let tipoFiltroActual = "todos";
 let busquedaActual = "";
 let comparables = [];
 let comparablesCargados = false;
-
-const TILE_URLS = {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-};
-
-function limpiarMapaHistorial() {
-    if (mapa) {
-        if (capaMarcadores) {
-            capaMarcadores.clearLayers();
-            capaMarcadores = null;
-        }
-        if (tilesLayerHistorial) {
-            mapa.removeLayer(tilesLayerHistorial);
-            tilesLayerHistorial = null;
-        }
-        mapa.remove();
-        mapa = null;
-    }
-}
 
 /* =========================
    HELPER FUNCTIONS
@@ -108,19 +82,6 @@ function formatearDireccion(direccion) {
    INICIALIZACIÓN
 ========================= */
 
-function cambiarTilesMapaHistorial() {
-    if (!mapa || !tilesLayerHistorial) return;
-
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
-
-    mapa.removeLayer(tilesLayerHistorial);
-    tilesLayerHistorial = L.tileLayer(
-        tileUrl,
-        { attribution: '© CartoDB, © OpenStreetMap' }
-    ).addTo(mapa);
-}
-
 async function inicializarHistorial() {
 
     lista =
@@ -144,26 +105,11 @@ async function inicializarHistorial() {
             return;
         }
 
-        // Limpiar mapa existente si hay uno
-        limpiarMapaHistorial();
-
-        mapa = L.map("map").setView(
-            [-34.6037, -58.3816],
-            5
-        );
-
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
-
-        tilesLayerHistorial = L.tileLayer(
-            tileUrl,
-            {
-                attribution: '© CartoDB, © OpenStreetMap'
-            }
-        ).addTo(mapa);
-
-        capaMarcadores =
-            L.layerGroup().addTo(mapa);
+        MapaCore.inicializarLectura('map', {
+            lat: -34.6037,
+            lon: -58.3816,
+            zoom: 5
+        });
 
         const modalOverlay =
             document.getElementById(
@@ -206,13 +152,9 @@ async function inicializarHistorial() {
 
     inicializarFiltrosHistorial();
 
-    if (mapa) {
-
-        setTimeout(() => {
-
-            mapa.invalidateSize();
-        }, 360);
-    }
+    setTimeout(() => {
+        MapaCore.redimensionar('map');
+    }, 360);
 }
 
 window.inicializarHistorial =
@@ -303,9 +245,7 @@ function renderHistorial() {
 
     lista.innerHTML = "";
 
-    if (capaMarcadores) {
-        capaMarcadores.clearLayers();
-    }
+    MapaCore.limpiarMarcadores('map');
 
     const itemsFiltrados = filtrarItemsHistorial().sort((a, b) => {
         const fechaA = a.fechaCreacion ? new Date(a.fechaCreacion) : new Date(0);
@@ -362,16 +302,18 @@ function renderHistorial() {
             mostrarEstado: registroActual === "tasaciones"
         });
 
-        if (capaMarcadores && item.ubicacion?.lat && item.ubicacion?.lon) {
+        if (item.ubicacion?.lat && item.ubicacion?.lon) {
             const esComparable = registroActual === "comparables";
-            L.marker([item.ubicacion.lat, item.ubicacion.lon])
-                .addTo(capaMarcadores)
-                .bindPopup(`
+            MapaCore.agregarMarcador('map', {
+                lat: item.ubicacion.lat,
+                lon: item.ubicacion.lon,
+                popupHtml: `
                     <b>${item.ubicacion.direccion}</b><br>
                     ${item.ubicacion.localidad}, ${item.ubicacion.provincia}<br>
                     Tipo: ${esComparable ? (item.tipoInmueble || "comparable") : item.tipo}<br>
                     ${esComparable ? `Valor: ${precio}` : `Estado: ${item.estado || "completada"}`}
-                `);
+                `
+            });
         }
     });
 }

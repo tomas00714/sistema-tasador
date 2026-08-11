@@ -1364,7 +1364,8 @@ def register(request: RegisterRequest):
             usuario_id=nuevo_usuario['id'],
             email=nuevo_usuario['email'],
             nombre=nuevo_usuario['nombre'],
-            apellido=nuevo_usuario['apellido']
+            apellido=nuevo_usuario['apellido'],
+            is_admin=auth.is_admin(nuevo_usuario['email'])
         )
     except HTTPException:
         raise
@@ -1406,7 +1407,8 @@ def login(request: LoginRequest):
             usuario_id=usuario['id'],
             email=usuario['email'],
             nombre=usuario['nombre'],
-            apellido=usuario['apellido']
+            apellido=usuario['apellido'],
+            is_admin=auth.is_admin(usuario['email'])
         )
     except HTTPException:
         raise
@@ -1492,4 +1494,319 @@ def endpoint_clean_db(usuario_id: int = Depends(middleware.require_admin)):
     finally:
         cursor.close()
         release_connection(conn)
+
+
+# =========================
+#   ENDPOINTS DE ADMIN
+# =========================
+
+@app.get("/api/admin/stats")
+def admin_stats(usuario_id: int = Depends(middleware.require_admin)):
+    """Devuelve métricas generales de la plataforma. Solo lectura."""
+    try:
+        tasacion_repo = TasacionRepository()
+        usuario_repo = UsuarioRepository()
+        comparable_repo = ComparableRepository()
+
+        total_usuarios = usuario_repo.execute_query("SELECT COUNT(*) FROM usuarios")[0]['count']
+        usuarios_ultimos_7_dias = usuario_repo.execute_query(
+            "SELECT COUNT(*) FROM usuarios WHERE fecha_creacion >= NOW() - INTERVAL '7 days'"
+        )[0]['count']
+        usuarios_login_7_dias = usuario_repo.execute_query(
+            "SELECT COUNT(*) FROM usuarios WHERE ultimo_acceso >= NOW() - INTERVAL '7 days'"
+        )[0]['count']
+
+        total_tasaciones = tasacion_repo.execute_query("SELECT COUNT(*) FROM tasaciones")[0]['count']
+        tasaciones_ultimos_7_dias = tasacion_repo.execute_query(
+            "SELECT COUNT(*) FROM tasaciones WHERE fecha_creacion >= NOW() - INTERVAL '7 days'"
+        )[0]['count']
+        total_tasaciones_recibidas = tasacion_repo.execute_query(
+            "SELECT COUNT(*) FROM tasaciones WHERE origen = 'compartida'"
+        )[0]['count']
+
+        total_comparables = comparable_repo.execute_query("SELECT COUNT(*) FROM comparables")[0]['count']
+
+        tasaciones_por_tipo = {
+            row['tipo_inmueble']: int(row['count'])
+            for row in tasacion_repo.execute_query(
+                "SELECT tipo_inmueble, COUNT(*) FROM tasaciones WHERE tipo_inmueble IS NOT NULL GROUP BY tipo_inmueble"
+            )
+        }
+
+        ultimas_tasaciones = tasacion_repo.execute_query(
+            """
+            SELECT t.id, u.email, t.tipo_inmueble, t.estado, t.fecha_creacion
+            FROM tasaciones t
+            JOIN usuarios u ON t.usuario_id = u.id
+            ORDER BY t.fecha_creacion DESC
+            LIMIT 5
+            """
+        )
+
+        return {
+            "total_usuarios": int(total_usuarios),
+            "usuarios_ultimos_7_dias": int(usuarios_ultimos_7_dias),
+            "usuarios_login_7_dias": int(usuarios_login_7_dias),
+            "total_tasaciones": int(total_tasaciones),
+            "tasaciones_ultimos_7_dias": int(tasaciones_ultimos_7_dias),
+            "total_comparables": int(total_comparables),
+            "total_tasaciones_recibidas": int(total_tasaciones_recibidas),
+            "tasaciones_por_tipo": tasaciones_por_tipo,
+            "ultimas_tasaciones": [
+                {
+                    "id": generar_codigo_publico(TIPO_TASACION, t['id']),
+                    "usuario_email": t['email'],
+                    "tipo": t['tipo_inmueble'],
+                    "estado": t['estado'],
+                    "fecha_creacion": t['fecha_creacion']
+                }
+                for t in ultimas_tasaciones
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error en admin_stats: {e}")
+        raise HTTPException(status_code=500, detail="Error al obtener métricas")
+
+
+@app.get("/api/admin/tasaciones")
+def admin_tasaciones(
+    limit: int = 100,
+    offset: int = 0,
+    q: str = None,
+    tipo: str = None,
+    estado: str = None,
+    usuario_id: int = Depends(middleware.require_admin)
+):
+    """Lista paginada de todas las tasaciones. Solo lectura."""
+    try:
+        tasacion_repo = TasacionRepository()
+
+        conditions = []
+        params = []
+
+        if q:
+            conditions.append("u.email ILIKE %s")
+            params.append(f"%{q}%")
+        if tipo:
+            conditions.append("t.tipo_inmueble = %s")
+            params.append(tipo)
+        if estado:
+            conditions.append("t.estado = %s")
+            params.append(estado)
+
+        where = " AND ".join(conditions) if conditions else "1=1"
+
+        rows = tasacion_repo.execute_query(
+            f"""
+            SELECT t.id, u.email, t.tipo_inmueble, t.estado, t.fecha_creacion
+            FROM tasaciones t
+            JOIN usuarios u ON t.usuario_id = u.id
+            WHERE {where}
+            ORDER BY t.fecha_creacion DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params + [limit, offset])
+        )
+
+        return [
+            {
+                "id": generar_codigo_publico(TIPO_TASACION, row['id']),
+                "usuario_email": row['email'],
+                "tipo": row['tipo_inmueble'],
+                "estado": row['estado'],
+                "fecha_creacion": row['fecha_creacion']
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Error en admin_tasaciones: {e}")
+        raise HTTPException(status_code=500, detail="Error al listar tasaciones")
+
+
+@app.get("/api/admin/usuarios")
+def admin_usuarios(
+    limit: int = 100,
+    offset: int = 0,
+    usuario_id: int = Depends(middleware.require_admin)
+):
+    """Lista paginada de usuarios con métricas. Solo lectura."""
+    try:
+        usuario_repo = UsuarioRepository()
+        rows = usuario_repo.execute_query(
+            """
+            SELECT
+                u.id,
+                u.email,
+                u.nombre,
+                u.apellido,
+                u.fecha_creacion,
+                u.ultimo_acceso,
+                p.nombre AS plan,
+                (SELECT COUNT(*) FROM tasaciones t WHERE t.usuario_id = u.id) AS cantidad_tasaciones,
+                (SELECT COUNT(*) FROM comparables c WHERE c.usuario_id = u.id) AS cantidad_comparables,
+                (SELECT COUNT(*) FROM tasaciones t WHERE t.usuario_id = u.id AND t.origen = 'compartida') AS cantidad_recibidas
+            FROM usuarios u
+            LEFT JOIN planes p ON u.plan_id = p.id
+            ORDER BY u.fecha_creacion DESC
+            LIMIT %s OFFSET %s
+            """,
+            (limit, offset)
+        )
+
+        return [
+            {
+                "id": row['id'],
+                "email": row['email'],
+                "nombre": row['nombre'],
+                "apellido": row['apellido'],
+                "fecha_creacion": row['fecha_creacion'],
+                "ultimo_acceso": row['ultimo_acceso'],
+                "plan": row['plan'] or 'Sin plan',
+                "is_admin": auth.is_admin(row['email']),
+                "inmobiliaria": None,
+                "cantidad_tasaciones": int(row['cantidad_tasaciones']),
+                "cantidad_comparables": int(row['cantidad_comparables']),
+                "cantidad_recibidas": int(row['cantidad_recibidas'])
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Error en admin_usuarios: {e}")
+        raise HTTPException(status_code=500, detail="Error al listar usuarios")
+
+
+@app.get("/api/admin/usuarios/{usuario_id}")
+def admin_usuario_perfil(
+    usuario_id: int,
+    admin_id: int = Depends(middleware.require_admin)
+):
+    """Detalle de un usuario para el panel de administración. Solo lectura."""
+    try:
+        usuario_repo = UsuarioRepository()
+        usuario = usuario_repo.execute_query(
+            """
+            SELECT
+                u.id,
+                u.nombre,
+                u.apellido,
+                u.email,
+                u.fecha_creacion,
+                u.ultimo_acceso,
+                p.nombre AS plan,
+                (SELECT COUNT(*) FROM tasaciones t WHERE t.usuario_id = u.id) AS cantidad_tasaciones,
+                (SELECT COUNT(*) FROM comparables c WHERE c.usuario_id = u.id) AS cantidad_comparables,
+                (SELECT COUNT(*) FROM tasaciones t WHERE t.usuario_id = u.id AND t.origen = 'compartida') AS cantidad_recibidas
+            FROM usuarios u
+            LEFT JOIN planes p ON u.plan_id = p.id
+            WHERE u.id = %s
+            """,
+            (usuario_id,)
+        )
+
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        u = usuario[0]
+
+        tasacion_repo = TasacionRepository()
+        ultimas = tasacion_repo.execute_query(
+            """
+            SELECT t.id, t.tipo_inmueble, t.estado, t.fecha_creacion
+            FROM tasaciones t
+            WHERE t.usuario_id = %s AND (t.origen IS NULL OR t.origen != 'compartida')
+            ORDER BY t.fecha_creacion DESC
+            LIMIT 10
+            """,
+            (usuario_id,)
+        )
+
+        return {
+            "id": u['id'],
+            "nombre": u['nombre'],
+            "apellido": u['apellido'],
+            "email": u['email'],
+            "fecha_creacion": u['fecha_creacion'],
+            "ultimo_acceso": u['ultimo_acceso'],
+            "plan": u['plan'] or 'Sin plan',
+            "cantidad_tasaciones": int(u['cantidad_tasaciones']),
+            "cantidad_comparables": int(u['cantidad_comparables']),
+            "cantidad_recibidas": int(u['cantidad_recibidas']),
+            "ultimas_tasaciones": [
+                {
+                    "id": generar_codigo_publico(TIPO_TASACION, t['id']),
+                    "tipo": t['tipo_inmueble'],
+                    "estado": t['estado'],
+                    "fecha_creacion": t['fecha_creacion']
+                }
+                for t in ultimas
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en admin_usuario_perfil: {e}")
+        raise HTTPException(status_code=500, detail="Error al obtener usuario")
+
+
+@app.get("/api/admin/comparables")
+def admin_comparables(
+    limit: int = 100,
+    offset: int = 0,
+    q: str = None,
+    tipo: str = None,
+    fuente: str = None,
+    usuario_id: int = Depends(middleware.require_admin)
+):
+    """Lista paginada de comparables. Solo lectura."""
+    try:
+        conditions = []
+        params = []
+
+        if q:
+            conditions.append("u.email ILIKE %s")
+            params.append(f"%{q}%")
+        if tipo:
+            conditions.append("c.tipo_inmueble = %s")
+            params.append(tipo)
+        if fuente:
+            conditions.append("c.fuente = %s")
+            params.append(fuente)
+
+        where = " AND ".join(conditions) if conditions else "1=1"
+
+        comparable_repo = ComparableRepository()
+        rows = comparable_repo.execute_query(
+            f"""
+            SELECT
+                c.id,
+                u.email,
+                c.tipo_inmueble,
+                COALESCE(c.direccion, c.datos->>'direccion', c.datos->'ubicacion'->>'direccion', '-') AS direccion,
+                c.valor,
+                c.fuente,
+                c.fecha_creacion
+            FROM comparables c
+            JOIN usuarios u ON c.usuario_id = u.id
+            WHERE {where}
+            ORDER BY c.fecha_creacion DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params + [limit, offset])
+        )
+
+        return [
+            {
+                "id": generar_codigo_publico(TIPO_COMPARABLE, row['id']),
+                "usuario_email": row['email'],
+                "tipo": row['tipo_inmueble'],
+                "direccion": row['direccion'],
+                "valor": float(row['valor']) if row['valor'] is not None else None,
+                "fuente": row['fuente'],
+                "fecha_creacion": row['fecha_creacion']
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Error en admin_comparables: {e}")
+        raise HTTPException(status_code=500, detail="Error al listar comparables")
 

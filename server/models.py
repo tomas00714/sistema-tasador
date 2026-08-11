@@ -304,6 +304,7 @@ class TokenResponse(BaseModel):
     email: str
     nombre: str
     apellido: str
+    is_admin: bool
 
 
 class VerifyEmailRequest(BaseModel):

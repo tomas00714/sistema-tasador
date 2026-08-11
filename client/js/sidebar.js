@@ -11,6 +11,9 @@ function inyectarSidebar(paginaActual) {
         return;
     }
 
+    // Inyectar link de admin antes de calcular el activo
+    inyectarAdminLink();
+
     // Actualizar la clase activa según la página actual
     const navItems = sidebar.querySelectorAll('.sidebar-nav-item');
     navItems.forEach(item => {
@@ -71,6 +74,28 @@ function inicializarLogoClick() {
     sidebarLogo.style.cursor = 'pointer';
 }
 
+function inyectarAdminLink() {
+    const userData = localStorage.getItem('auth_user');
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+    if (!user.is_admin) return;
+
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+
+    if (sidebarNav.querySelector('[data-page="admin"]')) return;
+
+    sidebarNav.insertAdjacentHTML('beforeend', `
+        <a href="admin.html" class="sidebar-nav-item" data-page="admin">
+            <span class="sidebar-nav-item-icon">
+                <i class="fa-solid fa-chart-line"></i>
+            </span>
+            <span class="sidebar-nav-item-text">Admin</span>
+        </a>
+    `);
+}
+
 function inicializarLogout() {
     const profileButton = document.querySelector('.sidebar-profile');
     if (!profileButton) return;
@@ -100,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         paginaActual = 'historial';
     } else if (path.includes('app/tasacion.html')) {
         paginaActual = 'tasacion';
+    } else if (path.includes('app/admin.html')) {
+        paginaActual = 'admin';
     }
 
     inyectarSidebar(paginaActual);

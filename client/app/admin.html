@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/shell.css">
+    <link rel="stylesheet" href="../css/admin.css">
+
+    <script>
+        (function() {
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed-initial');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-img">
+                <i class="fa-solid fa-home"></i>
+            </div>
+            <span class="sidebar-logo-text">Tasador</span>
+        </div>
+
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Minimizar/expandir menú">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <nav class="sidebar-nav">
+            <a href="index.html" class="sidebar-nav-item" data-page="inicio">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-house"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Inicio</span>
+            </a>
+
+            <a href="historial.html" class="sidebar-nav-item" data-page="historial">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Base de datos</span>
+            </a>
+
+            <a href="tasacion.html" class="sidebar-nav-item" data-page="tasacion">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-plus"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Nueva tasación</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <button type="button" class="sidebar-nav-item" id="appearanceBtn" aria-label="Apariencia">
+            <span class="sidebar-nav-item-icon">
+                <i class="fa-solid fa-palette"></i>
+            </span>
+            <span class="sidebar-nav-item-text">Apariencia</span>
+        </button>
+
+        <button type="button" class="sidebar-profile" aria-label="Perfil de usuario">
+            <div class="sidebar-profile-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="sidebar-profile-info">
+                <span class="sidebar-profile-name">Usuario</span>
+            </div>
+        </button>
+    </aside>
+
+    <div class="main-layout" id="mainLayout">
+        <div class="main-content" id="mainContent">
+            <section class="admin-section" aria-label="Panel de administración">
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h1>Panel de administración</h1>
+                        <p class="admin-subtitle">Vista general de la actividad</p>
+                    </div>
+
+                    <div class="admin-tabs" id="adminTabs">
+                        <button class="admin-tab active" data-tab="dashboard" type="button">Dashboard</button>
+                        <button class="admin-tab" data-tab="tasaciones" type="button">Tasaciones</button>
+                        <button class="admin-tab" data-tab="usuarios" type="button">Usuarios</button>
+                        <button class="admin-tab" data-tab="comparables" type="button">Comparables</button>
+                    </div>
+
+                    <div class="admin-panel active" id="dashboardPanel" data-panel="dashboard">
+                        <div class="admin-loading" id="dashboardLoading">Cargando...</div>
+
+                        <div class="admin-cards" id="adminCards" style="display: none;">
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalUsuarios">-</div>
+                                <div class="admin-card-label">Usuarios</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalUsuarios7Dias">-</div>
+                                <div class="admin-card-label">Usuarios 7 días</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalTasaciones">-</div>
+                                <div class="admin-card-label">Tasaciones</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="tasaciones7Dias">-</div>
+                                <div class="admin-card-label">Tasaciones 7 días</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalComparables">-</div>
+                                <div class="admin-card-label">Comparables</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalRecibidas">-</div>
+                                <div class="admin-card-label">Recibidas compartir</div>
+                            </div>
+                            <div class="admin-card">
+                                <div class="admin-card-value" id="totalUsuariosLogin7Dias">-</div>
+                                <div class="admin-card-label">Login 7 días</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-tipo-box" id="adminTipoBox" style="display: none;">
+                            <h3>Tasaciones por tipo</h3>
+                            <div class="admin-tipo-list" id="adminTipoList"></div>
+                        </div>
+
+                        <div class="admin-recent" id="adminRecentBox" style="display: none;">
+                            <h3>Últimas tasaciones</h3>
+                            <div class="admin-recent-list" id="adminRecentList"></div>
+                        </div>
+                    </div>
+
+                    <div class="admin-panel" id="tasacionesPanel" data-panel="tasaciones">
+                        <div class="admin-filters" id="tasacionesFiltros">
+                            <input type="text" class="admin-filter-input" id="adminTasacionesEmail" placeholder="Buscar por email">
+                            <select class="admin-filter-select" id="adminTasacionesTipo">
+                                <option value="">Todos los tipos</option>
+                                <option value="casa">Casa</option>
+                                <option value="departamento">Departamento</option>
+                                <option value="lote">Lote</option>
+                            </select>
+                            <select class="admin-filter-select" id="adminTasacionesEstado">
+                                <option value="">Todos los estados</option>
+                                <option value="borrador">Borrador</option>
+                                <option value="completada">Completada</option>
+                                <option value="archivada">Archivada</option>
+                            </select>
+                            <button type="button" class="admin-filter-button" id="adminTasacionesBuscar">Buscar</button>
+                        </div>
+
+                        <div class="admin-table-wrapper">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuario</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminTasacionesBody"></tbody>
+                            </table>
+                            <div class="admin-empty" id="adminTasacionesEmpty" style="display: none;">Sin tasaciones</div>
+                            <div class="admin-loading" id="adminTasacionesLoading">Cargando...</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-panel" id="usuariosPanel" data-panel="usuarios">
+                        <div class="admin-table-wrapper">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Nombre</th>
+                                        <th>Inmobiliaria</th>
+                                        <th>Plan</th>
+                                        <th>Registro</th>
+                                        <th>Último acceso</th>
+                                        <th>Tasaciones</th>
+                                        <th>Comparables</th>
+                                        <th>Recibidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminUsuariosBody"></tbody>
+                            </table>
+                            <div class="admin-empty" id="adminUsuariosEmpty" style="display: none;">Sin usuarios</div>
+                            <div class="admin-loading" id="adminUsuariosLoading">Cargando...</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-panel" id="comparablesPanel" data-panel="comparables">
+                        <div class="admin-filters" id="comparablesFiltros">
+                            <input type="text" class="admin-filter-input" id="adminComparablesEmail" placeholder="Buscar por email">
+                            <select class="admin-filter-select" id="adminComparablesTipo">
+                                <option value="">Todos los tipos</option>
+                                <option value="casa">Casa</option>
+                                <option value="departamento">Departamento</option>
+                                <option value="lote">Lote</option>
+                            </select>
+                            <select class="admin-filter-select" id="adminComparablesFuente">
+                                <option value="">Todas las fuentes</option>
+                                <option value="manual">Manual</option>
+                                <option value="de_tasacion">De tasación</option>
+                                <option value="compartido">Compartido</option>
+                            </select>
+                            <button type="button" class="admin-filter-button" id="adminComparablesBuscar">Buscar</button>
+                        </div>
+
+                        <div class="admin-table-wrapper">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuario</th>
+                                        <th>Tipo</th>
+                                        <th>Dirección</th>
+                                        <th>Valor</th>
+                                        <th>Fuente</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminComparablesBody"></tbody>
+                            </table>
+                            <div class="admin-empty" id="adminComparablesEmpty" style="display: none;">Sin comparables</div>
+                            <div class="admin-loading" id="adminComparablesLoading">Cargando...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="admin-modal" id="adminUserModal" style="display: none;">
+                <div class="admin-modal-backdrop"></div>
+                <div class="admin-modal-content">
+                    <div class="admin-modal-header">
+                        <h2>Perfil de usuario</h2>
+                        <button type="button" class="admin-modal-close" id="adminUserModalClose" aria-label="Cerrar">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="admin-modal-body" id="adminUserModalBody">
+                        <div class="admin-loading" id="adminUserModalLoading">Cargando...</div>
+
+                        <div id="adminUserModalInfo" style="display: none;">
+                            <div class="admin-profile-section">
+                                <h3>Datos de cuenta</h3>
+                                <div class="admin-profile-grid" id="adminUserDatosCuenta"></div>
+                            </div>
+
+                            <div class="admin-profile-section">
+                                <h3>Uso</h3>
+                                <div class="admin-profile-grid" id="adminUserUso"></div>
+                            </div>
+
+                            <div class="admin-profile-section">
+                                <h3>Últimas tasaciones</h3>
+                                <div class="admin-recent-list" id="adminUserTasacionesList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="../js/route-guard.js"></script>
+    <script src="../js/api-client.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/global.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/admin.js"></script>
+</body>
+</html>

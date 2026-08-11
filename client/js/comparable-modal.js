@@ -76,10 +76,7 @@ async function abrirModalComparable(tipoInmueble, onGuardar, modo = 'formulario'
         
         // Invalidar el mapa después de un delay para que se renderice correctamente
         setTimeout(() => {
-            const mapa = document.getElementById('compFormMapa');
-            if (mapa && mapa._mapa) {
-                mapa._mapa.invalidateSize();
-            }
+            MapaCore.redimensionar('compFormMapa');
         }, 100);
     }
     

@@ -1,7 +1,5 @@
-const TOKEN_KEY = 'auth_token';
-
 function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem('auth_token');
 }
 
 function isAuthenticated() {

@@ -3,18 +3,6 @@
    Generador de formularios para cargar comparables
 ========================= */
 
-// Variables globales para el mapa y marcador
-let comparableMapa = null;
-let comparableMarcador = null;
-
-// Configurar iconos de Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
 /**
  * Obtiene el objeto de homogeneización de los datos de edición del comparable
  * @param {string} tipoInmueble - 'departamento' o 'casa'
@@ -493,9 +481,8 @@ async function cargarDatosEnFormularioComparable(datos) {
         setChecked('compFormTieneJardinInput', datos.tieneJardin ?? casa.tieneJardin ?? false);
     }
 
-    if (comparableMarcador && comparableMapa && ubicacion.lat != null && ubicacion.lon != null) {
-        comparableMarcador.setLatLng([ubicacion.lat, ubicacion.lon]);
-        comparableMapa.setView([ubicacion.lat, ubicacion.lon], 15);
+    if (ubicacion.lat != null && ubicacion.lon != null) {
+        MapaCore.actualizarMarcador('compFormMapa', { lat: ubicacion.lat, lon: ubicacion.lon, zoom: 15 });
     }
 }
 
@@ -751,50 +738,15 @@ async function inicializarMapaComparable(latInicial = null, lonInicial = null) {
     const mapaContainer = document.getElementById("compFormMapa");
     if (!mapaContainer) return;
 
-    let zoomInicial = 15;
+    const zoom = (latInicial != null && lonInicial != null) ? 15 : null;
 
-    if (latInicial == null || lonInicial == null) {
-        latInicial = -34.6037;
-        lonInicial = -58.3816;
-        zoomInicial = 13;
-
-        const ubicacionUsuario = await obtenerUbicacionUsuario();
-        if (ubicacionUsuario) {
-            latInicial = ubicacionUsuario.lat;
-            lonInicial = ubicacionUsuario.lon;
-            zoomInicial = 12;
-        }
-    }
-
-    // Inicializar mapa Leaflet
-    if (typeof L !== 'undefined') {
-        comparableMapa = L.map('compFormMapa').setView([latInicial, lonInicial], zoomInicial);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(comparableMapa);
-        
-        // Agregar marcador draggable
-        comparableMarcador = L.marker([latInicial, lonInicial], {
-            draggable: true
-        }).addTo(comparableMapa);
-
-        comparableMapa.on('click', (e) => {
-            comparableMarcador.setLatLng(e.latlng);
-        });
-        
-        // Event listener cuando se mueve el marcador
-        comparableMarcador.on('dragend', function(e) {
-            const position = e.target.getLatLng();
-            console.log('Marcador movido a:', position.lat, position.lng);
-            // Aquí se podría actualizar la dirección inversa si se desea
-        });
-        
-        // Guardar referencia al mapa
-        mapaContainer._mapa = comparableMapa;
-    }
+    await MapaCore.inicializarEdicion('compFormMapa', {
+        lat: latInicial,
+        lon: lonInicial,
+        zoom,
+        draggable: true,
+        onMarkerDrag: (pos) => console.log('Marcador movido a:', pos.lat, pos.lng)
+    });
 }
 
 /**
@@ -840,10 +792,7 @@ async function actualizarMapaComparable() {
         mostrarMensajeMapa(mapaContainer, `No se encontró la dirección exacta. Mostrando: ${query}`);
     }
     
-    if (comparableMapa && comparableMarcador) {
-        comparableMapa.setView([lat, lon], exacto ? 15 : 12);
-        comparableMarcador.setLatLng([lat, lon]);
-    }
+    MapaCore.actualizarMarcador('compFormMapa', { lat, lon, zoom: exacto ? 15 : 12 });
 }
 
 /**
@@ -896,10 +845,10 @@ function obtenerDatosFormularioComparable(tipoInmueble) {
     // Coordenadas del marcador o valores por defecto
     let lat = 0;
     let lon = 0;
-    if (comparableMarcador && comparableMarcador.getLatLng) {
-        const pos = comparableMarcador.getLatLng();
-        lat = pos?.lat ?? 0;
-        lon = pos?.lng ?? 0;
+    const pos = MapaCore.obtenerPosicion('compFormMapa');
+    if (pos) {
+        lat = pos.lat ?? 0;
+        lon = pos.lng ?? 0;
     }
     
     const datos = {

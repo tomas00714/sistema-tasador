@@ -101,7 +101,8 @@ async function login(email, password) {
         usuario_id: data.usuario_id,
         email: data.email,
         nombre: data.nombre,
-        apellido: data.apellido
+        apellido: data.apellido,
+        is_admin: data.is_admin
     });
     
     return data;
@@ -127,7 +128,8 @@ async function register(nombre, apellido, email, password) {
         usuario_id: data.usuario_id,
         email: data.email,
         nombre: data.nombre,
-        apellido: data.apellido
+        apellido: data.apellido,
+        is_admin: data.is_admin
     });
     
     return data;

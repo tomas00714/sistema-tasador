@@ -37,89 +37,15 @@ async function cargarLocalidadesUI(provincia) {
     inicializarAutocompleteLocalidad();
 }
 
-// Configuración Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
-let mapa;
-let marcador;
-let tilesLayer;
-
-const TILE_URLS = {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-};
-
-function limpiarMapa() {
-    if (mapa) {
-        if (marcador) {
-            mapa.removeLayer(marcador);
-            marcador = null;
-        }
-        if (tilesLayer) {
-            mapa.removeLayer(tilesLayer);
-            tilesLayer = null;
-        }
-        mapa.remove();
-        mapa = null;
-    }
-}
-
 async function inicializarMapa() {
     const contenedorMapa = document.getElementById("mapaTasacion");
     if (!contenedorMapa) return;
 
-    // Limpiar mapa existente si hay uno
-    limpiarMapa();
-
-    let latInicial = datosTasacion.ubicacion.lat || -34.6037;
-    let lonInicial = datosTasacion.ubicacion.lon || -58.3816;
-    let desdeUsuario = false;
-
-    if (!datosTasacion.ubicacion.lat || !datosTasacion.ubicacion.lon) {
-        const ubicacionUsuario = await obtenerUbicacionUsuario();
-        if (ubicacionUsuario) {
-            latInicial = ubicacionUsuario.lat;
-            lonInicial = ubicacionUsuario.lon;
-            desdeUsuario = true;
-        }
-    }
-
-    mapa = L.map(contenedorMapa).setView([latInicial, lonInicial], desdeUsuario ? 12 : 13);
-
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
-
-    tilesLayer = L.tileLayer(tileUrl, {
-        attribution: '© CartoDB, © OpenStreetMap'
-    }).addTo(mapa);
-
-    marcador = L.marker([latInicial, lonInicial], {
+    await MapaCore.inicializarEdicion('mapaTasacion', {
+        lat: datosTasacion.ubicacion.lat || null,
+        lon: datosTasacion.ubicacion.lon || null,
         draggable: true
-    }).addTo(mapa);
-
-    mapa.on('click', (e) => {
-        marcador.setLatLng(e.latlng);
     });
-
-    setTimeout(() => {
-        mapa.invalidateSize();
-    }, 100);
-}
-
-function cambiarTelosMapa() {
-    if (!mapa || !tilesLayer) return;
-
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    const tileUrl = isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
-
-    mapa.removeLayer(tilesLayer);
-    tilesLayer = L.tileLayer(tileUrl, { attribution: '© CartoDB, © OpenStreetMap' }).addTo(mapa);
 }
 
 function configurarBusquedaMapa() {
@@ -164,6 +90,5 @@ async function actualizarMapa() {
         mostrarMensajeMapa(contenedorMapa, `No se encontró la dirección exacta. Mostrando: ${query}`);
     }
 
-    mapa.setView([lat, lon], exacto ? 17 : 12);
-    marcador.setLatLng([lat, lon]);
+    MapaCore.actualizarMarcador('mapaTasacion', { lat, lon, zoom: exacto ? 17 : 12 });
 }

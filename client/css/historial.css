@@ -132,7 +132,7 @@
     align-items: center;
     gap: 14px;
     flex-wrap: nowrap;
-    margin-top: 6px;
+    overflow: scroll;
 }
 
 .segmented-control {
@@ -209,11 +209,10 @@
 
 .filtro-label {
     font-family: 'Inter', sans-serif;
-    font-size: 1.05rem;
     font-weight: 400;
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
     min-width: 70px;
-    text-align: left;
+    text-align: right;
     line-height: 1;
     flex-shrink: 0;
 }

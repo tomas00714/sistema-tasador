@@ -630,3 +630,267 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof pasoActual === 'undefined') return;
     actualizarIndicadoresProgreso();
 });
+
+/* =========================
+   MAPA CORE
+   Utilidades unificadas de mapa (Leaflet)
+========================= */
+
+var MapaCore = (function() {
+    'use strict';
+
+    const TILE_URLS = {
+        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    };
+
+    const VISTA_POR_DEFECTO = { lat: -34.6037, lon: -58.3816, zoom: 13 };
+
+    const instancias = new Map();
+
+    const PIN_ICON = typeof L !== 'undefined' ? L.divIcon({
+        className: 'pin-mapa',
+        html: `<i class="fa-solid fa-location-dot" style="
+            display: inline-block;
+            width: 24px;
+            height: 32px;
+            line-height: 32px;
+            font-size: 24px;
+            text-align: center;
+            color: var(--color-primary);
+            filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.5));
+        "></i>`,
+        iconSize: [24, 32],
+        iconAnchor: [12, 32],
+        popupAnchor: [0, -32]
+    }) : null;
+
+    function _crearIconoCluster(cluster) {
+        const cantidad = cluster.getChildCount();
+        return L.divIcon({
+            className: 'pin-mapa-cluster',
+            html: `<div style="
+                position: relative;
+                display: inline-block;
+                width: 32px;
+                height: 40px;
+                text-align: center;
+                color: var(--color-primary);
+                filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.5));
+            ">
+                <i class="fa-solid fa-location-dot" style="font-size: 32px; line-height: 40px;"></i>
+                <span style="
+                    position: absolute;
+                    top: 3px;
+                    left: 0;
+                    right: 0;
+                    font-size: 14px;
+                    font-weight: 700;
+                    transform: translateX(11px);
+                    color: var(--color-primary);
+                    line-height: 20px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 18px;
+                    height: 18px;
+                    background-color: var(--color-info-light);
+                    border-radius: 50%;
+                ">${cantidad}</span>
+            </div>`,
+            iconSize: [32, 40],
+            iconAnchor: [16, 40],
+            popupAnchor: [0, -40]
+        });
+    }
+
+    function _crearTiles(modo) {
+        const isDark = modo === 'dark' || (modo !== 'light' && document.body.classList.contains('dark-mode'));
+        const url = isDark ? TILE_URLS.dark : TILE_URLS.light;
+        return L.tileLayer(url, {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+    }
+
+    async function _resolverUbicacionInicial(lat, lon) {
+        if (lat != null && lon != null) {
+            return { lat, lon, desdeUsuario: false };
+        }
+        if (typeof obtenerUbicacionUsuario === 'function') {
+            try {
+                const ubicacion = await obtenerUbicacionUsuario();
+                if (ubicacion && ubicacion.lat != null && ubicacion.lon != null) {
+                    return { lat: ubicacion.lat, lon: ubicacion.lon, desdeUsuario: true };
+                }
+            } catch (e) {
+                console.warn('No se pudo obtener ubicación del usuario:', e);
+            }
+        }
+        return { ...VISTA_POR_DEFECTO, desdeUsuario: false };
+    }
+
+    function _obtenerZoomEdicion(desdeUsuario, zoomManual) {
+        if (zoomManual != null) return zoomManual;
+        return desdeUsuario ? 12 : 13;
+    }
+
+    function _guardarRef(container, mapa) {
+        if (container) container._mapa = mapa;
+    }
+
+    function _limpiar(containerId) {
+        const instancia = instancias.get(containerId);
+        if (!instancia) return;
+        if (instancia.mapa) instancia.mapa.remove();
+        if (instancia.container) instancia.container._mapa = null;
+        instancias.delete(containerId);
+    }
+
+    return {
+        TILE_URLS,
+
+        async inicializarEdicion(containerId, { lat = null, lon = null, zoom = null, draggable = true, onMapClick, onMarkerDrag } = {}) {
+            if (typeof L === 'undefined' || !PIN_ICON) return null;
+
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`[MapaCore] Contenedor #${containerId} no encontrado`);
+                return null;
+            }
+
+            _limpiar(containerId);
+
+            const inicial = await _resolverUbicacionInicial(lat, lon);
+            const zoomFinal = _obtenerZoomEdicion(inicial.desdeUsuario, zoom);
+
+            const mapa = L.map(containerId).setView([inicial.lat, inicial.lon], zoomFinal);
+            const tiles = _crearTiles().addTo(mapa);
+            const opcionesMarcador = { draggable: !!draggable, icon: PIN_ICON };
+            const marcador = L.marker([inicial.lat, inicial.lon], opcionesMarcador).addTo(mapa);
+
+            mapa.on('click', (e) => {
+                marcador.setLatLng(e.latlng);
+                if (typeof onMapClick === 'function') onMapClick(e.latlng);
+            });
+
+            if (draggable && typeof onMarkerDrag === 'function') {
+                marcador.on('dragend', (e) => onMarkerDrag(e.target.getLatLng()));
+            }
+
+            _guardarRef(container, mapa);
+
+            const instancia = { mapa, tiles, marcador, container, tipo: 'edicion' };
+            instancias.set(containerId, instancia);
+
+            setTimeout(() => mapa.invalidateSize(), 100);
+
+            return instancia;
+        },
+
+        inicializarLectura(containerId, { lat = null, lon = null, zoom = null } = {}) {
+            if (typeof L === 'undefined' || !PIN_ICON) return null;
+
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`[MapaCore] Contenedor #${containerId} no encontrado`);
+                return null;
+            }
+
+            _limpiar(containerId);
+
+            const latInicial = lat != null ? lat : VISTA_POR_DEFECTO.lat;
+            const lonInicial = lon != null ? lon : VISTA_POR_DEFECTO.lon;
+            const zoomInicial = zoom != null ? zoom : VISTA_POR_DEFECTO.zoom;
+
+            const mapa = L.map(containerId).setView([latInicial, lonInicial], zoomInicial);
+            const tiles = _crearTiles().addTo(mapa);
+            const capaMarcadores = typeof L.markerClusterGroup === 'function'
+                ? L.markerClusterGroup({
+                    iconCreateFunction: _crearIconoCluster,
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true,
+                    spiderfyOnMaxZoom: true,
+                    maxClusterRadius: 20
+                }).addTo(mapa)
+                : L.layerGroup().addTo(mapa);
+
+            _guardarRef(container, mapa);
+
+            const instancia = { mapa, tiles, capaMarcadores, container, tipo: 'lectura' };
+            instancias.set(containerId, instancia);
+
+            setTimeout(() => mapa.invalidateSize(), 100);
+
+            return instancia;
+        },
+
+        agregarMarcador(containerId, { lat, lon, popupHtml = '', icon = null }) {
+            const instancia = instancias.get(containerId);
+            if (!instancia || !instancia.capaMarcadores) {
+                console.error(`[MapaCore] No existe capa de marcadores para #${containerId}`);
+                return null;
+            }
+            if (lat == null || lon == null) return null;
+
+            const opciones = { icon: icon || PIN_ICON };
+            const marcador = L.marker([lat, lon], opciones).addTo(instancia.capaMarcadores);
+            if (popupHtml) marcador.bindPopup(popupHtml);
+            return marcador;
+        },
+
+        limpiarMarcadores(containerId) {
+            const instancia = instancias.get(containerId);
+            if (instancia && instancia.capaMarcadores) instancia.capaMarcadores.clearLayers();
+        },
+
+        actualizarMarcador(containerId, { lat, lon, zoom = 15 } = {}) {
+            const instancia = instancias.get(containerId);
+            if (!instancia || !instancia.marcador) return;
+            instancia.marcador.setLatLng([lat, lon]);
+            instancia.mapa.setView([lat, lon], zoom);
+        },
+
+        obtenerPosicion(containerId) {
+            const instancia = instancias.get(containerId);
+            const marcador = instancia?.marcador;
+            if (!marcador || typeof marcador.getLatLng !== 'function') return null;
+            const pos = marcador.getLatLng();
+            return { lat: pos.lat, lng: pos.lng };
+        },
+
+        redimensionar(containerId) {
+            const instancia = instancias.get(containerId);
+            if (instancia && instancia.mapa && typeof instancia.mapa.invalidateSize === 'function') {
+                instancia.mapa.invalidateSize();
+            }
+        },
+
+        cambiarTiles(modo) {
+            if (typeof L === 'undefined') return;
+            for (const [containerId, instancia] of instancias) {
+                if (!instancia || !instancia.tiles || !instancia.mapa) continue;
+                const isDark = modo === 'dark' || (modo !== 'light' && document.body.classList.contains('dark-mode'));
+                const url = isDark ? TILE_URLS.dark : TILE_URLS.light;
+                instancia.mapa.removeLayer(instancia.tiles);
+                instancia.tiles = _crearTiles(isDark ? 'dark' : 'light').addTo(instancia.mapa);
+            }
+        },
+
+        limpiar(containerId) {
+            _limpiar(containerId);
+        }
+    };
+})();
+
+window.MapaCore = window.MapaCore || MapaCore;
+window.TILE_URLS = window.TILE_URLS || MapaCore.TILE_URLS;
+
+window.cambiarTelosMapa = function() {
+    MapaCore.cambiarTiles();
+};
+
+window.cambiarTilesMapaHistorial = function() {
+    MapaCore.cambiarTiles();
+};
