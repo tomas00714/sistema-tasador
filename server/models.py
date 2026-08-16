@@ -318,3 +318,126 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+
+# Modelos para Suscripciones
+class SuscripcionCreate(BaseModel):
+    usuario_id: int
+    plan_id: int
+    estado: Optional[str] = 'pending'
+    fecha_inicio: Optional[datetime] = None
+    fecha_fin_periodo: Optional[datetime] = None
+    renovacion_automatica: bool = True
+    mp_preapproval_id: Optional[str] = None
+    mp_external_reference: Optional[str] = None
+    monto: float = 10
+    moneda: str = 'USD'
+    frecuencia: int = 1
+    frecuencia_tipo: str = 'months'
+
+
+class SuscripcionUpdate(BaseModel):
+    plan_id: Optional[int] = None
+    estado: Optional[str] = None
+    fecha_inicio: Optional[datetime] = None
+    fecha_fin_periodo: Optional[datetime] = None
+    renovacion_automatica: Optional[bool] = None
+    fecha_cancelacion: Optional[datetime] = None
+    mp_preapproval_id: Optional[str] = None
+    mp_external_reference: Optional[str] = None
+    monto: Optional[float] = None
+    moneda: Optional[str] = None
+    frecuencia: Optional[int] = None
+    frecuencia_tipo: Optional[str] = None
+    ultimo_pago_id: Optional[str] = None
+    ultimo_pago_estado: Optional[str] = None
+    ultimo_pago_fecha: Optional[datetime] = None
+    proximo_intento_cobro: Optional[datetime] = None
+
+
+class SuscripcionResponse(BaseModel):
+    id: int
+    usuario_id: int
+    plan_id: int
+    estado: str
+    fecha_inicio: Optional[datetime]
+    fecha_fin_periodo: Optional[datetime]
+    renovacion_automatica: bool
+    fecha_cancelacion: Optional[datetime]
+    mp_preapproval_id: Optional[str]
+    mp_external_reference: Optional[str]
+    monto: float
+    moneda: str
+    frecuencia: int
+    frecuencia_tipo: str
+    ultimo_pago_id: Optional[str]
+    ultimo_pago_estado: Optional[str]
+    ultimo_pago_fecha: Optional[datetime]
+    proximo_intento_cobro: Optional[datetime]
+    creada_en: datetime
+
+
+# Modelos para Pagos
+class PagoCreate(BaseModel):
+    suscripcion_id: int
+    mp_authorized_payment_id: Optional[str] = None
+    mp_payment_id: Optional[str] = None
+    estado: Optional[str] = 'pending'
+    monto: Optional[float] = None
+    moneda: Optional[str] = None
+    fecha_cobro: Optional[datetime] = None
+    fecha_aprobacion: Optional[datetime] = None
+    motivo_rechazo: Optional[str] = None
+    raw_response: Optional[Dict[str, Any]] = None
+
+
+class PagoUpdate(BaseModel):
+    mp_authorized_payment_id: Optional[str] = None
+    mp_payment_id: Optional[str] = None
+    estado: Optional[str] = None
+    monto: Optional[float] = None
+    moneda: Optional[str] = None
+    fecha_cobro: Optional[datetime] = None
+    fecha_aprobacion: Optional[datetime] = None
+    motivo_rechazo: Optional[str] = None
+    raw_response: Optional[Dict[str, Any]] = None
+
+
+class PagoResponse(BaseModel):
+    id: int
+    suscripcion_id: int
+    mp_authorized_payment_id: Optional[str]
+    mp_payment_id: Optional[str]
+    estado: str
+    monto: Optional[float]
+    moneda: Optional[str]
+    fecha_cobro: Optional[datetime]
+    fecha_aprobacion: Optional[datetime]
+    motivo_rechazo: Optional[str]
+    raw_response: Optional[Dict[str, Any]]
+    creada_en: datetime
+
+
+# Modelo de respuesta para el estado actual de suscripción del usuario
+class EstadoSuscripcionResponse(BaseModel):
+    tiene_acceso_pro: bool
+    plan: str
+    estado: str
+    fecha_inicio: Optional[datetime]
+    fecha_fin_periodo: Optional[datetime]
+    renovacion_automatica: Optional[bool]
+
+
+class CrearSuscripcionRequest(BaseModel):
+    card_token_id: str
+    back_url: str
+
+
+# Modelos para Webhooks de Mercado Pago
+class MercadoPagoWebhookData(BaseModel):
+    id: str
+    type: Optional[str] = None  # 'subscription_preapproval', 'subscription_authorized_payment', etc.
+
+
+class MercadoPagoWebhookRequest(BaseModel):
+    data: MercadoPagoWebhookData
