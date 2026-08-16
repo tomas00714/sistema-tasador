@@ -80,127 +80,121 @@
 
             <section class="perfil-section" aria-label="Perfil de usuario">
 
-                <div class="perfil-container">
+                <div class="perfil-card">
 
-                    <div class="perfil-card">
-
-                            <div class="perfil-header">
-                                <div class="perfil-avatar-container">
-                                    <div class="perfil-avatar" id="perfilAvatar">
-                                        <i class="fa-solid fa-user"></i>
-                                    </div>
-                                    <button type="button" class="perfil-avatar-upload" id="btnCambiarFoto">
-                                        <i class="fa-solid fa-camera"></i>
-                                        <span>Cambiar foto</span>
-                                    </button>
-                                </div>
-                                <div class="perfil-info">
-                                    <h1 class="perfil-nombre" id="perfilNombre">Usuario</h1>
-                                    <p class="perfil-email" id="perfilEmail">usuario@ejemplo.com</p>
-                                    <div class="perfil-meta">
-                                        <span class="perfil-badge" id="perfilPlanBadge">Free</span>
-                                    </div>
-                                </div>
+                    <div class="perfil-header">
+                        <div class="perfil-avatar-container">
+                            <div class="perfil-avatar" id="perfilAvatar">
+                                <i class="fa-solid fa-user"></i>
                             </div>
+                            <button type="button" class="perfil-avatar-upload" id="btnCambiarFoto">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Cambiar foto</span>
+                            </button>
+                        </div>
+                        <div class="perfil-info">
+                            <h1 class="perfil-nombre" id="perfilNombre">Usuario</h1>
+                            <p class="perfil-email" id="perfilEmail">usuario@ejemplo.com</p>
+                            <div class="perfil-meta">
+                                <span class="perfil-badge" id="perfilPlanBadge">Free</span>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="perfil-divider"></div>
+                    <div class="perfil-divider"></div>
 
-                            <div class="perfil-section">
-                                <h2 class="perfil-section-title">Datos personales</h2>
-                                <div class="perfil-info-grid">
-                                    <div class="perfil-info-item">
-                                        <span class="perfil-info-label">Nombre</span>
-                                        <span class="perfil-info-value" id="infoNombre">—</span>
-                                    </div>
-                                    <div class="perfil-info-item">
-                                        <span class="perfil-info-label">Apellido</span>
-                                        <span class="perfil-info-value" id="infoApellido">—</span>
-                                    </div>
-                                    <div class="perfil-info-item">
-                                        <span class="perfil-info-label">Email</span>
-                                        <span class="perfil-info-value" id="infoEmail">—</span>
-                                    </div>
-                                    <div class="perfil-info-item">
-                                        <span class="perfil-info-label">Fecha de registro</span>
-                                        <span class="perfil-info-value" id="infoFechaRegistro">—</span>
-                                    </div>
+                    <div class="perfil-section-body">
+                        <h2 class="perfil-section-title">Datos personales</h2>
+                        <div class="perfil-info-grid">
+                            <div class="perfil-info-item">
+                                <span class="perfil-info-label">Nombre</span>
+                                <span class="perfil-info-value" id="infoNombre">—</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-info-label">Apellido</span>
+                                <span class="perfil-info-value" id="infoApellido">—</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-info-label">Email</span>
+                                <span class="perfil-info-value" id="infoEmail">—</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-info-label">Fecha de registro</span>
+                                <span class="perfil-info-value" id="infoFechaRegistro">—</span>
+                            </div>
+                        </div>
+                        <button type="button" class="perfil-btn-editar" id="btnEditarDatos">
+                            <i class="fa-solid fa-pen"></i> Editar datos
+                        </button>
+                    </div>
+
+                    <div class="perfil-divider"></div>
+
+                    <div class="perfil-section-body">
+                        <h2 class="perfil-section-title">Identidad de la inmobiliaria</h2>
+                        <div class="inmobiliaria-card">
+                            <div class="inmobiliaria-logo-container">
+                                <div class="inmobiliaria-logo" id="inmobiliariaLogo">
+                                    <i class="fa-solid fa-building"></i>
                                 </div>
-                                <button type="button" class="perfil-btn-editar" id="btnEditarDatos">
-                                    <i class="fa-solid fa-pen"></i> Editar datos
+                                <button type="button" class="inmobiliaria-logo-upload" id="btnSubirLogo">
+                                    <i class="fa-solid fa-upload"></i>
+                                    <span>Subir logo</span>
                                 </button>
                             </div>
-
-                            <div class="perfil-divider"></div>
-
-                            <div class="perfil-section">
-                                <h2 class="perfil-section-title">Identidad de la inmobiliaria</h2>
-                                <div class="inmobiliaria-card">
-                                    <div class="inmobiliaria-logo-container">
-                                        <div class="inmobiliaria-logo" id="inmobiliariaLogo">
-                                            <i class="fa-solid fa-building"></i>
-                                        </div>
-                                        <button type="button" class="inmobiliaria-logo-upload" id="btnSubirLogo">
-                                            <i class="fa-solid fa-upload"></i>
-                                            <span>Subir logo</span>
-                                        </button>
-                                    </div>
-                                    <div class="inmobiliaria-info">
-                                        <span class="inmobiliaria-nombre" id="inmobiliariaNombre">No configurado</span>
-                                        <span class="inmobiliaria-estado">Próximamente</span>
-                                    </div>
-                                </div>
+                            <div class="inmobiliaria-info">
+                                <span class="inmobiliaria-nombre" id="inmobiliariaNombre">No configurado</span>
+                                <span class="inmobiliaria-estado">Próximamente</span>
                             </div>
-
-                            <div class="perfil-divider"></div>
-
-                            <div class="perfil-section">
-                                <h2 class="perfil-section-title">Configuración</h2>
-                                <div class="perfil-config-list">
-                                    <button type="button" class="perfil-config-item" id="configDatos">
-                                        <span class="perfil-config-icon"><i class="fa-solid fa-user-gear"></i></span>
-                                        <span class="perfil-config-text">Datos personales</span>
-                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                                    </button>
-                                    <button type="button" class="perfil-config-item" id="configInmobiliaria">
-                                        <span class="perfil-config-icon"><i class="fa-solid fa-building"></i></span>
-                                        <span class="perfil-config-text">Información de la inmobiliaria</span>
-                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                                    </button>
-                                    <button type="button" class="perfil-config-item" id="configPreferencias">
-                                        <span class="perfil-config-icon"><i class="fa-solid fa-sliders"></i></span>
-                                        <span class="perfil-config-text">Preferencias</span>
-                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                                    </button>
-                                    <button type="button" class="perfil-config-item" id="configSeguridad">
-                                        <span class="perfil-config-icon"><i class="fa-solid fa-shield-halved"></i></span>
-                                        <span class="perfil-config-text">Seguridad y cuenta</span>
-                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="perfil-divider"></div>
-
-                            <div class="perfil-section">
-                                <h2 class="perfil-section-title">Información de cuenta</h2>
-                                <div class="cuenta-info-grid">
-                                    <div class="cuenta-info-item">
-                                        <span class="cuenta-info-label">Plan actual</span>
-                                        <span class="cuenta-info-value cuenta-plan" id="cuentaPlan">Free</span>
-                                    </div>
-                                    <div class="cuenta-info-item">
-                                        <span class="cuenta-info-label">Estado de cuenta</span>
-                                        <span class="cuenta-info-value cuenta-estado" id="cuentaEstado">Activo</span>
-                                    </div>
-                                    <div class="cuenta-info-item">
-                                        <span class="cuenta-info-label">Fecha de registro</span>
-                                        <span class="cuenta-info-value" id="cuentaFechaRegistro">—</span>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
+                    </div>
 
+                    <div class="perfil-divider"></div>
+
+                    <div class="perfil-section-body">
+                        <h2 class="perfil-section-title">Configuración</h2>
+                        <div class="perfil-config-list">
+                            <button type="button" class="perfil-config-item" id="configDatos">
+                                <span class="perfil-config-icon"><i class="fa-solid fa-user-gear"></i></span>
+                                <span class="perfil-config-text">Datos personales</span>
+                                <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                            </button>
+                            <button type="button" class="perfil-config-item" id="configInmobiliaria">
+                                <span class="perfil-config-icon"><i class="fa-solid fa-building"></i></span>
+                                <span class="perfil-config-text">Información de la inmobiliaria</span>
+                                <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                            </button>
+                            <button type="button" class="perfil-config-item" id="configPreferencias">
+                                <span class="perfil-config-icon"><i class="fa-solid fa-sliders"></i></span>
+                                <span class="perfil-config-text">Preferencias</span>
+                                <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                            </button>
+                            <button type="button" class="perfil-config-item" id="configSeguridad">
+                                <span class="perfil-config-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                                <span class="perfil-config-text">Seguridad y cuenta</span>
+                                <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="perfil-divider"></div>
+
+                    <div class="perfil-section-body">
+                        <h2 class="perfil-section-title">Información de cuenta</h2>
+                        <div class="cuenta-info-grid">
+                            <div class="cuenta-info-item">
+                                <span class="cuenta-info-label">Plan actual</span>
+                                <span class="cuenta-info-value cuenta-plan" id="cuentaPlan">Free</span>
+                            </div>
+                            <div class="cuenta-info-item">
+                                <span class="cuenta-info-label">Estado de cuenta</span>
+                                <span class="cuenta-info-value cuenta-estado" id="cuentaEstado">Activo</span>
+                            </div>
+                            <div class="cuenta-info-item">
+                                <span class="cuenta-info-label">Fecha de registro</span>
+                                <span class="cuenta-info-value" id="cuentaFechaRegistro">—</span>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
