@@ -120,7 +120,6 @@ function limpiarDatosTasacion() {
             cochera: false,
             baulera: false,
             servicios: [],
-            infraestructura: [],
             observaciones: "",
             superficieCubierta: "",
             superficieCubiertaCoef: 0,

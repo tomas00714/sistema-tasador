@@ -568,9 +568,8 @@ window.abrirPerfilTasacion = async function(id) {
             ? tasacion.departamento.amenities.map(amenidad => `<div class="chip-servicio">${amenidad}</div>`).join("")
             : "";
 
-    // Infrastructure (departments and houses)
-    const infraestructura =
-        tasacion.casa?.infraestructura || tasacion.departamento?.infraestructura || [];
+    // Infrastructure (only for departments)
+    const infraestructura = tasacion.departamento?.infraestructura || [];
     const infraestructuraHtml =
         infraestructura.length
             ? infraestructura.map(infra => `<div class="chip-servicio">${infra}</div>`).join("")
@@ -964,7 +963,7 @@ window.abrirPerfilTasacion = async function(id) {
                 </div>
                 ` : ""}
 
-                ${!esLote && infraestructuraHtml ? `
+                ${tipo === 'departamento' && infraestructuraHtml ? `
                 <!-- Row 3c: Infrastructure (for departments) -->
                 <div class="perfil-row">
                     <div class="perfil-card-item perfil-card-full">

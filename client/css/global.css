@@ -731,6 +731,14 @@ body.dark-mode .leaflet-tile {
     background: var(--color-bg-light);
 }
 
+.sidebar-profile.active {
+    background: var(--color-primary-light);
+}
+
+.sidebar-profile.active .sidebar-profile-avatar {
+    color: var(--color-primary);
+}
+
 .sidebar-profile-avatar {
     width: 40px;
     height: 40px;

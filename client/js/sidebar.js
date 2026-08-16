@@ -18,18 +18,35 @@ function inyectarSidebar(paginaActual) {
     const navItems = sidebar.querySelectorAll('.sidebar-nav-item');
     navItems.forEach(item => {
         const page = item.getAttribute('data-page');
-        if (page === paginaActual && paginaActual !== 'perfil') {
+        if (page === paginaActual) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
         }
     });
 
+    // Actualizar estado activo del botón de perfil
+    const profileButton = sidebar.querySelector('.sidebar-profile');
+    if (profileButton) {
+        const profilePage = profileButton.getAttribute('data-page');
+        if (profilePage === paginaActual) {
+            profileButton.classList.add('active');
+        } else {
+            profileButton.classList.remove('active');
+        }
+    }
+
+    // Actualizar nombre del usuario
+    actualizarNombreUsuario();
+
     // Inicializar funcionalidad del toggle
     inicializarSidebarToggle();
 
     // Inicializar click en logo para volver a landing
     inicializarLogoClick();
+
+    // Inicializar click en perfil para navegar
+    inicializarLogout();
 }
 
 function inicializarSidebarToggle() {

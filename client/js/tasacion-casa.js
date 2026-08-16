@@ -71,15 +71,6 @@ function mostrarFormularioCasa() {
         <div class="separador-formulario"></div>
 
         <div class="seccion-campos">
-            <h3>Infraestructura</h3>
-            <div class="servicios-grid">
-                ${generarHTMLInfraestructura(datosTasacion.casa.infraestructura)}
-            </div>
-        </div>
-
-        <div class="separador-formulario"></div>
-
-        <div class="seccion-campos">
             <h3>Observaciones</h3>
             <div class="input-group">
                 <textarea id="observacionesInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.casa.observaciones || ""}</textarea>
@@ -108,7 +99,6 @@ function mostrarFormularioCasa() {
         inicializarSwitchCochera();
         inicializarSwitchBaulera();
         inicializarServicios();
-        inicializarInfraestructura();
     });
 }
 
@@ -273,27 +263,6 @@ function inicializarServicios() {
     });
 }
 
-function inicializarInfraestructura() {
-    if (!Array.isArray(datosTasacion.casa.infraestructura)) {
-        datosTasacion.casa.infraestructura = [];
-    }
-    const checkboxes = document.querySelectorAll('.servicios-grid input[type="checkbox"][data-infraestructura]');
-    checkboxes.forEach(checkbox => {
-        agregarListenerSeguro(checkbox, "change", () => {
-            const infra = checkbox.dataset.infraestructura;
-            if (infra) {
-                if (checkbox.checked) {
-                    if (!datosTasacion.casa.infraestructura.includes(infra)) {
-                        datosTasacion.casa.infraestructura.push(infra);
-                    }
-                } else {
-                    datosTasacion.casa.infraestructura = datosTasacion.casa.infraestructura.filter(i => i !== infra);
-                }
-            }
-        });
-    });
-}
-
 function inicializarBotonAgregarComparable() {
     const btn = document.getElementById("btnAgregarComparable");
     if (!btn) return;
@@ -402,15 +371,6 @@ function guardarDatosPantallaCasa() {
     serviciosCheckboxes.forEach(checkbox => {
         if (checkbox.checked && checkbox.dataset.servicio) {
             datosTasacion.casa.servicios.push(checkbox.dataset.servicio);
-        }
-    });
-
-    // Guardar infraestructura
-    const infraCheckboxes = document.querySelectorAll('.servicios-grid input[type="checkbox"][data-infraestructura]');
-    datosTasacion.casa.infraestructura = [];
-    infraCheckboxes.forEach(checkbox => {
-        if (checkbox.checked && checkbox.dataset.infraestructura) {
-            datosTasacion.casa.infraestructura.push(checkbox.dataset.infraestructura);
         }
     });
 }

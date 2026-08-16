@@ -149,7 +149,7 @@ function mapearPropiedad(tasacion) {
         base.parking = !!d.cochera;
         base.storage = !!d.baulera;
         base.balcony = (hom.balcon?.superficie || 0) > 0;
-        base.security = (d.amenities || []).includes('seguridad') || (d.infraestructura || []).includes('seguridad');
+        base.security = (d.amenities || []).includes('seguridad') || (d.infraestructura || []).includes('Seguridad');
         base.gym = (d.amenities || []).includes('gimnasio');
         base.pool = (d.amenities || []).includes('pileta');
         return base;
