@@ -6,7 +6,6 @@
 function inicializarPerfil() {
     cargarDatosUsuario();
     inicializarBotonesPerfil();
-    inicializarCerrarSesion();
 }
 
 function cargarDatosUsuario() {
@@ -24,16 +23,14 @@ function cargarDatosUsuario() {
     document.getElementById('infoNombre').textContent = userData.nombre || '—';
     document.getElementById('infoApellido').textContent = userData.apellido || '—';
     document.getElementById('infoEmail').textContent = email;
+    document.getElementById('infoInmobiliaria').textContent = 'No configurado';
 
     const planBadge = document.getElementById('perfilPlanBadge');
-    const cuentaPlan = document.getElementById('cuentaPlan');
     if (userData.is_admin) {
         planBadge.textContent = 'Admin';
         planBadge.classList.add('perfil-badge-admin');
-        cuentaPlan.textContent = 'Admin';
     } else {
         planBadge.textContent = 'Free';
-        cuentaPlan.textContent = 'Free';
     }
 
     const fechaRegistro = userData.fecha_creacion;
@@ -45,7 +42,6 @@ function cargarDatosUsuario() {
             year: '2-digit'
         });
         document.getElementById('infoFechaRegistro').textContent = fechaFormateada;
-        document.getElementById('cuentaFechaRegistro').textContent = fechaFormateada;
     }
 }
 
@@ -64,29 +60,11 @@ function inicializarBotonesPerfil() {
         });
     }
 
-    const btnSubirLogo = document.getElementById('btnSubirLogo');
-    if (btnSubirLogo) {
-        btnSubirLogo.addEventListener('click', () => {
-            alert('Funcionalidad de subida de logo próximamente');
-        });
-    }
-
     const configItems = document.querySelectorAll('.perfil-config-item');
     configItems.forEach(item => {
         item.addEventListener('click', () => {
             alert('Configuración próximamente');
         });
-    });
-}
-
-function inicializarCerrarSesion() {
-    const btnCerrarSesion = document.querySelector('.sidebar-profile');
-    if (!btnCerrarSesion) return;
-
-    btnCerrarSesion.addEventListener('click', () => {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        window.location.href = '../login.html';
     });
 }
 

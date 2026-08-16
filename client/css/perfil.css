@@ -3,19 +3,6 @@
    Estilos específicos para la página de perfil
 ========================= */
 
-.perfil-section {
-    background: var(--color-white);
-    padding: 20px;
-    box-sizing: border-box;
-    border: 1.5px solid var(--color-border);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    height: calc(100dvh - 40px);
-    min-height: 0;
-    margin: 20px 20px 0 0;
-}
-
 .perfil-card {
     background: var(--color-white);
     border: 1.5px solid var(--color-border);
@@ -25,7 +12,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    height: 100%;
+    margin: 20px 20px 0 0;
 }
 
 .perfil-header {
@@ -194,75 +181,6 @@
     border-color: var(--color-primary);
 }
 
-.inmobiliaria-card {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    padding: 20px;
-    border: 1px solid var(--color-border);
-    border-radius: 16px;
-    background: var(--color-bg-light);
-}
-
-.inmobiliaria-logo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.inmobiliaria-logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 12px;
-    background: var(--color-white);
-    border: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: var(--color-text-secondary);
-}
-
-.inmobiliaria-logo-upload {
-    padding: 6px 12px;
-    border-radius: 16px;
-    border: 1px solid var(--color-border);
-    background: var(--color-white);
-    color: var(--color-text-secondary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.inmobiliaria-logo-upload:hover {
-    background: var(--color-bg-hover);
-    border-color: var(--color-primary);
-}
-
-.inmobiliaria-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.inmobiliaria-nombre {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.inmobiliaria-estado {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--color-text-secondary);
-}
-
 .perfil-config-list {
     display: flex;
     flex-direction: column;
@@ -309,39 +227,4 @@
 .perfil-config-arrow {
     color: var(--color-text-secondary);
     flex-shrink: 0;
-}
-
-.cuenta-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-}
-
-.cuenta-info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.cuenta-info-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-}
-
-.cuenta-info-value {
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    color: var(--color-text-primary);
-}
-
-.cuenta-plan {
-    font-weight: 600;
-    color: var(--color-primary);
-}
-
-.cuenta-estado {
-    font-weight: 500;
-    color: var(--color-success);
 }
