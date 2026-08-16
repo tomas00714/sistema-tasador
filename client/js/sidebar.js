@@ -101,9 +101,7 @@ function inicializarLogout() {
     if (!profileButton) return;
 
     profileButton.addEventListener('click', () => {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        window.location.href = 'login.html';
+        window.location.href = 'perfil.html';
     });
 }
 
@@ -112,7 +110,7 @@ function actualizarNombreUsuario() {
     const profileName = document.querySelector('.sidebar-profile-name');
     if (userData && profileName) {
         const user = JSON.parse(userData);
-        profileName.textContent = `${user.nombre} ${user.apellido}`;
+        profileName.textContent = 'Cerrar sesión';
     }
 }
 
@@ -125,11 +123,21 @@ document.addEventListener('DOMContentLoaded', () => {
         paginaActual = 'historial';
     } else if (path.includes('app/tasacion.html')) {
         paginaActual = 'tasacion';
+    } else if (path.includes('app/perfil.html')) {
+        paginaActual = 'perfil';
     } else if (path.includes('app/admin.html')) {
         paginaActual = 'admin';
     }
 
     inyectarSidebar(paginaActual);
-    inicializarLogout();
     actualizarNombreUsuario();
+
+    const btnCerrarSesion = document.querySelector('.sidebar-profile');
+    if (btnCerrarSesion) {
+        btnCerrarSesion.addEventListener('click', () => {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            window.location.href = '../login.html';
+        });
+    }
 });

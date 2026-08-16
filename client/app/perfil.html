@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil</title>
+
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/shell.css">
+    <link rel="stylesheet" href="../css/tasacion.css">
+    <link rel="stylesheet" href="../css/historial.css">
+    <link rel="stylesheet" href="../css/perfil.css">
+
+    <script>
+        (function() {
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed-initial');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-img">
+                <i class="fa-solid fa-home"></i>
+            </div>
+            <span class="sidebar-logo-text">Tasador</span>
+        </div>
+
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Minimizar/expandir menú">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <nav class="sidebar-nav">
+            <a href="index.html" class="sidebar-nav-item" data-page="inicio">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-house"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Inicio</span>
+            </a>
+
+            <a href="historial.html" class="sidebar-nav-item" data-page="historial">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Base de datos</span>
+            </a>
+
+            <a href="tasacion.html" class="sidebar-nav-item" data-page="tasacion">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-plus"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Nueva tasación</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <a href="perfil.html" class="sidebar-nav-item active" data-page="perfil">
+            <span class="sidebar-nav-item-icon">
+                <i class="fa-solid fa-user"></i>
+            </span>
+            <span class="sidebar-nav-item-text">Perfil</span>
+        </a>
+
+        <button type="button" class="sidebar-nav-item" id="appearanceBtn" aria-label="Apariencia">
+            <span class="sidebar-nav-item-icon">
+                <i class="fa-solid fa-palette"></i>
+            </span>
+            <span class="sidebar-nav-item-text">Apariencia</span>
+        </button>
+
+        <button type="button" class="sidebar-profile" aria-label="Cerrar sesión">
+            <div class="sidebar-profile-avatar">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <div class="sidebar-profile-info">
+                <span class="sidebar-profile-name">Cerrar sesión</span>
+            </div>
+        </button>
+    </aside>
+
+    <div class="main-layout" id="mainLayout">
+        <div class="main-content" id="mainContent">
+
+            <section class="historial-section" aria-label="Perfil de usuario">
+
+                <div class="historial-container">
+
+                    <div class="historial-content">
+
+                        <div class="perfil-card">
+
+                            <div class="perfil-header">
+                                <div class="perfil-avatar-container">
+                                    <div class="perfil-avatar" id="perfilAvatar">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <button type="button" class="perfil-avatar-upload" id="btnCambiarFoto">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <span>Cambiar foto</span>
+                                    </button>
+                                </div>
+                                <div class="perfil-info">
+                                    <h1 class="perfil-nombre" id="perfilNombre">Usuario</h1>
+                                    <p class="perfil-email" id="perfilEmail">usuario@ejemplo.com</p>
+                                    <div class="perfil-meta">
+                                        <span class="perfil-badge" id="perfilPlanBadge">Free</span>
+                                        <span class="perfil-estado" id="perfilEstado">Activo</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="perfil-divider"></div>
+
+                            <div class="perfil-section">
+                                <h2 class="perfil-section-title">Datos personales</h2>
+                                <div class="perfil-info-grid">
+                                    <div class="perfil-info-item">
+                                        <span class="perfil-info-label">Nombre</span>
+                                        <span class="perfil-info-value" id="infoNombre">—</span>
+                                    </div>
+                                    <div class="perfil-info-item">
+                                        <span class="perfil-info-label">Apellido</span>
+                                        <span class="perfil-info-value" id="infoApellido">—</span>
+                                    </div>
+                                    <div class="perfil-info-item">
+                                        <span class="perfil-info-label">Email</span>
+                                        <span class="perfil-info-value" id="infoEmail">—</span>
+                                    </div>
+                                    <div class="perfil-info-item">
+                                        <span class="perfil-info-label">Fecha de registro</span>
+                                        <span class="perfil-info-value" id="infoFechaRegistro">—</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="perfil-btn-editar" id="btnEditarDatos">
+                                    <i class="fa-solid fa-pen"></i> Editar datos
+                                </button>
+                            </div>
+
+                            <div class="perfil-divider"></div>
+
+                            <div class="perfil-section">
+                                <h2 class="perfil-section-title">Identidad de la inmobiliaria</h2>
+                                <div class="inmobiliaria-card">
+                                    <div class="inmobiliaria-logo-container">
+                                        <div class="inmobiliaria-logo" id="inmobiliariaLogo">
+                                            <i class="fa-solid fa-building"></i>
+                                        </div>
+                                        <button type="button" class="inmobiliaria-logo-upload" id="btnSubirLogo">
+                                            <i class="fa-solid fa-upload"></i>
+                                            <span>Subir logo</span>
+                                        </button>
+                                    </div>
+                                    <div class="inmobiliaria-info">
+                                        <span class="inmobiliaria-nombre" id="inmobiliariaNombre">No configurado</span>
+                                        <span class="inmobiliaria-estado">Próximamente</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="perfil-divider"></div>
+
+                            <div class="perfil-section">
+                                <h2 class="perfil-section-title">Configuración</h2>
+                                <div class="perfil-config-list">
+                                    <button type="button" class="perfil-config-item" id="configDatos">
+                                        <span class="perfil-config-icon"><i class="fa-solid fa-user-gear"></i></span>
+                                        <span class="perfil-config-text">Datos personales</span>
+                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                                    </button>
+                                    <button type="button" class="perfil-config-item" id="configInmobiliaria">
+                                        <span class="perfil-config-icon"><i class="fa-solid fa-building"></i></span>
+                                        <span class="perfil-config-text">Información de la inmobiliaria</span>
+                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                                    </button>
+                                    <button type="button" class="perfil-config-item" id="configPreferencias">
+                                        <span class="perfil-config-icon"><i class="fa-solid fa-sliders"></i></span>
+                                        <span class="perfil-config-text">Preferencias</span>
+                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                                    </button>
+                                    <button type="button" class="perfil-config-item" id="configSeguridad">
+                                        <span class="perfil-config-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                                        <span class="perfil-config-text">Seguridad y cuenta</span>
+                                        <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="perfil-divider"></div>
+
+                            <div class="perfil-section">
+                                <h2 class="perfil-section-title">Información de cuenta</h2>
+                                <div class="cuenta-info-grid">
+                                    <div class="cuenta-info-item">
+                                        <span class="cuenta-info-label">Plan actual</span>
+                                        <span class="cuenta-info-value cuenta-plan" id="cuentaPlan">Free</span>
+                                    </div>
+                                    <div class="cuenta-info-item">
+                                        <span class="cuenta-info-label">Estado de cuenta</span>
+                                        <span class="cuenta-info-value cuenta-estado" id="cuentaEstado">Activo</span>
+                                    </div>
+                                    <div class="cuenta-info-item">
+                                        <span class="cuenta-info-label">Fecha de registro</span>
+                                        <span class="cuenta-info-value" id="cuentaFechaRegistro">—</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="../js/route-guard.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/perfil.js"></script>
+</body>
+</html>
