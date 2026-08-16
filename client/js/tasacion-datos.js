@@ -366,8 +366,8 @@ function guardarDatosPantalla1() {
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
 
-    if (marcador) {
-        const posicion = marcador.getLatLng();
+    const posicion = MapaCore.obtenerPosicion('mapaTasacion');
+    if (posicion) {
         datosTasacion.ubicacion.lat = posicion.lat;
         datosTasacion.ubicacion.lon = posicion.lng;
     }
@@ -418,8 +418,8 @@ function guardarDatosPantallaDepartamento() {
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
 
-    if (marcador) {
-        const posicion = marcador.getLatLng();
+    const posicion = MapaCore.obtenerPosicion('mapaTasacion');
+    if (posicion) {
         datosTasacion.ubicacion.lat = posicion.lat;
         datosTasacion.ubicacion.lon = posicion.lng;
     }
