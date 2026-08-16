@@ -19,11 +19,6 @@ for i in range(1, 100):  # Soporta hasta 99 administradores por entorno
     if email:
         ADMIN_EMAILS.add(email)
 
-# DEBUG LOG - Verificar qué emails de admin se cargaron
-import logging
-logger = logging.getLogger(__name__)
-logger.info(f"=== DEBUG ADMIN === ADMIN_EMAILS cargados: {ADMIN_EMAILS}")
-
 # Opcional: hardcodeados para desarrollo local.
 # Forma recomendada: usar el archivo .env con variables ADMIN_EMAIL_1, ADMIN_EMAIL_2, etc.
 # Si querés hardcodear, descomentá los correos de abajo.
@@ -77,6 +72,4 @@ def get_user_id_from_token(token: str) -> Optional[int]:
 
 def is_admin(email: str) -> bool:
     """Determina si un email pertenece a un administrador."""
-    result = email in ADMIN_EMAILS
-    logger.info(f"=== DEBUG ADMIN === is_admin check - email: '{email}', result: {result}, esta_en_lista: {email in ADMIN_EMAILS}")
-    return result
+    return email in ADMIN_EMAILS
