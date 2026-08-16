@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
+    <!-- Mercado Pago SDK -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-container">
@@ -238,8 +241,7 @@
                     <li><i class="fa-solid fa-check"></i> Colaboración en tiempo real</li>
                     <li><i class="fa-solid fa-check"></i> Soporte prioritario</li>
                 </ul>
-                <!-- TODO: Implementar sistema de pagos -->
-                <button class="btn btn-primary pricing-cta" id="pricingCtaButton" style="width: 100%; justify-content: center;" onclick="alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.')">
+                <button class="btn btn-primary pricing-cta" id="pricingCtaButton" style="width: 100%; justify-content: center;">
                     Suscribirme
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
@@ -339,6 +341,7 @@
     </footer>
 
     <script src="js/auth.js"></script>
+    <script src="js/mercado-pago.js"></script>
     <script>
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {
@@ -424,27 +427,15 @@
             });
         }
 
-        // Handler para botón de pricing - verifica autenticación
+        // Handler para botón de pricing - ahora manejado por mercado-pago.js
         function setupPricingCtaHandler() {
+            // El manejo del botón de pricing ahora está en mercado-pago.js
+            // Esta función se mantiene por compatibilidad pero no hace nada
             const pricingCtaButton = document.getElementById('pricingCtaButton');
             if (!pricingCtaButton) return;
-
-            const isAuthenticated = window.isAuthenticated && window.isAuthenticated();
             
-            if (isAuthenticated) {
-                // Usuario autenticado: ir a la aplicación
-                pricingCtaButton.removeAttribute('onclick');
-                pricingCtaButton.onclick = function() {
-                    window.location.href = 'app/index.html';
-                };
-                pricingCtaButton.innerHTML = 'Ir a la aplicación <i class="fa-solid fa-arrow-right"></i>';
-            } else {
-                // Usuario no autenticado: mostrar alerta de pagos
-                pricingCtaButton.onclick = function() {
-                    alert('El sistema de pagos se implementará próximamente. Por ahora, contactanos para activar tu cuenta.');
-                };
-                pricingCtaButton.innerHTML = 'Suscribirme <i class="fa-solid fa-arrow-right"></i>';
-            }
+            // Remover cualquier handler onclick anterior
+            pricingCtaButton.removeAttribute('onclick');
         }
 
         // User dropdown toggle
