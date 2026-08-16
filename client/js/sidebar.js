@@ -18,7 +18,7 @@ function inyectarSidebar(paginaActual) {
     const navItems = sidebar.querySelectorAll('.sidebar-nav-item');
     navItems.forEach(item => {
         const page = item.getAttribute('data-page');
-        if (page === paginaActual) {
+        if (page === paginaActual && paginaActual !== 'perfil') {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -110,7 +110,7 @@ function actualizarNombreUsuario() {
     const profileName = document.querySelector('.sidebar-profile-name');
     if (userData && profileName) {
         const user = JSON.parse(userData);
-        profileName.textContent = 'Cerrar sesión';
+        profileName.textContent = `${user.nombre} ${user.apellido}`;
     }
 }
 
@@ -130,14 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     inyectarSidebar(paginaActual);
+    inicializarLogout();
     actualizarNombreUsuario();
-
-    const btnCerrarSesion = document.querySelector('.sidebar-profile');
-    if (btnCerrarSesion) {
-        btnCerrarSesion.addEventListener('click', () => {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_user');
-            window.location.href = '../login.html';
-        });
-    }
 });
