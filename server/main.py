@@ -11,6 +11,7 @@ from models import (
     TasacionCreate, TasacionUpdate, TasacionResponse,
     Comparable, ComparableCreate, ComparableUpdate, ComparableBatchRequest, ComparableResponse,
     SolicitudCreate, SolicitudUpdate, SolicitudResponse, SolicitudContribuirRequest,
+    SolicitudComparableAceptacionResponse, SolicitudComparableDecisionRequest,
     TasacionCompartirRequest, TasacionCompartirResponse, VistaPreviaTasacionResponse,
     RevocarTasacionCompartidaResponse,
     LoginRequest, RegisterRequest, TokenResponse, ForgotPasswordRequest,
@@ -27,6 +28,7 @@ from migrations.migration_runner import MigrationRunner
 from repositories.tasacion_repository import TasacionRepository
 from repositories.comparable_repository import ComparableRepository
 from repositories.solicitud_repository import SolicitudRepository
+from repositories.solicitud_comparable_aceptacion_repository import SolicitudComparableAceptacionRepository
 from repositories.usuario_repository import UsuarioRepository
 from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
@@ -374,17 +376,49 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         
         tasacion_creada = repo.create(datos_tasacion)
         
-        # Agregar comparables usando la tabla relacional
+        # Agregar comparables usando la tabla relacional con snapshots
         if tasacion.comparables_ids:
+            from repositories.comparable_repository import ComparableRepository
+            comp_repo = ComparableRepository()
+            
             for orden, comp_id in enumerate(tasacion.comparables_ids):
                 # Decodificar ID público a ID interno
                 comp_id_interno = obtener_id_desde_codigo(comp_id)
                 if comp_id_interno:
-                    repo.agregar_comparable(tasacion_creada['id'], comp_id_interno, orden)
+                    # Obtener el comparable actual para construir snapshot
+                    comparable = comp_repo.find_by_id(comp_id_interno)
+                    if comparable:
+                        # Construir snapshot
+                        snapshot = {
+                            'direccion': comparable.get('direccion'),
+                            'lat': comparable.get('lat'),
+                            'lon': comparable.get('lon'),
+                            'tipo_inmueble': comparable.get('tipo_inmueble'),
+                            'tipo_valor': comparable.get('tipo_valor'),
+                            'valor': comparable.get('valor'),
+                            'valor_m2': comparable.get('valor_m2'),
+                            'superficie': comparable.get('superficie'),
+                            'frente': comparable.get('frente'),
+                            'fondo': comparable.get('fondo'),
+                            'tipo_lote': comparable.get('tipo_lote'),
+                            'ambientes': comparable.get('ambientes'),
+                            'dormitorios': comparable.get('dormitorios'),
+                            'banos': comparable.get('banos'),
+                            'cochera': comparable.get('cochera'),
+                            'tiene_ascensor': comparable.get('tiene_ascensor'),
+                            'tiene_pileta': comparable.get('tiene_pileta'),
+                            'tiene_jardin': comparable.get('tiene_jardin'),
+                            'datos': comparable.get('datos', {})
+                        }
+                        repo.agregar_comparable(tasacion_creada['id'], comp_id_interno, orden, snapshot)
         
         # Obtener comparables para la respuesta
         comparables = repo.obtener_comparables(tasacion_creada['id'])
         comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+        
+        # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
+        datos_creada = tasacion_creada['datos'].copy()
+        datos_creada['comparables'] = comparables  # Snapshots como fuente de verdad
         
         # Generar código público para la tasación
         codigo_publico = generar_codigo_publico(TIPO_TASACION, tasacion_creada['id'])
@@ -395,7 +429,7 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
             tipo=tasacion_creada['tipo_inmueble'],
             estado=tasacion_creada['estado'],
             origen=tasacion_creada.get('origen', 'propia'),
-            datos=tasacion_creada['datos'],
+            datos=datos_creada,
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_creada['fecha_creacion'],
             fecha_modificacion=tasacion_creada['fecha_modificacion']
@@ -426,9 +460,13 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
         if tasacion['usuario_id'] != usuario_id:
             raise HTTPException(status_code=403, detail="No tienes permiso para acceder a esta tasación")
         
-        # Obtener comparables desde la tabla relacional
+        # Obtener comparables desde la tabla relacional (snapshots)
         comparables = repo.obtener_comparables(tasacion['id'])
         comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+
+        # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
+        datos_tasacion = tasacion['datos'].copy()
+        datos_tasacion['comparables'] = comparables  # Snapshots como fuente de verdad
 
         # Obtener datos del remitente si la tasación fue recibida por compartir
         compartido_por = None
@@ -441,7 +479,7 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
             tipo=tasacion['tipo_inmueble'],
             estado=tasacion['estado'],
             origen=tasacion.get('origen', 'propia'),
-            datos=tasacion['datos'],
+            datos=datos_tasacion,
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion['fecha_creacion'],
             fecha_modificacion=tasacion['fecha_modificacion'],
@@ -472,20 +510,31 @@ def listar_tasaciones(
         else:
             tasaciones = repo.get_by_usuario(usuario_id, limit=limit, offset=offset)
         
-        return [
-            TasacionResponse(
-                id=generar_codigo_publico(TIPO_TASACION, t['id']),
-                usuario_id=t['usuario_id'],
-                tipo=t['tipo_inmueble'],
-                estado=t['estado'],
-                origen=t.get('origen', 'propia'),
-                datos=t['datos'],
-                comparables_ids=[generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in repo.obtener_comparables(t['id'])],
-                fecha_creacion=t['fecha_creacion'],
-                fecha_modificacion=t['fecha_modificacion']
+        tasaciones_response = []
+        for t in tasaciones:
+            # Obtener comparables (snapshots) para cada tasación
+            comparables = repo.obtener_comparables(t['id'])
+            comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+            
+            # Incluir snapshots en datos.datos.comparables
+            datos_tasacion = t['datos'].copy()
+            datos_tasacion['comparables'] = comparables
+            
+            tasaciones_response.append(
+                TasacionResponse(
+                    id=generar_codigo_publico(TIPO_TASACION, t['id']),
+                    usuario_id=t['usuario_id'],
+                    tipo=t['tipo_inmueble'],
+                    estado=t['estado'],
+                    origen=t.get('origen', 'propia'),
+                    datos=datos_tasacion,
+                    comparables_ids=comparables_ids,
+                    fecha_creacion=t['fecha_creacion'],
+                    fecha_modificacion=t['fecha_modificacion']
+                )
             )
-            for t in tasaciones
-        ]
+        
+        return tasaciones_response
     except Exception as e:
         logger.error(f"Error al listar tasaciones: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -535,20 +584,91 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         elif not tasacion_actualizada:
             raise HTTPException(status_code=404, detail="Tasación no encontrada")
         
-        # Actualizar comparables usando la tabla relacional
+        # Actualizar comparables usando upsert para preservar snapshots
         if tasacion.comparables_ids is not None:
-            # Eliminar relaciones existentes
-            repo.limpiar_comparables(tasacion_id_interno)
+            from repositories.comparable_repository import ComparableRepository
+            comp_repo = ComparableRepository()
             
-            # Agregar nuevas relaciones
-            for orden, comp_id in enumerate(tasacion.comparables_ids):
-                comp_id_interno = obtener_id_desde_codigo(comp_id)
-                if comp_id_interno:
-                    repo.agregar_comparable(tasacion_id_interno, comp_id_interno, orden)
+            # Construir lista de datos para upsert
+            comparables_data = []
+            
+            # Si se proporcionan snapshots explícitos, usarlos
+            if tasacion.comparables_snapshots:
+                for orden, (comp_id, snapshot) in enumerate(zip(tasacion.comparables_ids, tasacion.comparables_snapshots)):
+                    comp_id_interno = obtener_id_desde_codigo(comp_id)
+                    if comp_id_interno:
+                        comparables_data.append({
+                            'comparable_id': comp_id_interno,
+                            'orden': orden,
+                            'snapshot': snapshot
+                        })
+            else:
+                # Si no, preservar snapshots existentes o crear nuevos desde estado actual
+                for orden, comp_id in enumerate(tasacion.comparables_ids):
+                    comp_id_interno = obtener_id_desde_codigo(comp_id)
+                    if comp_id_interno:
+                        # Verificar si ya existe relación
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        try:
+                            cursor.execute(
+                                "SELECT snapshot FROM tasacion_comparable WHERE tasacion_id = %s AND comparable_id = %s",
+                                (tasacion_id_interno, comp_id_interno)
+                            )
+                            existing = cursor.fetchone()
+                            if existing and existing[0]:
+                                # Preservar snapshot existente
+                                snapshot = existing[0]
+                            else:
+                                # Crear snapshot desde estado actual
+                                comparable = comp_repo.find_by_id(comp_id_interno)
+                                if comparable:
+                                    snapshot = {
+                                        'direccion': comparable.get('direccion'),
+                                        'lat': comparable.get('lat'),
+                                        'lon': comparable.get('lon'),
+                                        'tipo_inmueble': comparable.get('tipo_inmueble'),
+                                        'tipo_valor': comparable.get('tipo_valor'),
+                                        'valor': comparable.get('valor'),
+                                        'valor_m2': comparable.get('valor_m2'),
+                                        'superficie': comparable.get('superficie'),
+                                        'frente': comparable.get('frente'),
+                                        'fondo': comparable.get('fondo'),
+                                        'tipo_lote': comparable.get('tipo_lote'),
+                                        'ambientes': comparable.get('ambientes'),
+                                        'dormitorios': comparable.get('dormitorios'),
+                                        'banos': comparable.get('banos'),
+                                        'cochera': comparable.get('cochera'),
+                                        'tiene_ascensor': comparable.get('tiene_ascensor'),
+                                        'tiene_pileta': comparable.get('tiene_pileta'),
+                                        'tiene_jardin': comparable.get('tiene_jardin'),
+                                        'datos': comparable.get('datos', {})
+                                    }
+                                else:
+                                    snapshot = {}
+                            
+                            comparables_data.append({
+                                'comparable_id': comp_id_interno,
+                                'orden': orden,
+                                'snapshot': snapshot
+                            })
+                        finally:
+                            cursor.close()
+                            release_connection(conn)
+            
+            # Usar upsert para actualizar relaciones
+            if comparables_data:
+                repo.actualizar_comparables_upsert(tasacion_id_interno, comparables_data)
         
-        # Obtener comparables para la respuesta
+        # Obtener comparables para la respuesta (ahora son snapshots)
         comparables = repo.obtener_comparables(tasacion_id_interno)
-        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+        # Los snapshots ya tienen el ID, generar códigos públicos
+        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables if c.get('id')]
+        
+        # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
+        # Los snapshots son la fuente de verdad, datos.datos.comparables es solo para compatibilidad
+        datos_actualizados = tasacion_actualizada['datos'].copy()
+        datos_actualizados['comparables'] = comparables  # Snapshots como fuente de verdad
         
         return TasacionResponse(
             id=tasacion_id,
@@ -556,7 +676,7 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
             tipo=tasacion_actualizada['tipo_inmueble'],
             estado=tasacion_actualizada['estado'],
             origen=tasacion_actualizada.get('origen', 'propia'),
-            datos=tasacion_actualizada['datos'],
+            datos=datos_actualizados,
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_actualizada['fecha_creacion'],
             fecha_modificacion=tasacion_actualizada['fecha_modificacion']
@@ -786,7 +906,7 @@ def obtener_comparable(comparable_id: str, usuario_id: int = Depends(middleware.
 
 @app.post("/api/comparables/batch", response_model=list[ComparableResponse])
 def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int = Depends(middleware.get_current_user_id)):
-    """Obtiene múltiples comparables por sus códigos públicos."""
+    """Obtiene múltiples comparables por sus códigos públicos, filtrando por propiedad y utilidad."""
     logger.info(f"Obteniendo comparables batch: {request.ids}")
     
     try:
@@ -797,11 +917,24 @@ def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int =
             if id_interno:
                 ids_internos.append(id_interno)
         
+        if not ids_internos:
+            return []
+        
         repo = ComparableRepository()
         comparables = repo.find_by_ids(ids_internos)
         
-        # Filtrar solo los comparables que pertenecen al usuario autenticado
-        comparables_filtrados = [c for c in comparables if c['usuario_id'] == usuario_id]
+        # Filtrar solo los que pertenecen al usuario y son utilizables
+        comparables_filtrados = []
+        for c in comparables:
+            # Verificar propiedad
+            if c['usuario_id'] != usuario_id:
+                continue
+            
+            # Verificar si es utilizable
+            if not repo.es_utilizable(c['id']):
+                continue
+            
+            comparables_filtrados.append(c)
         
         return [
             ComparableResponse(
@@ -829,18 +962,20 @@ def listar_comparables(
     limit: Optional[int] = Query(None, ge=1, le=1000),
     offset: Optional[int] = Query(None, ge=0)
 ):
-    """Lista comparables de un usuario con paginación."""
+    """Lista comparables de un usuario con paginación, filtrando solo los utilizables."""
     logger.info(f"Listando comparables para usuario: {usuario_id}, tipo: {tipo_inmueble}, fuente: {fuente}")
     
     try:
         repo = ComparableRepository()
         
-        if tipo_inmueble and fuente:
-            comparables = repo.get_by_usuario_tipo_origen(usuario_id, tipo_inmueble, fuente, limit=limit, offset=offset)
-        elif tipo_inmueble:
-            comparables = repo.get_by_usuario_tipo(usuario_id, tipo_inmueble, limit=limit, offset=offset)
-        else:
-            comparables = repo.get_by_usuario(usuario_id, limit=limit, offset=offset)
+        # Usar nuevo método que filtra por utilidad
+        comparables = repo.get_by_usuario_utilizables(
+            usuario_id, 
+            tipo_inmueble=tipo_inmueble, 
+            fuente=fuente, 
+            limit=limit, 
+            offset=offset
+        )
         
         return [
             ComparableResponse(
@@ -913,6 +1048,68 @@ def actualizar_comparable(comparable_id: str, comparable: ComparableUpdate, usua
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.put("/api/tasaciones/{tasacion_id}/comparables/{comparable_id}")
+def actualizar_snapshot_comparable_tasacion(
+    tasacion_id: str,
+    comparable_id: str,
+    snapshot: Dict[str, Any],
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Actualiza el snapshot de un comparable dentro de una tasación.
+    
+    Este endpoint modifica SOLO el snapshot de la relación tasacion_comparable,
+    NO modifica la entidad en la tabla comparables.
+    """
+    logger.info(f"Actualizando snapshot de comparable {comparable_id} en tasación {tasacion_id}")
+    
+    try:
+        # Decodificar códigos públicos a IDs internos
+        tasacion_id_interno = obtener_id_desde_codigo(tasacion_id)
+        if not tasacion_id_interno:
+            raise HTTPException(status_code=404, detail="Tasación no encontrada")
+        
+        comparable_id_interno = obtener_id_desde_codigo(comparable_id)
+        if not comparable_id_interno:
+            raise HTTPException(status_code=404, detail="Comparable no encontrado")
+        
+        repo = TasacionRepository()
+        tasacion = repo.find_by_id(tasacion_id_interno)
+        
+        if not tasacion:
+            raise HTTPException(status_code=404, detail="Tasación no encontrada")
+        
+        # Verificar que la tasación pertenezca al usuario autenticado
+        if tasacion['usuario_id'] != usuario_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta tasación")
+        
+        # Verificar que la relación existe
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT id FROM tasacion_comparable WHERE tasacion_id = %s AND comparable_id = %s",
+                (tasacion_id_interno, comparable_id_interno)
+            )
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Relación tasación-comparable no encontrada")
+        finally:
+            cursor.close()
+            release_connection(conn)
+        
+        # Actualizar el snapshot
+        exito = repo.actualizar_snapshot_comparable(tasacion_id_interno, comparable_id_interno, snapshot)
+        
+        if not exito:
+            raise HTTPException(status_code=500, detail="Error al actualizar snapshot")
+        
+        return {"mensaje": "Snapshot actualizado correctamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al actualizar snapshot: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete("/api/comparables/{comparable_id}")
 def eliminar_comparable(comparable_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
     """Elimina un comparable por código público."""
@@ -954,44 +1151,73 @@ def eliminar_comparable(comparable_id: str, usuario_id: int = Depends(middleware
 @app.post("/api/solicitudes", response_model=SolicitudResponse)
 def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middleware.get_current_user_id)):
     """Crea una nueva solicitud."""
-    logger.info(f"Creando solicitud para tasación: {solicitud.tasacion_id}")
-    
+    logger.info(f"Creando solicitud para usuario: {usuario_id}, tipo: {solicitud.tipo_inmueble}")
+
     try:
         repo = SolicitudRepository()
-        
-        # Decodificar tasacion_id público a interno
-        tasacion_id_interno = obtener_id_desde_codigo(solicitud.tasacion_id)
-        if not tasacion_id_interno:
-            raise HTTPException(status_code=404, detail="Tasación no encontrada")
-        
-        # Verificar que la tasación existe
-        tasacion_repo = TasacionRepository()
-        tasacion = tasacion_repo.find_by_id(tasacion_id_interno)
-        if not tasacion:
-            raise HTTPException(status_code=404, detail="Tasación no encontrada")
-        
-        solicitud_creada = repo.create({
+
+        # Decodificar tasacion_id si se proporcionó
+        tasacion_id_interno = None
+        if solicitud.tasacion_id:
+            tasacion_id_interno = obtener_id_desde_codigo(solicitud.tasacion_id)
+            if not tasacion_id_interno:
+                raise HTTPException(status_code=404, detail="Tasación no encontrada")
+
+            # Verificar que la tasación existe si se proporcionó
+            tasacion_repo = TasacionRepository()
+            tasacion = tasacion_repo.find_by_id(tasacion_id_interno)
+            if not tasacion:
+                raise HTTPException(status_code=404, detail="Tasación no encontrada")
+            
+            # Verificar que la tasación pertenezca al usuario autenticado
+            if tasacion['usuario_id'] != usuario_id:
+                raise HTTPException(status_code=403, detail="No puedes crear una solicitud vinculada a una tasación de otro usuario")
+
+        # Calcular fecha de expiración (7 días desde ahora)
+        from datetime import datetime, timedelta
+        fecha_expiracion = datetime.utcnow() + timedelta(days=7)
+
+        # Preparar datos de la solicitud
+        datos_solicitud = {
             'usuario_id': usuario_id,
-            'tasacion_id': tasacion_id_interno,
             'estado': solicitud.estado,
-            'datos': solicitud.datos
-        })
-        
+            'datos': solicitud.datos,
+            'fecha_expiracion': fecha_expiracion
+        }
+
+        # Agregar tasacion_id solo si se proporcionó
+        if tasacion_id_interno:
+            datos_solicitud['tasacion_id'] = tasacion_id_interno
+
+        # Agregar tipo_inmueble si está en datos o se proporcionó
+        if solicitud.tipo_inmueble:
+            datos_solicitud['tipo_inmueble'] = solicitud.tipo_inmueble
+
+        solicitud_creada = repo.create(datos_solicitud)
+
         # Generar código público para la solicitud
         codigo_publico = generar_codigo_publico(TIPO_SOLICITUD, solicitud_creada['id'])
-        
+
         # Generar link público dinámicamente
         link_publico = f"https://tasador.app/s/{codigo_publico}"
-        
+
+        # Preparar tasacion_id para la respuesta (código público si existe)
+        tasacion_id_publico = None
+        if solicitud_creada.get('tasacion_id'):
+            tasacion_id_publico = generar_codigo_publico(TIPO_TASACION, solicitud_creada['tasacion_id'])
+
         return SolicitudResponse(
             id=codigo_publico,
             usuario_id=solicitud_creada['usuario_id'],
-            tasacion_id=solicitud.tasacion_id,
+            tasacion_id=tasacion_id_publico,
             link_publico=link_publico,
             estado=solicitud_creada['estado'],
             datos=solicitud_creada['datos'],
             fecha_creacion=solicitud_creada['fecha_creacion'],
-            fecha_modificacion=solicitud_creada['fecha_modificacion']
+            fecha_modificacion=solicitud_creada['fecha_modificacion'],
+            tipo_inmueble=solicitud_creada.get('tipo_inmueble'),
+            fecha_expiracion=solicitud_creada.get('fecha_expiracion'),
+            fecha_completacion=solicitud_creada.get('fecha_completacion')
         )
     except Exception as e:
         logger.error(f"Error al crear solicitud: {e}")
@@ -1033,7 +1259,10 @@ def obtener_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.ge
             estado=solicitud['estado'],
             datos=solicitud['datos'],
             fecha_creacion=solicitud['fecha_creacion'],
-            fecha_modificacion=solicitud['fecha_modificacion']
+            fecha_modificacion=solicitud['fecha_modificacion'],
+            tipo_inmueble=solicitud.get('tipo_inmueble'),
+            fecha_expiracion=solicitud.get('fecha_expiracion'),
+            fecha_completacion=solicitud.get('fecha_completacion')
         )
     except HTTPException:
         raise
@@ -1076,7 +1305,10 @@ def listar_solicitudes(
                 estado=s['estado'],
                 datos=s['datos'],
                 fecha_creacion=s['fecha_creacion'],
-                fecha_modificacion=s['fecha_modificacion']
+                fecha_modificacion=s['fecha_modificacion'],
+                tipo_inmueble=s.get('tipo_inmueble'),
+                fecha_expiracion=s.get('fecha_expiracion'),
+                fecha_completacion=s.get('fecha_completacion')
             )
             for s in solicitudes
         ]
@@ -1092,7 +1324,24 @@ def obtener_comparables_de_solicitud(link_publico: str):
 
     try:
         repo = ComparableRepository()
+        repo_aceptacion = SolicitudComparableAceptacionRepository()
+        solicitud_repo = SolicitudRepository()
+        
+        # Obtener solicitud primero para obtener su ID interno
+        solicitud = solicitud_repo.find_by_link_publico(link_publico)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        solicitud_id_interno = solicitud['id']
+        
         comparables = repo.find_by_link_publico(link_publico)
+
+        # Obtener estados de aceptación para cada comparable
+        aceptaciones = {}
+        for comp in comparables:
+            aceptacion = repo_aceptacion.obtener_decision(solicitud_id_interno, comp['id'])
+            if aceptacion:
+                aceptaciones[comp['id']] = aceptacion
 
         return [
             ComparableResponse(
@@ -1103,7 +1352,11 @@ def obtener_comparables_de_solicitud(link_publico: str):
                 tasacion_origen_id=None if c.get('tasacion_origen_id') is None else generar_codigo_publico(TIPO_TASACION, c['tasacion_origen_id']),
                 datos=c['datos'],
                 fecha_creacion=c['fecha_creacion'],
-                fecha_modificacion=c['fecha_modificacion']
+                fecha_modificacion=c['fecha_modificacion'],
+                estado_aceptacion=aceptaciones.get(c['id'], {}).get('estado') if aceptaciones.get(c['id']) else 'pendiente',
+                observaciones=aceptaciones.get(c['id'], {}).get('observaciones') if aceptaciones.get(c['id']) else None,
+                fecha_decision=str(aceptaciones.get(c['id'], {}).get('fecha')) if aceptaciones.get(c['id']) else None,
+                usuario_decision=aceptaciones.get(c['id'], {}).get('usuario_id') if aceptaciones.get(c['id']) else None
             )
             for c in comparables
         ]
@@ -1140,7 +1393,9 @@ def obtener_solicitud_por_link(link_publico: str):
             datos=solicitud['datos'],
             fecha_creacion=solicitud['fecha_creacion'],
             fecha_modificacion=solicitud['fecha_modificacion'],
-            tipo_inmueble=solicitud.get('tipo_inmueble') or (solicitud['datos'] or {}).get('tipo')
+            tipo_inmueble=solicitud.get('tipo_inmueble') or (solicitud['datos'] or {}).get('tipo'),
+            fecha_expiracion=solicitud.get('fecha_expiracion'),
+            fecha_completacion=solicitud.get('fecha_completacion')
         )
     except HTTPException:
         raise
@@ -1172,6 +1427,28 @@ def actualizar_solicitud(solicitud_id: str, solicitud: SolicitudUpdate, usuario_
         
         datos_actualizacion = {}
         if solicitud.estado is not None:
+            # Validar transición de estado
+            estado_actual = solicitud_existente.get('estado')
+            estado_nuevo = solicitud.estado
+            
+            # Transiciones válidas para solicitudes
+            TRANSICIONES_VALIDAS = {
+                "pendiente": {"completada", "expirada"},
+                "completada": set(),
+                "expirada": set()
+            }
+            
+            # Si el estado no cambia, permitir (no es una transición)
+            if estado_actual != estado_nuevo:
+                if estado_actual not in TRANSICIONES_VALIDAS:
+                    raise HTTPException(status_code=400, detail=f"Estado actual '{estado_actual}' no reconocido para validación de transición")
+                
+                if estado_nuevo not in TRANSICIONES_VALIDAS[estado_actual]:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Transición de estado inválida: no se puede cambiar de '{estado_actual}' a '{estado_nuevo}'"
+                    )
+            
             datos_actualizacion['estado'] = solicitud.estado
         if solicitud.datos is not None:
             datos_actualizacion['datos'] = solicitud.datos
@@ -1198,7 +1475,10 @@ def actualizar_solicitud(solicitud_id: str, solicitud: SolicitudUpdate, usuario_
             estado=solicitud_actualizada['estado'],
             datos=solicitud_actualizada['datos'],
             fecha_creacion=solicitud_actualizada['fecha_creacion'],
-            fecha_modificacion=solicitud_actualizada['fecha_modificacion']
+            fecha_modificacion=solicitud_actualizada['fecha_modificacion'],
+            tipo_inmueble=solicitud_actualizada.get('tipo_inmueble'),
+            fecha_expiracion=solicitud_actualizada.get('fecha_expiracion'),
+            fecha_completacion=solicitud_actualizada.get('fecha_completacion')
         )
     except HTTPException:
         raise
@@ -1247,6 +1527,8 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
     logger.info(f"Contribuyendo a solicitud: {link_publico}")
 
     try:
+        from datetime import datetime
+
         repo = SolicitudRepository()
         solicitud = repo.find_by_link_publico(link_publico)
 
@@ -1255,6 +1537,16 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
 
         if solicitud['estado'] != 'pendiente':
             raise HTTPException(status_code=400, detail="La solicitud ya fue respondida o expiró")
+
+        # Validar expiración por fecha
+        if solicitud.get('fecha_expiracion'):
+            fecha_expiracion = solicitud['fecha_expiracion']
+            if isinstance(fecha_expiracion, str):
+                fecha_expiracion = datetime.fromisoformat(fecha_expiracion.replace('Z', '+00:00'))
+            if fecha_expiracion < datetime.utcnow():
+                # Actualizar estado a expirada
+                repo.update(solicitud['id'], {'estado': 'expirada'})
+                raise HTTPException(status_code=400, detail="La solicitud expiró y ya no acepta respuestas")
 
         if not payload.comparables:
             raise HTTPException(status_code=400, detail="No se proporcionaron comparables")
@@ -1320,12 +1612,196 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
             estado=solicitud_actualizada['estado'],
             datos=solicitud_actualizada['datos'],
             fecha_creacion=solicitud_actualizada['fecha_creacion'],
-            fecha_modificacion=solicitud_actualizada['fecha_modificacion']
+            fecha_modificacion=solicitud_actualizada['fecha_modificacion'],
+            tipo_inmueble=solicitud_actualizada.get('tipo_inmueble'),
+            fecha_expiracion=solicitud_actualizada.get('fecha_expiracion'),
+            fecha_completacion=solicitud_actualizada.get('fecha_completacion')
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error al contribuir a la solicitud: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/solicitudes/{solicitud_id}/comparables", response_model=list[ComparableResponse])
+def obtener_comparables_de_solicitud_por_id(solicitud_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Obtiene los comparables creados como respuesta a una solicitud por ID público."""
+    logger.info(f"Obteniendo comparables de solicitud por ID: {solicitud_id}")
+    
+    try:
+        # Decodificar ID público a interno
+        solicitud_id_interno = obtener_id_desde_codigo(solicitud_id)
+        if not solicitud_id_interno:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        repo = ComparableRepository()
+        repo_aceptacion = SolicitudComparableAceptacionRepository()
+        solicitud_repo = SolicitudRepository()
+        
+        # Verificar que la solicitud existe
+        solicitud = solicitud_repo.find_by_id(solicitud_id_interno)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        # Verificar que el usuario sea el propietario
+        if solicitud['usuario_id'] != usuario_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para ver esta solicitud")
+        
+        # Obtener comparables por solicitud_origen_id
+        comparables = repo.find_by_solicitud_origen(solicitud_id_interno)
+
+        # Obtener estados de aceptación para cada comparable
+        aceptaciones = {}
+        for comp in comparables:
+            aceptacion = repo_aceptacion.obtener_decision(solicitud_id_interno, comp['id'])
+            if aceptacion:
+                aceptaciones[comp['id']] = aceptacion
+
+        return [
+            ComparableResponse(
+                id=generar_codigo_publico(TIPO_COMPARABLE, c['id']),
+                usuario_id=c['usuario_id'],
+                tipo_inmueble=c['tipo_inmueble'],
+                fuente=c['fuente'],
+                tasacion_origen_id=None if c.get('tasacion_origen_id') is None else generar_codigo_publico(TIPO_TASACION, c['tasacion_origen_id']),
+                datos=c['datos'],
+                fecha_creacion=c['fecha_creacion'],
+                fecha_modificacion=c['fecha_modificacion'],
+                estado_aceptacion=aceptaciones.get(c['id'], {}).get('estado') if aceptaciones.get(c['id']) else 'pendiente',
+                observaciones=aceptaciones.get(c['id'], {}).get('observaciones') if aceptaciones.get(c['id']) else None,
+                fecha_decision=str(aceptaciones.get(c['id'], {}).get('fecha')) if aceptaciones.get(c['id']) else None,
+                usuario_decision=aceptaciones.get(c['id'], {}).get('usuario_id') if aceptaciones.get(c['id']) else None
+            )
+            for c in comparables
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al obtener comparables de solicitud: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/aceptar", response_model=SolicitudComparableAceptacionResponse)
+def aceptar_comparable_solicitud(solicitud_id: str, comparable_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Acepta un comparable recibido mediante una solicitud."""
+    logger.info(f"Aceptando comparable {comparable_id} de solicitud {solicitud_id} por usuario {usuario_id}")
+    
+    try:
+        # Decodificar IDs públicos a internos
+        solicitud_id_interno = obtener_id_desde_codigo(solicitud_id)
+        if not solicitud_id_interno:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        comparable_id_interno = obtener_id_desde_codigo(comparable_id)
+        if not comparable_id_interno:
+            raise HTTPException(status_code=404, detail="Comparable no encontrado")
+        
+        # Verificar que la solicitud existe
+        solicitud_repo = SolicitudRepository()
+        solicitud = solicitud_repo.find_by_id(solicitud_id_interno)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        # Verificar que el usuario sea el propietario de la solicitud
+        if solicitud['usuario_id'] != usuario_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta solicitud")
+        
+        # Verificar que la solicitud esté completada
+        if solicitud['estado'] != 'completada':
+            raise HTTPException(status_code=400, detail="La solicitud debe estar completada para aceptar comparables")
+        
+        # Verificar que el comparable existe
+        comparable_repo = ComparableRepository()
+        comparable = comparable_repo.find_by_id(comparable_id_interno)
+        if not comparable:
+            raise HTTPException(status_code=404, detail="Comparable no encontrado")
+        
+        # Verificar que el comparable pertenece a esta solicitud
+        if comparable.get('solicitud_origen_id') != solicitud_id_interno:
+            raise HTTPException(status_code=400, detail="El comparable no pertenece a esta solicitud")
+        
+        # Aceptar el comparable
+        repo_aceptacion = SolicitudComparableAceptacionRepository()
+        resultado = repo_aceptacion.aceptar(solicitud_id_interno, comparable_id_interno, usuario_id)
+        
+        if not resultado:
+            raise HTTPException(status_code=500, detail="Error al aceptar comparable")
+        
+        return SolicitudComparableAceptacionResponse(
+            solicitud_id=solicitud_id,
+            comparable_id=comparable_id,
+            usuario_id=usuario_id,
+            estado=resultado['estado'],
+            fecha=str(resultado['fecha']),
+            observaciones=resultado.get('observaciones')
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al aceptar comparable: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/rechazar", response_model=SolicitudComparableAceptacionResponse)
+def rechazar_comparable_solicitud(solicitud_id: str, comparable_id: str, decision: SolicitudComparableDecisionRequest, usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Rechaza un comparable recibido mediante una solicitud."""
+    logger.info(f"Rechazando comparable {comparable_id} de solicitud {solicitud_id} por usuario {usuario_id}")
+    
+    try:
+        # Decodificar IDs públicos a internos
+        solicitud_id_interno = obtener_id_desde_codigo(solicitud_id)
+        if not solicitud_id_interno:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        comparable_id_interno = obtener_id_desde_codigo(comparable_id)
+        if not comparable_id_interno:
+            raise HTTPException(status_code=404, detail="Comparable no encontrado")
+        
+        # Verificar que la solicitud existe
+        solicitud_repo = SolicitudRepository()
+        solicitud = solicitud_repo.find_by_id(solicitud_id_interno)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+        
+        # Verificar que el usuario sea el propietario de la solicitud
+        if solicitud['usuario_id'] != usuario_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta solicitud")
+        
+        # Verificar que la solicitud esté completada
+        if solicitud['estado'] != 'completada':
+            raise HTTPException(status_code=400, detail="La solicitud debe estar completada para rechazar comparables")
+        
+        # Verificar que el comparable existe
+        comparable_repo = ComparableRepository()
+        comparable = comparable_repo.find_by_id(comparable_id_interno)
+        if not comparable:
+            raise HTTPException(status_code=404, detail="Comparable no encontrado")
+        
+        # Verificar que el comparable pertenece a esta solicitud
+        if comparable.get('solicitud_origen_id') != solicitud_id_interno:
+            raise HTTPException(status_code=400, detail="El comparable no pertenece a esta solicitud")
+        
+        # Rechazar el comparable
+        repo_aceptacion = SolicitudComparableAceptacionRepository()
+        observaciones = decision.observaciones if decision else None
+        resultado = repo_aceptacion.rechazar(solicitud_id_interno, comparable_id_interno, usuario_id, observaciones)
+        
+        if not resultado:
+            raise HTTPException(status_code=500, detail="Error al rechazar comparable")
+        
+        return SolicitudComparableAceptacionResponse(
+            solicitud_id=solicitud_id,
+            comparable_id=comparable_id,
+            usuario_id=usuario_id,
+            estado=resultado['estado'],
+            fecha=str(resultado['fecha']),
+            observaciones=resultado.get('observaciones')
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al rechazar comparable: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

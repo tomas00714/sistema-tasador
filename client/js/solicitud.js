@@ -8,6 +8,7 @@ let comparablesPendientes = [];
 let modo = 'cargando';
 let linkPublico = null;
 let vistaActual = 'lista';
+let datosEdicionSolicitud = null;
 
 const ETIQUETAS_ORIGEN = {
     manual: 'Manual',
@@ -148,7 +149,9 @@ async function cargarSolicitud() {
             linkPublico: data.link_publico,
             estado: data.estado,
             datos: data.datos || {},
-            tipoInmueble: data.tipo_inmueble || data.datos?.tipo || 'lote'
+            tipoInmueble: data.tipo_inmueble || data.datos?.tipo || 'lote',
+            fechaExpiracion: data.fecha_expiracion,
+            fechaCompletacion: data.fecha_completacion
         };
 
         if (solicitud.estado === 'completada') {
@@ -183,30 +186,21 @@ function renderSolicitud() {
     if (!header || !comparablesWrap) return;
 
     const d = solicitud.datos || {};
-    const solicitante = d.solicitante || d.nombre || 'Solicitante';
     const mensaje = d.mensaje || '';
-    const cantidadSolicitada = d.cantidad != null ? d.cantidad : 'N/D';
     const tipoLabel = typeof etiquetaTipoInmueble === 'function'
         ? etiquetaTipoInmueble(solicitud.tipoInmueble)
         : (solicitud.tipoInmueble || 'Lote');
 
     header.innerHTML = `
-        <div class="solicitud-encabezado-marca">
-            <div class="marca-logo"><i class="fa-solid fa-home"></i></div>
-            <span class="marca-nombre">Tasador</span>
-        </div>
-        <div class="solicitud-encabezado-datos">
-            <h1>Solicitud de comparables</h1>
-            <p>
-                <strong>${escapeHtml(solicitante)}</strong> solicitó comparables para un
-                <strong>${escapeHtml(tipoLabel)}</strong>.
-            </p>
-            ${mensaje ? `<p>${escapeHtml(mensaje)}</p>` : ''}
-            <div class="solicitud-meta">
-                <span class="solicitud-badge">${escapeHtml(tipoLabel)}</span>
-                <span class="solicitud-badge">${escapeHtml(String(cantidadSolicitada))} solicitados</span>
-                <span class="solicitud-badge">${comparablesPendientes.length} agregados</span>
-            </div>
+        <h1>Solicitud de comparables</h1>
+        <p>
+            Se solicitan comparables para un
+            <strong>${escapeHtml(tipoLabel)}</strong>.
+        </p>
+        ${mensaje ? `<p>${escapeHtml(mensaje)}</p>` : ''}
+        <div class="solicitud-meta">
+            <span class="solicitud-badge">${escapeHtml(tipoLabel)}</span>
+            <span class="solicitud-badge">${comparablesPendientes.length} agregados</span>
         </div>
     `;
 
@@ -238,13 +232,6 @@ function renderListaComparables(wrap) {
                 <p>Agregá al menos un comparable para poder enviar la respuesta.</p>
             </div>
         `;
-        if (modo === 'edicion') {
-            const btn = document.createElement('button');
-            btn.className = 'btn-agregar-comparable';
-            btn.textContent = '+ Agregar comparable';
-            btn.onclick = mostrarSelectorOrigen;
-            wrap.appendChild(btn);
-        }
         return;
     }
 
@@ -420,11 +407,7 @@ function cambiarVista(nombre, onPreparar, onCompleto) {
 function volverALaLista() {
     cambiarVista('lista', null, () => {
         renderSolicitud();
-        if (window.comparableEditor && window.comparableEditor.mapa) {
-            try {
-                window.comparableEditor.mapa.remove();
-            } catch (e) { /* ignore */ }
-        }
+        limpiarFormularioSolicitud();
     });
 }
 
@@ -447,14 +430,14 @@ function actualizarBottomNav(estado) {
         btnCancelar.style.display = 'block';
         btnCancelar.textContent = 'Cancelar';
         btnCancelar.disabled = false;
-        btnCancelar.onclick = () => window.comparableEditor.cerrar();
+        btnCancelar.onclick = volverALaLista;
         btnAccion.style.margin = '';
 
         btnAccion.textContent = 'Agregar';
         btnAccion.disabled = false;
         btnAccion.classList.add('activo');
         btnAccion.classList.remove('disabled');
-        btnAccion.onclick = () => window.comparableEditor.guardar();
+        btnAccion.onclick = guardarComparableSolicitud;
         return;
     }
 
@@ -483,7 +466,7 @@ function mostrarSelectorOrigen() {
         botones: [
             {
                 texto: 'Manualmente',
-                clase: 'btn-confirmar',
+                clase: 'btn-modal btn-modal-positive-primary',
                 onClick: () => {
                     ocultarModalGenerico();
                     abrirEditorManual();
@@ -491,7 +474,7 @@ function mostrarSelectorOrigen() {
             },
             {
                 texto: 'Desde mi cuenta',
-                clase: 'btn-secundario',
+                clase: 'btn-modal btn-modal-positive-secondary',
                 onClick: () => {
                     ocultarModalGenerico();
                     abrirSelectorCuenta();
@@ -499,7 +482,7 @@ function mostrarSelectorOrigen() {
             },
             {
                 texto: 'Cancelar',
-                clase: 'btn-cancelar',
+                clase: 'btn-modal btn-modal-neutral',
                 onClick: ocultarModalGenerico
             }
         ]
@@ -507,30 +490,11 @@ function mostrarSelectorOrigen() {
 }
 
 function abrirEditorManual() {
-    if (!window.comparableEditor) {
-        alert('El editor de comparables no está disponible.');
-        return;
-    }
-
     cambiarVista('formulario', () => {
-        window.comparableEditor.abrirEn(document.getElementById('solicitudEditor'), {
-            modo: 'solicitud',
-            tipo: solicitud.tipoInmueble,
-            footer: false,
-            onGuardar: (datos) => {
-                comparablesPendientes.push({
-                    id: generarIdLocal(),
-                    origen: 'manual',
-                    datos
-                });
-            },
-            onCancelar: volverALaLista
-        });
+        renderizarFormularioSolicitud(solicitud.tipoInmueble);
     }, () => {
         actualizarBottomNav('formulario');
-        if (window.comparableEditor && window.comparableEditor.mapa) {
-            window.comparableEditor.mapa.invalidateSize();
-        }
+        inicializarMapaSolicitud();
     });
 }
 
@@ -615,24 +579,16 @@ function convertirItemASolicitud(item, categoria) {
 
 function editarComparable(id) {
     const pendiente = comparablesPendientes.find(p => p.id === id);
-    if (!pendiente || !window.comparableEditor) return;
+    if (!pendiente) return;
+
+    datosEdicionSolicitud = pendiente;
+    const tipo = pendiente.datos.tipo || pendiente.datos.tipoInmueble || solicitud.tipoInmueble;
 
     cambiarVista('formulario', () => {
-        window.comparableEditor.abrirEn(document.getElementById('solicitudEditor'), {
-            modo: 'editar',
-            tipo: pendiente.datos.tipo || pendiente.datos.tipoInmueble || solicitud.tipoInmueble,
-            datos: pendiente.datos,
-            footer: false,
-            onGuardar: (datos) => {
-                pendiente.datos = datos;
-            },
-            onCancelar: volverALaLista
-        });
+        renderizarFormularioSolicitud(tipo, pendiente.datos);
     }, () => {
         actualizarBottomNav('formulario');
-        if (window.comparableEditor && window.comparableEditor.mapa) {
-            window.comparableEditor.mapa.invalidateSize();
-        }
+        inicializarMapaSolicitud();
     });
 }
 
@@ -679,7 +635,7 @@ async function enviarSolicitud() {
         mostrarModalGenerico({
             titulo: 'Faltan comparables',
             mensaje: 'Agregá al menos un comparable antes de enviar.',
-            botones: [{ texto: 'Entendido', clase: 'btn-confirmar', onClick: ocultarModalGenerico }]
+            botones: [{ texto: 'Entendido', clase: 'btn-modal btn-modal-neutral', onClick: ocultarModalGenerico }]
         });
         return;
     }
@@ -716,13 +672,86 @@ async function enviarSolicitud() {
         mostrarModalGenerico({
             titulo: 'Error',
             mensaje: 'No se pudo enviar la solicitud. Revisá la consola o intentá más tarde.',
-            botones: [{ texto: 'Aceptar', clase: 'btn-confirmar', onClick: ocultarModalGenerico }]
+            botones: [{ texto: 'Aceptar', clase: 'btn-modal btn-modal-neutral', onClick: ocultarModalGenerico }]
         });
     } finally {
         if (btn) {
             btn.disabled = false;
             btn.textContent = 'Enviar comparables';
         }
+    }
+}
+
+/* ========================================
+   FORMULARIO DE COMPARABLE (reutiliza ComparableFormulario)
+   ======================================== */
+
+function renderizarFormularioSolicitud(tipoInmueble, datosEdicion = null) {
+    const contenedor = document.getElementById('solicitudEditor');
+    if (!contenedor) {
+        console.error('[renderizarFormularioSolicitud] No se encontró el contenedor solicitudEditor');
+        return;
+    }
+
+    // Generar el formulario usando ComparableFormulario
+    contenedor.innerHTML = generarFormularioComparable(tipoInmueble, datosEdicion);
+}
+
+async function inicializarMapaSolicitud() {
+    const tipoInmueble = datosEdicionSolicitud?.datos?.tipo || datosEdicionSolicitud?.datos?.tipoInmueble || solicitud.tipoInmueble;
+    const latInicial = datosEdicionSolicitud?.datos?.ubicacion?.lat || null;
+    const lonInicial = datosEdicionSolicitud?.datos?.ubicacion?.lon || null;
+
+    // Usar las funciones de comparable-formulario.js
+    await inicializarFormularioComparable(tipoInmueble, { datos: datosEdicionSolicitud?.datos });
+}
+
+function limpiarFormularioSolicitud() {
+    const contenedor = document.getElementById('solicitudEditor');
+    if (contenedor) {
+        contenedor.innerHTML = '';
+    }
+    datosEdicionSolicitud = null;
+}
+
+async function guardarComparableSolicitud() {
+    const tipoInmueble = datosEdicionSolicitud?.datos?.tipo || datosEdicionSolicitud?.datos?.tipoInmueble || solicitud.tipoInmueble;
+
+    try {
+        // Validar formulario usando ComparableFormulario
+        const validacion = validarFormularioComparable(tipoInmueble);
+        if (!validacion.valido) {
+            mostrarModalGenerico({
+                titulo: 'Error de validación',
+                mensaje: 'Por favor, corregí los siguientes errores:\n\n' + validacion.errores.join('\n'),
+                botones: [{ texto: 'Aceptar', clase: 'btn-modal btn-modal-neutral', onClick: ocultarModalGenerico }]
+            });
+            return;
+        }
+
+        // Obtener datos usando ComparableFormulario
+        const datos = obtenerDatosFormularioComparable(tipoInmueble);
+
+        if (datosEdicionSolicitud) {
+            // Editar existente
+            datosEdicionSolicitud.datos = datos;
+        } else {
+            // Crear nuevo
+            comparablesPendientes.push({
+                id: generarIdLocal(),
+                origen: 'manual',
+                datos
+            });
+        }
+
+        volverALaLista();
+    } catch (e) {
+        console.error('Error al guardar comparable:', e);
+        mostrarModalGenerico({
+            titulo: 'Error',
+            mensaje: 'No se pudo guardar el comparable. Revisá la consola.',
+            botones: [{ texto: 'Aceptar', clase: 'btn-modal btn-modal-neutral', onClick: ocultarModalGenerico }]
+        });
     }
 }
 

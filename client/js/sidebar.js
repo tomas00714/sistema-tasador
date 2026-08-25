@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (path.includes('app/historial.html')) {
         paginaActual = 'historial';
+    } else if (path.includes('app/solicitudes.html')) {
+        paginaActual = 'solicitudes';
     } else if (path.includes('app/tasacion.html')) {
         paginaActual = 'tasacion';
     } else if (path.includes('app/perfil.html')) {

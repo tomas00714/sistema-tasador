@@ -256,26 +256,22 @@ document.addEventListener("DOMContentLoaded", () => {
  * Convierte un array de comparables (IDs u objetos) en objetos completos
  * @param {Array} comparables - IDs u objetos de comparables
  * @returns {Promise<Array>} Array de comparables completos
+ * 
+ * NOTA: Con el nuevo modelo de snapshot, el backend siempre devuelve objetos completos (snapshots).
+ * Ya no necesitamos obtenerComparablesBatchAPI porque los snapshots contienen todos los datos.
  */
 async function cargarComparablesDesdeIds(comparables) {
     if (!Array.isArray(comparables) || comparables.length === 0) return [];
 
-    // Si ya son objetos con id, usarlos directamente
+    // Con el nuevo modelo de snapshot, el backend siempre devuelve objetos completos (snapshots)
+    // Ya no necesitamos obtenerComparablesBatchAPI porque los snapshots contienen todos los datos
     if (typeof comparables[0] === 'object' && comparables[0] && comparables[0].id) {
         return JSON.parse(JSON.stringify(comparables));
     }
 
-    // Si son IDs, obtener los objetos completos por batch
-    try {
-        const comparablesAPI = await obtenerComparablesBatchAPI(comparables);
-        return comparablesAPI.map(c => ({
-            id: c.id,
-            ...c.datos
-        }));
-    } catch (e) {
-        console.error('Error al cargar comparables batch:', e);
-        return [];
-    }
+    // Si se reciben IDs en lugar de objetos, es un error con el nuevo modelo
+    console.error('cargarComparablesDesdeIds recibió IDs en lugar de objetos. Esto es incompatible con el modelo de snapshot.');
+    return [];
 }
 
 // Verificar si estamos en modo edición

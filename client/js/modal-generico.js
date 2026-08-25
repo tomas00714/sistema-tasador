@@ -106,7 +106,7 @@ function mostrarModalConfirmacion(titulo, mensaje, onConfirm, onCancel) {
         botones: [
             {
                 texto: "Cancelar",
-                clase: "btn-cancelar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarModalGenerico();
                     if (onCancel) onCancel();
@@ -114,7 +114,7 @@ function mostrarModalConfirmacion(titulo, mensaje, onConfirm, onCancel) {
             },
             {
                 texto: "Confirmar",
-                clase: "btn-confirmar",
+                clase: "btn-modal btn-modal-positive-primary",
                 onClick: () => {
                     ocultarModalGenerico();
                     if (onConfirm) onConfirm();
@@ -137,7 +137,7 @@ function mostrarModalInformacion(titulo, mensaje, onAccept) {
         botones: [
             {
                 texto: "Aceptar",
-                clase: "btn-aceptar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarModalGenerico();
                     if (onAccept) onAccept();

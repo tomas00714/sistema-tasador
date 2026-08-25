@@ -184,31 +184,12 @@ async function cargarDatosCompletos(datosCompletos) {
         datosTasacion.casa = datosCompletos.casa ? JSON.parse(JSON.stringify(datosCompletos.casa)) : {};
     }
     
-    // Cargar comparables: si son IDs, obtener objetos de la API por batch
+    // Cargar comparables: usar datosCompletos.comparables como snapshots
+    // NOTA: Los snapshots ahora vienen del backend via tasacion_comparable.snapshot
+    // Ya no necesitamos obtenerComparablesBatchAPI porque el backend devuelve snapshots
     if (datosCompletos.comparables && datosCompletos.comparables.length > 0) {
-        // Verificar si son IDs u objetos
-        if (typeof datosCompletos.comparables[0] === 'string') {
-            // Son IDs, obtener todos de la API en una sola llamada
-            try {
-                const comparables = await obtenerComparablesBatchAPI(datosCompletos.comparables);
-                datosTasacion.comparables = comparables.map(c => {
-                    const datosSinId = { ...c.datos };
-                    delete datosSinId.id;
-                    return {
-                        ...datosSinId,
-                        id: c.id,
-                        fechaCreacion: c.fecha_creacion,
-                        fechaModificacion: c.fecha_modificacion
-                    };
-                });
-            } catch (e) {
-                console.error('Error al cargar comparables batch:', e);
-                datosTasacion.comparables = [];
-            }
-        } else {
-            // Ya son objetos, usar directamente
-            datosTasacion.comparables = JSON.parse(JSON.stringify(datosCompletos.comparables));
-        }
+        // Usar directamente los objetos (snapshots) que vienen del backend
+        datosTasacion.comparables = JSON.parse(JSON.stringify(datosCompletos.comparables));
     } else {
         datosTasacion.comparables = [];
     }
@@ -305,10 +286,37 @@ async function guardarTasacion(estado = 'completada') {
     } else {
         // Actualizar tasación existente en la API
         try {
+            // Enviar snapshots actuales para preservar ediciones
+            const comparablesSnapshots = datosTasacion.comparables.map(c => {
+                // Construir snapshot con los campos necesarios
+                return {
+                    direccion: c.direccion,
+                    lat: c.lat,
+                    lon: c.lon,
+                    tipo_inmueble: c.tipoInmueble || c.tipo_inmueble,
+                    tipo_valor: c.tipoValor || c.tipo_valor,
+                    valor: c.valor,
+                    valor_m2: c.valorM2 || c.valor_m2,
+                    superficie: c.superficie,
+                    frente: c.frente,
+                    fondo: c.fondo,
+                    tipo_lote: c.tipoLote || c.tipo_lote,
+                    ambientes: c.ambientes,
+                    dormitorios: c.dormitorios,
+                    banos: c.banos,
+                    cochera: c.cochera,
+                    tiene_ascensor: c.tieneAscensor || c.tiene_ascensor,
+                    tiene_pileta: c.tienePileta || c.tiene_pileta,
+                    tiene_jardin: c.tieneJardin || c.tiene_jardin,
+                    datos: c.datos || {}
+                };
+            });
+            
             await actualizarTasacionAPI(idFinal, {
                 estado: estado,
                 datos: datosCompletos,
-                comparables_ids: comparablesIds
+                comparables_ids: comparablesIds,
+                comparables_snapshots: comparablesSnapshots
             });
         } catch (e) {
             console.error('Error al actualizar tasación en API:', e);

@@ -754,6 +754,7 @@ async function agregarComparableExistente(comparableId, cerrarModal = true) {
         }
 
         // Agregar el objeto completo a memoria (clonado para evitar referencias)
+        // NO crear un nuevo comparable en la biblioteca, solo agregar a memoria
         datosTasacion.comparables.push({ ...comparable });
 
         resultadoCalculado = false;

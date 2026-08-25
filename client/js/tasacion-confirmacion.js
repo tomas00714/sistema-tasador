@@ -12,21 +12,21 @@ function mostrarConfirmacionSalir() {
         botones: [
             {
                 texto: "Cancelar",
-                clase: "btn-confirmacion-cancelar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarConfirmacionSalir();
                 }
             },
             {
                 texto: "Guardar borrador",
-                clase: "btn-confirmacion-guardar",
+                clase: "btn-modal btn-modal-positive-secondary",
                 onClick: async () => {
                     await guardarBorrador();
                 }
             },
             {
                 texto: "No guardar",
-                clase: "btn-confirmacion-no-guardar",
+                clase: "btn-modal btn-modal-negative",
                 onClick: () => {
                     const urlPendiente = navegacionPendiente;
                     ocultarConfirmacionSalir();
@@ -51,14 +51,14 @@ function mostrarModalConfirmacionGuardarTasacion() {
         botones: [
             {
                 texto: "Cancelar",
-                clase: "btn-confirmacion-cancelar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarModalGenerico();
                 }
             },
             {
                 texto: "Guardar y salir",
-                clase: "btn-confirmacion-guardar",
+                clase: "btn-modal btn-modal-positive-secondary",
                 onClick: async () => {
                     ocultarModalGenerico();
                     datosTasacion.resultado = resultadoTasacion;
@@ -69,7 +69,7 @@ function mostrarModalConfirmacionGuardarTasacion() {
             },
             {
                 texto: "Guardar y crear informe",
-                clase: "btn-confirmacion-crear-informe",
+                clase: "btn-modal btn-modal-positive-primary",
                 onClick: async () => {
                     ocultarModalGenerico();
                     datosTasacion.resultado = resultadoTasacion;

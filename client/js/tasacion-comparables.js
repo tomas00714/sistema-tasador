@@ -570,8 +570,16 @@ async function editarComparableDesdeLista(idx) {
                 const actualizado = { ...original, ...datosForm, id: original.id, fuente: original.fuente || 'manual' };
 
                 try {
-                    if (actualizado.id) {
-                        // Actualizar comparable existente
+                    // Verificar si estamos en modo edición de tasación
+                    const esModoTasacion = (typeof tasacionId !== 'undefined' && tasacionId === 1 && typeof tasacionIdReal !== 'undefined' && tasacionIdReal) || (typeof tasacionId !== 'undefined' && tasacionId);
+                    
+                    if (esModoTasacion && actualizado.id) {
+                        // Estamos editando desde una tasación: actualizar solo el snapshot
+                        const tasacionIdParaAPI = (typeof tasacionIdReal !== 'undefined' && tasacionIdReal) ? tasacionIdReal : tasacionId;
+                        await actualizarSnapshotComparableTasacion(tasacionIdParaAPI, actualizado.id, actualizado);
+                        datosTasacion.comparables[idx] = actualizado;
+                    } else if (actualizado.id) {
+                        // Estamos en biblioteca: actualizar el comparable
                         await actualizarComparable(actualizado.id, actualizado);
                         datosTasacion.comparables[idx] = actualizado;
                     } else {

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitudes de Comparables</title>
+
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/shell.css">
+    <link rel="stylesheet" href="../css/tasacion.css">
+    <link rel="stylesheet" href="../css/solicitudes.css">
+
+    <script>
+        // Aplicar estado del sidebar antes del primer render para evitar salto visual
+        (function() {
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed-initial');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-img">
+                <i class="fa-solid fa-home"></i>
+            </div>
+            <span class="sidebar-logo-text">Tasador</span>
+        </div>
+
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Minimizar/expandir menú">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <nav class="sidebar-nav">
+            <a href="index.html" class="sidebar-nav-item" data-page="inicio">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-house"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Inicio</span>
+            </a>
+
+            <a href="historial.html" class="sidebar-nav-item" data-page="historial">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Base de datos</span>
+            </a>
+
+            <a href="solicitudes.html" class="sidebar-nav-item active" data-page="solicitudes">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-hand-holding-heart"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Solicitudes</span>
+            </a>
+
+            <a href="tasacion.html" class="sidebar-nav-item" data-page="tasacion">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-plus"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Nueva tasación</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <button type="button" class="sidebar-nav-item" id="appearanceBtn" aria-label="Apariencia">
+            <span class="sidebar-nav-item-icon">
+                <i class="fa-solid fa-palette"></i>
+            </span>
+            <span class="sidebar-nav-item-text">Apariencia</span>
+        </button>
+
+        <button type="button" class="sidebar-profile" data-page="perfil" aria-label="Perfil de usuario">
+            <div class="sidebar-profile-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="sidebar-profile-info">
+                <span class="sidebar-profile-name">Usuario</span>
+            </div>
+        </button>
+    </aside>
+
+    <div class="main-layout" id="mainLayout">
+        <div class="main-content" id="mainContent">
+
+    <section class="solicitudes-section" aria-label="Solicitudes">
+
+        <div class="solicitudes-container">
+
+            <div class="titulo-seccion">
+                <h1>Solicitudes de Comparables</h1>
+                <p>Gestioná tus solicitudes y revisá los comparables recibidos</p>
+            </div>
+
+            <div class="solicitudes-header">
+                <div class="solicitudes-filtros">
+                    <div class="segmented-control" role="tablist" aria-label="Estado de solicitudes">
+                        <div class="segmented-pill"></div>
+                        <button type="button" class="btn-segment active" data-estado="todas">Todas</button>
+                        <button type="button" class="btn-segment" data-estado="pendiente">Pendientes</button>
+                        <button type="button" class="btn-segment" data-estado="completada">Completadas</button>
+                        <button type="button" class="btn-segment" data-estado="expirada">Expiradas</button>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" id="btnCrearSolicitud">
+                    <i class="fa-solid fa-plus"></i> Nueva solicitud
+                </button>
+            </div>
+
+            <div class="solicitudes-lista" id="solicitudesLista">
+                <div class="solicitudes-cargando" id="solicitudesCargando">
+                    <div class="loading-spinner-inline">
+                        <div class="spinner-small"></div>
+                        <span>Cargando solicitudes...</span>
+                    </div>
+                </div>
+                <div class="solicitudes-vacio" id="solicitudesVacio" style="display: none;">
+                    <div class="vacio-icono">
+                        <i class="fa-solid fa-inbox"></i>
+                    </div>
+                    <h3>No hay solicitudes</h3>
+                    <p>Crea tu primera solicitud para recibir comparables de otras personas.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+    </div>
+    </div>
+
+    <!-- Modal para crear solicitud -->
+    <div class="modal-overlay" id="modalCrearSolicitud">
+        <div class="modal-tasacion">
+            <button type="button" class="cerrar-modal" id="cerrarModalCrearSolicitud" aria-label="Cerrar">
+                ✕
+            </button>
+
+            <h2 class="modal-titulo">Crear nueva solicitud</h2>
+
+            <form id="formCrearSolicitud">
+                <div class="form-grupo">
+                    <label for="solicitudTipo" class="form-label">Tipo de inmueble:</label>
+                    <select id="solicitudTipo" class="form-select" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="lote">Lote</option>
+                        <option value="casa">Casa</option>
+                        <option value="departamento">Departamento</option>
+                    </select>
+                </div>
+
+                <div class="form-grupo">
+                    <label for="solicitudMensaje" class="form-label">Información adicional (opcional):</label>
+                    <textarea id="solicitudMensaje" class="form-textarea" rows="3" placeholder="Describe qué tipo de comparables estás buscando..."></textarea>
+                </div>
+
+                <div class="modal-botones">
+                    <button type="button" class="btn-cancelar" id="btnCancelarCrearSolicitud">Cancelar</button>
+                    <button type="submit" class="btn-confirmar">Crear solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalle de solicitud -->
+    <div class="modal-overlay" id="modalDetalleSolicitud">
+        <div class="modal-tasacion modal-solicitud-detalle">
+            <button type="button" class="cerrar-modal" id="cerrarModalDetalleSolicitud" aria-label="Cerrar">
+                ✕
+            </button>
+
+            <div id="solicitudDetalleContenido"></div>
+        </div>
+    </div>
+
+    <!-- Modal para rechazar comparable -->
+    <div class="modal-overlay" id="modalRechazarComparable">
+        <div class="modal-tasacion">
+            <button type="button" class="cerrar-modal" id="cerrarModalRechazarComparable" aria-label="Cerrar">
+                ✕
+            </button>
+
+            <h2 class="modal-titulo">Rechazar comparable</h2>
+
+            <form id="formRechazarComparable">
+                <input type="hidden" id="rechazarSolicitudId">
+                <input type="hidden" id="rechazarComparableId">
+                
+                <div class="form-grupo">
+                    <label for="rechazarObservaciones" class="form-label">Observaciones (opcional):</label>
+                    <textarea id="rechazarObservaciones" class="form-textarea" rows="4" placeholder="Explicá por qué rechazás este comparable..."></textarea>
+                </div>
+
+                <div class="modal-botones">
+                    <button type="button" class="btn-cancelar" id="btnCancelarRechazarComparable">Cancelar</button>
+                    <button type="submit" class="btn-confirmar btn-rechazar">Rechazar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Genérico Reutilizable -->
+    <div class="modal-overlay" id="modalGenerico">
+        <div class="modal-confirmacion-salir">
+            <h2 class="modal-titulo"></h2>
+            <p class="modal-mensaje"></p>
+            <div class="modal-confirmacion-botones modal-botones"></div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="../js/route-guard.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/api-client.js"></script>
+    <script src="../js/entidades.js"></script>
+    <script src="../js/global.js"></script>
+    <script src="../js/modal-generico.js"></script>
+    <script src="../js/solicitudes.js"></script>
+
+</body>
+</html>

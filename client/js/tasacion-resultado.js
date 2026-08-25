@@ -147,8 +147,8 @@ function mostrarModalAgregarCoeficiente(index) {
                 </div>
             </div>
             <div class="modal-agregar-coeficiente-footer">
-                <button type="button" class="btn-modal-cancelar" id="cancelarCoeficiente">Cancelar</button>
-                <button type="button" class="btn-modal-confirmar" id="confirmarCoeficiente">Agregar</button>
+                <button type="button" class="btn-modal btn-modal-neutral" id="cancelarCoeficiente">Cancelar</button>
+                <button type="button" class="btn-modal btn-modal-positive-primary" id="confirmarCoeficiente">Agregar</button>
             </div>
         </div>
     `;

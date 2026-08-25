@@ -133,8 +133,10 @@ class CompartirService:
 
         comparables = repo_tasacion.obtener_comparables(original['id'])
         for orden, comp in enumerate(comparables):
-            comp_datos = deepcopy(comp.get('datos') or {})
+            # Con el nuevo modelo de snapshot, comp ya es el snapshot completo
+            comp_datos = deepcopy(comp)
 
+            # Remover el ID interno para evitar conflictos
             if 'id' in comp_datos:
                 del comp_datos['id']
 
@@ -144,22 +146,10 @@ class CompartirService:
             comp_datos['nombreCreador'] = f"{destinatario.get('nombre') or ''} {destinatario.get('apellido') or ''}".strip()
             comp_datos['fechaCreacion'] = datetime.utcnow().isoformat()
 
+            # Asegurar ubicación
             if 'ubicacion' not in comp_datos or not isinstance(comp_datos['ubicacion'], dict):
-                comp_datos['ubicacion'] = {}
+                comp_datos['ubicacion'] = comp_datos.get('ubicacion') or {}
 
-            if comp.get('direccion') and not comp_datos['ubicacion'].get('direccion'):
-                comp_datos['ubicacion']['direccion'] = comp['direccion']
-            if comp.get('provincia') and not comp_datos['ubicacion'].get('provincia'):
-                comp_datos['ubicacion']['provincia'] = comp['provincia']
-            if comp.get('localidad') and not comp_datos['ubicacion'].get('localidad'):
-                comp_datos['ubicacion']['localidad'] = comp['localidad']
-            if comp.get('lat') is not None and comp_datos['ubicacion'].get('lat') is None:
-                comp_datos['ubicacion']['lat'] = comp['lat']
-            if comp.get('lon') is not None and comp_datos['ubicacion'].get('lon') is None:
-                comp_datos['ubicacion']['lon'] = comp['lon']
-
-            if comp.get('valor') is not None and comp_datos.get('valor') is None:
-                comp_datos['valor'] = comp['valor']
             if comp_datos.get('valor') is None:
                 comp_datos['valor'] = 0
 
@@ -167,7 +157,7 @@ class CompartirService:
 
             datos_comparable = {
                 'usuario_id': destinatario_id,
-                'tipo_inmueble': comp.get('tipo_inmueble') or columnas_comp.get('tipo_inmueble') or 'lote',
+                'tipo_inmueble': comp_datos.get('tipo_inmueble') or columnas_comp.get('tipo_inmueble') or 'lote',
                 'fuente': 'compartido',
                 'tasacion_origen_id': nueva_tasacion['id'],
                 'id_enviador': enviador_id,

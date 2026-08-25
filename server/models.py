@@ -174,6 +174,7 @@ class TasacionUpdate(BaseModel):
     estado: Optional[str] = None
     datos: Optional[Dict[str, Any]] = None
     comparables_ids: Optional[List[str]] = None
+    comparables_snapshots: Optional[List[Dict[str, Any]]] = None  # Lista de {comparable_id, orden, snapshot}
 
 
 class TasacionResponse(BaseModel):
@@ -213,12 +214,17 @@ class ComparableResponse(BaseModel):
     datos: Dict[str, Any]
     fecha_creacion: datetime
     fecha_modificacion: datetime
+    estado_aceptacion: Optional[str] = None
+    observaciones: Optional[str] = None
+    fecha_decision: Optional[str] = None
+    usuario_decision: Optional[int] = None
 
 
 # Modelos para CRUD de Solicitudes
 class SolicitudCreate(BaseModel):
-    tasacion_id: str
-    estado: str = 'pendiente'  # 'pendiente', 'aceptada', 'rechazada'
+    tasacion_id: Optional[str] = None  # Opcional: solicitudes independientes de tasación
+    tipo_inmueble: str  # 'lote', 'departamento', 'casa'
+    estado: str = 'pendiente'  # 'pendiente', 'completada', 'expirada'
     datos: Dict[str, Any]  # Datos adicionales de la solicitud (JSONB)
 
 
@@ -230,13 +236,15 @@ class SolicitudUpdate(BaseModel):
 class SolicitudResponse(BaseModel):
     id: str
     usuario_id: int
-    tasacion_id: str
+    tasacion_id: Optional[str] = None
     link_publico: str
     estado: str
     datos: Dict[str, Any]
     fecha_creacion: datetime
     fecha_modificacion: datetime
     tipo_inmueble: Optional[str] = None
+    fecha_expiracion: Optional[datetime] = None
+    fecha_completacion: Optional[datetime] = None
 
     @model_validator(mode='before')
     @classmethod
@@ -250,6 +258,19 @@ class SolicitudResponse(BaseModel):
 class SolicitudContribuirRequest(BaseModel):
     comparables: List[Dict[str, Any]]
     colaborador: Optional[Dict[str, Any]] = None
+
+
+class SolicitudComparableAceptacionResponse(BaseModel):
+    solicitud_id: str
+    comparable_id: str
+    usuario_id: int
+    estado: str
+    fecha: str
+    observaciones: Optional[str] = None
+
+
+class SolicitudComparableDecisionRequest(BaseModel):
+    observaciones: Optional[str] = None
 
 
 # Modelos para compartir tasaciones

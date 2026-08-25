@@ -29,6 +29,9 @@
     border: 1px solid var(--color-border);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
 }
 
 .solicitud-encabezado-marca {
@@ -38,6 +41,7 @@
     color: var(--color-primary);
     font-weight: 700;
     font-size: 1.1rem;
+    flex-shrink: 0;
 }
 
 .solicitud-encabezado-marca .marca-logo {
@@ -52,7 +56,7 @@
 }
 
 .solicitud-encabezado-datos {
-    margin-top: 14px;
+    flex: 1;
 }
 
 .solicitud-encabezado-datos h1 {
@@ -184,9 +188,6 @@
     gap: 12px;
 }
 
-.solicitud-lista .comparable-item-fila {
-    width: 100%;
-}
 
 .comparable-item-badge.origen-manual {
     background: var(--color-info-light);
@@ -234,6 +235,7 @@
 
 .btn-agregar-comparable {
     margin-top: 16px;
+    margin-bottom: 24px;
     padding: 14px 24px;
     border-radius: 14px;
     border: 1.5px dashed var(--color-primary);
@@ -360,6 +362,8 @@
 .bottom-nav-bar.solicitud-bottom-bar {
     left: 50%;
 }
+
+
 
 @media (max-width: 600px) {
     .solicitud-encabezado-inner {

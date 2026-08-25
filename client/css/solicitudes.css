@@ -1,0 +1,736 @@
+/* =========================
+   PÁGINA DE SOLICITUDES
+========================= */
+
+.solicitudes-section {
+    background: var(--color-white);
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1.5px solid var(--color-border);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 40px);
+    min-height: 0;
+    margin: 20px 20px 0 0;
+}
+
+.solicitudes-container {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.solicitudes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.solicitudes-filtros {
+    display: flex;
+    gap: 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Segmented Control */
+.segmented-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 4px;
+    box-sizing: border-box;
+    width: 320px;
+    flex-shrink: 0;
+}
+
+.segmented-pill {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: calc(25% - 4px);
+    background: var(--color-primary);
+    border-radius: 16px;
+    transition: transform 0.2s ease;
+}
+
+.btn-segment {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    z-index: 1;
+    transition: color 0.2s;
+}
+
+.btn-segment.active {
+    color: var(--color-white);
+}
+
+.btn-segment:hover:not(.active) {
+    color: var(--color-text-primary);
+}
+
+.solicitudes-lista {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.solicitudes-cargando,
+.solicitudes-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.loading-spinner-inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.vacio-icono {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.vacio-icono i {
+    color: var(--color-text-secondary);
+}
+
+.solicitudes-vacio h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.solicitudes-vacio p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+/* Card de solicitud usando estilo card-minimizada */
+.solicitud-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-white);
+    border-radius: 18px;
+    border: 1.5px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 16px 20px;
+    gap: 12px;
+}
+
+.solicitud-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-color: var(--color-primary);
+}
+
+.solicitud-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.solicitud-card-tipo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.solicitud-card-tipo i {
+    color: var(--color-primary);
+}
+
+.solicitud-card-estado {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.solicitud-card-estado.pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.solicitud-card-estado.completada {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.solicitud-card-estado.expirada {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.solicitud-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.solicitud-card-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.solicitud-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.solicitud-card-mensaje {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+}
+
+.solicitud-card-comparables {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.solicitud-card-comparables i {
+    color: var(--color-primary);
+}
+
+.solicitud-card-link {
+    margin-top: 4px;
+}
+
+.btn-copiar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-copiar-link:hover {
+    background: var(--color-bg-light);
+}
+
+/* Modal styles */
+.modal-tasacion {
+    background: var(--color-white);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-solicitud-detalle {
+    max-width: 700px;
+}
+
+.modal-titulo {
+    margin: 0 0 24px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.form-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.form-help {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+.form-select,
+.form-textarea {
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-light);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    box-sizing: border-box;
+}
+
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-botones {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 14px;
+    border: none;
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-dark);
+}
+
+.btn-confirmar {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-confirmar:hover {
+    background: var(--color-primary-dark);
+}
+
+.btn-cancelar {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cancelar:hover {
+    background: var(--color-bg-light);
+}
+
+.btn-rechazar {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.btn-rechazar:hover {
+    background: #fecaca;
+}
+
+/* Detalle de solicitud */
+.solicitud-detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.solicitud-detalle-tipo {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.solicitud-detalle-estado {
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.solicitud-detalle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.solicitud-detalle-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.solicitud-detalle-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.solicitud-detalle-meta-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.solicitud-detalle-meta-value {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.solicitud-detalle-mensaje {
+    padding: 16px;
+    background: var(--color-bg-light);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    line-height: 1.5;
+}
+
+.solicitud-detalle-link {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--color-bg-light);
+    border-radius: 12px;
+}
+
+.solicitud-detalle-link strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--color-text-primary);
+}
+
+.solicitud-detalle-link-container {
+    display: flex;
+    gap: 8px;
+}
+
+.solicitud-detalle-link-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-white);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-copiar-link-detalle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-copiar-link-detalle:hover {
+    background: var(--color-bg-light);
+}
+
+.solicitud-detalle-comparables {
+    margin-top: 24px;
+}
+
+.solicitud-detalle-comparables-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.solicitud-detalle-comparables-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.solicitud-detalle-comparables-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.solicitud-detalle-comparable {
+    padding: 16px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-bg-light);
+}
+
+.solicitud-detalle-comparable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.solicitud-detalle-comparable-direccion {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.solicitud-detalle-comparable-meta {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.solicitud-detalle-comparable-estado {
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.solicitud-detalle-comparable-estado.pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.solicitud-detalle-comparable-estado.aceptado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.solicitud-detalle-comparable-estado.rechazado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.solicitud-detalle-comparable-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.solicitud-detalle-comparable-observaciones {
+    padding: 8px 12px;
+    background: var(--color-white);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+.solicitud-detalle-comparable-acciones {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.solicitud-detalle-comparable-acciones button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.solicitud-detalle-comparable-acciones button:hover {
+    background: var(--color-bg-light);
+}
+
+.solicitud-detalle-comparable-acciones .btn-aceptar {
+    color: #065f46;
+    border-color: #d1fae5;
+}
+
+.solicitud-detalle-comparable-acciones .btn-aceptar:hover {
+    background: #d1fae5;
+}
+
+.solicitud-detalle-comparable-acciones .btn-rechazar {
+    color: #991b1b;
+    border-color: #fee2e2;
+}
+
+.solicitud-detalle-comparable-acciones .btn-rechazar:hover {
+    background: #fee2e2;
+}
+
+.solicitud-detalle-comparable-feedback {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.solicitud-detalle-comparable-feedback.aceptado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.solicitud-detalle-comparable-feedback.rechazado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Toast notification */
+.toast-notificacion {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    background: var(--color-text-primary);
+    color: var(--color-white);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .solicitudes-section {
+        margin: 10px;
+        border-radius: 16px;
+    }
+
+    .solicitudes-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .solicitudes-filtros {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .segmented-control {
+        width: 100%;
+    }
+
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .solicitud-card-meta {
+        flex-wrap: wrap;
+    }
+
+    .modal-tasacion {
+        max-width: 95%;
+        padding: 20px;
+    }
+
+    .solicitud-detalle-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .solicitud-detalle-link-container {
+        flex-direction: column;
+    }
+
+    .btn-copiar-link-detalle {
+        justify-content: center;
+    }
+}

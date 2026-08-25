@@ -214,31 +214,6 @@ async function obtenerComparableAPI(comparableId) {
     }
 }
 
-async function obtenerComparablesBatchAPI(ids) {
-    try {
-        if (!ids || ids.length === 0) return [];
-        
-        const response = await fetch(`${API_BASE_URL}/api/comparables/batch`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ ids })
-        });
-        
-        if (handleAuthError(response)) {
-            throw new Error('Sesión expirada');
-        }
-        
-        if (!response.ok) {
-            throw new Error(`Error al obtener comparables batch: ${response.status}`);
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Error en obtenerComparablesBatchAPI:', error);
-        throw error;
-    }
-}
-
 async function listarComparablesAPI(tipoInmueble = null, fuente = null) {
     try {
         let url = `${API_BASE_URL}/api/comparables`;
@@ -277,20 +252,43 @@ async function actualizarComparableAPI(comparableId, datosActualizacion) {
         const response = await fetch(`${API_BASE_URL}/api/comparables/${comparableId}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
-            body: JSON.stringify(datosActualizacion)
+            body: JSON.stringify({ datos: datosActualizacion })
         });
-        
+
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
         }
-        
+
         if (!response.ok) {
             throw new Error(`Error al actualizar comparable: ${response.status}`);
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error('Error en actualizarComparableAPI:', error);
+        throw error;
+    }
+}
+
+async function actualizarSnapshotComparableTasacion(tasacionId, comparableId, snapshot) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasaciones/${tasacionId}/comparables/${comparableId}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(snapshot)
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error al actualizar snapshot: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en actualizarSnapshotComparableTasacion:', error);
         throw error;
     }
 }
@@ -374,22 +372,48 @@ async function listarSolicitudesAPI(estado = null) {
         if (estado) {
             url += `?estado=${estado}`;
         }
-        
+
         const response = await fetch(url, {
             headers: getAuthHeaders()
         });
-        
+
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
         }
-        
+
         if (!response.ok) {
             throw new Error(`Error al listar solicitudes: ${response.status}`);
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error('Error en listarSolicitudesAPI:', error);
+        throw error;
+    }
+}
+
+async function obtenerSolicitudesAPI(queryParams = '') {
+    try {
+        let url = `${API_BASE_URL}/api/solicitudes`;
+        if (queryParams) {
+            url += queryParams.startsWith('?') ? queryParams : `?${queryParams}`;
+        }
+
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error al obtener solicitudes: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en obtenerSolicitudesAPI:', error);
         throw error;
     }
 }
@@ -494,6 +518,82 @@ async function obtenerComparablesDeSolicitudAPI(linkPublico) {
         return await response.json();
     } catch (error) {
         console.error('Error en obtenerComparablesDeSolicitudAPI:', error);
+        throw error;
+    }
+}
+
+async function obtenerComparablesDeSolicitudPorIdAPI(solicitudId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/solicitudes/${solicitudId}/comparables`, {
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return [];
+            }
+            throw new Error(`Error al obtener comparables de la solicitud: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en obtenerComparablesDeSolicitudPorIdAPI:', error);
+        throw error;
+    }
+}
+
+async function aceptarComparableSolicitudAPI(solicitudId, comparableId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/solicitudes/${solicitudId}/comparables/${comparableId}/aceptar`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `Error al aceptar comparable: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en aceptarComparableSolicitudAPI:', error);
+        throw error;
+    }
+}
+
+async function rechazarComparableSolicitudAPI(solicitudId, comparableId, observaciones = null) {
+    try {
+        const body = {};
+        if (observaciones) {
+            body.observaciones = observaciones;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/solicitudes/${solicitudId}/comparables/${comparableId}/rechazar`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(body)
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `Error al rechazar comparable: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en rechazarComparableSolicitudAPI:', error);
         throw error;
     }
 }

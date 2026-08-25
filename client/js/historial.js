@@ -32,6 +32,7 @@ function leerHistorialDesdeStorage() {
 }
 
 let tasacionPerfilAbiertaId = null;
+let comparablePerfilAbiertoId = null;
 
 let historialInicializado = false;
 
@@ -208,6 +209,11 @@ function getTipoInmuebleComparable(comparable) {
 function filtrarItemsHistorial() {
     let resultado = registroActual === "comparables" ? [...comparables] : [...tasaciones];
 
+    if (registroActual === "comparables") {
+        // Excluir comparables que provienen de tasaciones (fuente: de_tasacion)
+        resultado = resultado.filter(c => c.fuente !== 'de_tasacion');
+    }
+
     if (registroActual === "tasaciones") {
         if (estadoFiltroActual === "completada") {
             resultado = resultado.filter(t => t.estado === "completada");
@@ -289,6 +295,7 @@ function renderHistorial() {
             tipoLabel = (item.tipoInmueble || "comparable").charAt(0).toUpperCase() + (item.tipoInmueble || "comparable").slice(1);
             estadoLabel = "";
             estadoBadgeClass = "card-minimizada-badge-completada";
+            onClick = `abrirPerfilComparable('${item.id}')`;
         }
 
         lista.innerHTML += construirCardMinimizada({
@@ -458,14 +465,14 @@ function eliminarTasacion(id) {
         botones: [
             {
                 texto: "Cancelar",
-                clase: "btn-confirmacion-cancelar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarModalGenerico();
                 }
             },
             {
                 texto: "Eliminar",
-                clase: "btn-confirmacion-no-guardar",
+                clase: "btn-modal btn-modal-negative",
                 onClick: async () => {
                     ocultarModalGenerico();
                     try {
@@ -1097,11 +1104,13 @@ window.abrirPerfilTasacion = async function(id) {
 window.cerrarPerfil = function() {
 
     tasacionPerfilAbiertaId = null;
+    comparablePerfilAbiertoId = null;
 
     // Remove perfil-modal class from modal-tasacion
     const modalTasacion = document.getElementById("modalTasacion");
     if (modalTasacion) {
         modalTasacion.classList.remove("perfil-modal");
+        modalTasacion.classList.remove("perfil-simple");
     }
 
     // Remove modal-open class from body and html
@@ -1111,6 +1120,281 @@ window.cerrarPerfil = function() {
     document
         .getElementById("modalOverlay")
         ?.classList.remove("active");
+}
+
+window.abrirPerfilComparable = async function(id) {
+    try {
+        const modalOverlay = document.getElementById("modalOverlay");
+        const contenidoModal = document.getElementById("contenidoModal");
+
+        let comparable = comparables.find(c => c.id === id);
+
+        if (!comparable || !contenidoModal) {
+            return;
+        }
+
+        comparablePerfilAbiertoId = id;
+
+        const tipo = comparable.tipoInmueble || 'lote';
+        const esLote = tipo === 'lote';
+
+        // Valor
+        let valor = "—";
+        if (comparable.valor != null) {
+            if (typeof comparable.valor === 'object') {
+                valor = `USD ${(comparable.valor.monto || 0).toLocaleString('es-AR')}`;
+            } else {
+                valor = `USD ${comparable.valor.toLocaleString('es-AR')}`;
+            }
+        }
+
+        // Ubicación
+        const direccion = comparable.ubicacion?.direccion || '—';
+        const provincia = comparable.ubicacion?.provincia || '—';
+        const localidad = comparable.ubicacion?.localidad || '—';
+
+        // Características específicas
+        let caracteristicasHtml = '';
+
+        if (esLote) {
+            const frente = comparable.frente || comparable.lote?.caracteristicas?.frente || '—';
+            const fondo = comparable.fondo || comparable.lote?.caracteristicas?.fondo || '—';
+            const superficie = comparable.superficie || comparable.lote?.caracteristicas?.superficie || '—';
+            const tipoLote = comparable.tipoLote || comparable.lote?.tipoLote || '—';
+
+            caracteristicasHtml = `
+                <div class="perfil-grid-2">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Tipo de lote</div>
+                        <div class="perfil-item-value">${tipoLote}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie</div>
+                        <div class="perfil-item-value">${superficie} m²</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Frente</div>
+                        <div class="perfil-item-value">${frente} m</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Fondo</div>
+                        <div class="perfil-item-value">${fondo} m</div>
+                    </div>
+                </div>
+            `;
+        } else if (tipo === 'departamento') {
+            const superficie = comparable.superficie || comparable.departamento?.superficie || '—';
+            const ambientes = comparable.ambientes || comparable.departamento?.ambientes || '—';
+            const dormitorios = comparable.dormitorios || comparable.departamento?.dormitorios || '—';
+            const banos = comparable.banos || comparable.departamento?.banos || '—';
+            const antiguedad = comparable.antiguedad || comparable.departamento?.antiguedad || '—';
+
+            caracteristicasHtml = `
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie</div>
+                        <div class="perfil-item-value">${superficie} m²</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ambientes</div>
+                        <div class="perfil-item-value">${ambientes}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Dormitorios</div>
+                        <div class="perfil-item-value">${dormitorios}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baños</div>
+                        <div class="perfil-item-value">${banos}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Antigüedad</div>
+                        <div class="perfil-item-value">${antiguedad} años</div>
+                    </div>
+                </div>
+            `;
+        } else if (tipo === 'casa') {
+            const superficie = comparable.superficie || comparable.casa?.superficie || '—';
+            const superficieTerreno = comparable.superficieTerreno || comparable.casa?.superficieTerreno || '—';
+            const ambientes = comparable.ambientes || comparable.casa?.ambientes || '—';
+            const dormitorios = comparable.dormitorios || comparable.casa?.dormitorios || '—';
+            const banos = comparable.banos || comparable.casa?.banos || '—';
+            const antiguedad = comparable.antiguedad || comparable.casa?.antiguedad || '—';
+
+            caracteristicasHtml = `
+                <div class="perfil-grid-3">
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie cubierta</div>
+                        <div class="perfil-item-value">${superficie} m²</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Superficie terreno</div>
+                        <div class="perfil-item-value">${superficieTerreno} m²</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Ambientes</div>
+                        <div class="perfil-item-value">${ambientes}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Dormitorios</div>
+                        <div class="perfil-item-value">${dormitorios}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Baños</div>
+                        <div class="perfil-item-value">${banos}</div>
+                    </div>
+                    <div class="perfil-card-item">
+                        <div class="perfil-item-label">Antigüedad</div>
+                        <div class="perfil-item-value">${antiguedad} años</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fuente de información
+        const fuenteTipo = comparable.fuenteInformacion?.tipo || comparable.fuente || '—';
+        const fuenteDetalle = comparable.fuenteInformacion?.detalle || comparable.fuenteDetalle || '';
+
+        contenidoModal.innerHTML = `
+            <div class="perfil-card-container">
+
+                <!-- Barra superior fija -->
+                <div class="perfil-barra-superior">
+                    <button type="button" class="perfil-btn-volver" id="btnVolverPerfil">
+                        ← Volver
+                    </button>
+                </div>
+
+                <div class="perfil-card">
+
+                    <!-- Row 1: Blue horizontal card (más baja, sin shadow) -->
+                    <div class="perfil-row">
+                        <div class="perfil-card-azul perfil-card-azul-compacto">
+                            <div class="perfil-card-azul-left">
+                                <div class="perfil-codigo">
+                                    Comparable ID: ${comparable.id || '—'}
+                                </div>
+                                <div class="perfil-fecha">
+                                    ${formatearFecha(comparable.fechaCreacion)}
+                                </div>
+                                <div class="perfil-direccion">
+                                    ${direccion}
+                                </div>
+                                <div class="perfil-ubicacion">
+                                    ${localidad}, ${provincia}
+                                </div>
+                            </div>
+                            <div class="perfil-card-azul-right">
+                                <div class="perfil-valor-titulo">
+                                    Valor
+                                </div>
+                                <div class="perfil-valor">
+                                    ${valor}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Type and source -->
+                    <div class="perfil-row">
+                        <div class="perfil-grid-2">
+                            <div class="perfil-card-item">
+                                <div class="perfil-item-label">
+                                    Tipo de inmueble
+                                </div>
+                                <div class="perfil-item-value">
+                                    ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+                                </div>
+                            </div>
+                            <div class="perfil-card-item">
+                                <div class="perfil-item-label">
+                                    Fuente
+                                </div>
+                                <div class="perfil-item-value">
+                                    ${fuenteTipo.charAt(0).toUpperCase() + fuenteTipo.slice(1)}
+                                </div>
+                                ${fuenteDetalle ? `<div class="perfil-item-sub">${fuenteDetalle}</div>` : ""}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Characteristics (en cuadrícula) -->
+                    <div class="perfil-row">
+                        ${caracteristicasHtml}
+                    </div>
+
+                </div>
+
+                <!-- Barra inferior fija -->
+                <div class="perfil-barra-inferior">
+                    <div class="perfil-barra-inferior-derecha">
+                        <button type="button" class="perfil-btn-accion perfil-btn-eliminar" id="btnEliminarPerfil">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        `;
+
+        // Add listeners
+        const btnVolver = document.getElementById("btnVolverPerfil");
+        if (btnVolver) {
+            btnVolver.addEventListener("click", cerrarPerfil);
+        }
+
+        const btnEliminar = document.getElementById("btnEliminarPerfil");
+        if (btnEliminar) {
+            btnEliminar.addEventListener("click", () => eliminarComparable(comparable.id));
+        }
+
+        // Add perfil-modal class (same as tasaciones)
+        const modalTasacion = document.getElementById("modalTasacion");
+        if (modalTasacion) {
+            modalTasacion.classList.add("perfil-modal");
+        }
+
+        // Add modal-open class to body and html
+        document.body.classList.add("modal-open");
+        document.documentElement.classList.add("modal-open");
+
+        modalOverlay?.classList.add("active");
+    } catch (error) {
+        console.error("Error in abrirPerfilComparable:", error);
+    }
+}
+
+function eliminarComparable(id) {
+    mostrarModalGenerico({
+        titulo: "¿Estás seguro de eliminar?",
+        mensaje: "¿Deseas eliminar este comparable del historial? Esta acción no se puede deshacer.",
+        botones: [
+            {
+                texto: "Cancelar",
+                clase: "btn-modal btn-modal-neutral",
+                onClick: () => {
+                    ocultarModalGenerico();
+                }
+            },
+            {
+                texto: "Eliminar",
+                clase: "btn-modal btn-modal-negative",
+                onClick: async () => {
+                    ocultarModalGenerico();
+                    try {
+                        await eliminarComparableAPI(id);
+                        comparables = comparables.filter(c => c.id !== id);
+                        cerrarPerfil();
+                        renderHistorial();
+                    } catch (e) {
+                        console.error('Error al eliminar comparable:', e);
+                        alert('No se pudo eliminar el comparable. Revisá la consola o el servidor.');
+                    }
+                }
+            }
+        ],
+        cerrarAlClick: false
+    });
 }
 
 function editarTasacion(id) {

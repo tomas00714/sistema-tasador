@@ -291,7 +291,7 @@ function mostrarConfirmacionCambiarTipo() {
         botones: [
             {
                 texto: "Cancelar",
-                clase: "btn-confirmacion-cancelar",
+                clase: "btn-modal btn-modal-neutral",
                 onClick: () => {
                     ocultarModalGenerico();
                     tipoPendiente = null;
@@ -301,7 +301,7 @@ function mostrarConfirmacionCambiarTipo() {
             },
             {
                 texto: "Continuar",
-                clase: "btn-confirmacion-guardar",
+                clase: "btn-modal btn-modal-positive-secondary",
                 onClick: () => {
                     ocultarModalGenerico();
                     limpiarDatosTasacion();
