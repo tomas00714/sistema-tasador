@@ -32,6 +32,11 @@ function leerHistorialDesdeStorage() {
 }
 
 let tasacionPerfilAbiertaId = null;
+
+// Función para generar informe desde el historial
+function generarInformeDesdeHistorial(id) {
+    window.location.href = `vista-previa-informe.html?id=${id}`;
+}
 let comparablePerfilAbiertoId = null;
 
 let historialInicializado = false;
@@ -1032,6 +1037,9 @@ window.abrirPerfilTasacion = async function(id) {
             <!-- Barra inferior fija -->
             <div class="perfil-barra-inferior">
                 <div class="perfil-barra-inferior-derecha">
+                    <button type="button" class="perfil-btn-accion" id="btnCrearInformePerfil">
+                        <i class="fa-solid fa-file-pdf"></i> Crear informe
+                    </button>
                     <button type="button" class="perfil-btn-accion" id="btnEditarPerfil">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>
@@ -1065,6 +1073,11 @@ window.abrirPerfilTasacion = async function(id) {
     document
         .getElementById("btnVolverPerfil")
         ?.addEventListener("click", cerrarPerfil);
+
+    // Crear informe button event listener
+    document
+        .getElementById("btnCrearInformePerfil")
+        ?.addEventListener("click", () => generarInformeDesdeHistorial(id));
 
     // Edit button event listener
     document
@@ -1405,8 +1418,19 @@ function editarTasacion(id) {
         return;
     }
 
+    console.log('[DEBUG historial] editarTasacion llamada con id:', id);
+    console.log('[DEBUG historial] Tasación encontrada:', tasacion);
+    console.log('[DEBUG historial] comparables:', tasacion.comparables);
+    console.log('[DEBUG historial] comparables.length:', tasacion.comparables?.length);
+    if (tasacion.comparables && tasacion.comparables.length > 0) {
+        tasacion.comparables.forEach((c, i) => {
+            console.log(`[DEBUG historial]   Comparable ${i}: id=${c.id}, valor=${c.valor}, direccion=${c.direccion}`);
+        });
+    }
+
     // Guardar la tasación completa para el modo edición
     localStorage.setItem("tasacionEnEdicion", JSON.stringify(tasacion));
+    console.log('[DEBUG historial] Tasación guardada en localStorage');
 
     // Cerrar el modal
     cerrarPerfil();

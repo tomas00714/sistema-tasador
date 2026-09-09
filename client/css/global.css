@@ -266,7 +266,7 @@ p {
     flex-direction: column;
 }
 
-@media (max-width: 1100px) {
+@media screen and (max-width: 1100px) {
     .panel-principal {
         left: var(--shell-margin);
         right: var(--shell-margin);
@@ -319,6 +319,7 @@ p {
     /* Azules - Color primario de marca */
     --color-primary: #225197;
     --color-primary-hover: #1d467f;
+    --color-primary-dark: #173a6b;
     --color-primary-light: #eef6ff;
     --color-primary-lighter: #dcecff;
 
@@ -376,6 +377,7 @@ body.dark-mode {
     /* Azules - Color primario de marca */
     --color-primary: #4f87d9;
     --color-primary-hover: #3f76c7;
+    --color-primary-dark: #2d5aa8;
     --color-primary-light: #192535;
     --color-primary-lighter: #162b47;
 
@@ -756,6 +758,22 @@ body.dark-mode .leaflet-tile {
     color: var(--color-primary);
     font-size: 1rem;
     flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    position: absolute;
+    inset: 0;
+}
+
+.avatar-img-hidden {
+    display: none !important;
 }
 
 .sidebar-profile-info {

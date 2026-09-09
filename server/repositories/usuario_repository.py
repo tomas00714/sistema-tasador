@@ -52,5 +52,13 @@ class UsuarioRepository(BaseRepository):
             "token_recuperacion_password": None,
             "fecha_expiracion_recuperacion": None
         }) is not None
-    
+
+    def has_password(self, usuario_id: int) -> bool:
+        """Indica si el usuario tiene una contraseña configurada."""
+        usuario = self.find_by_id(usuario_id)
+        return bool(usuario and usuario.get("password_hash"))
+
+    def find_by_id(self, usuario_id: int) -> Optional[Dict[str, Any]]:
+        """Busca un usuario por ID."""
+        return super().find_by_id(usuario_id)
 

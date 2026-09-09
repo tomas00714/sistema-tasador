@@ -78,32 +78,52 @@
                         <input type="checkbox" id="showMethodology" checked>
                         <span>Mostrar metodología</span>
                     </label>
+
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showCompetition">
+                        <span>Mostrar propiedades en competencia</span>
+                    </label>
+
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showFODA">
+                        <span>Mostrar análisis FODA</span>
+                    </label>
                 </div>
 
-                <!-- Campos de texto editables -->
+                <!-- Datos profesionales -->
                 <div class="config-section">
-                    <h3>Contenido del informe</h3>
+                    <h3>Datos profesionales</h3>
+                    
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showProfessionalData" checked>
+                        <span>Mostrar datos profesionales</span>
+                    </label>
+                </div>
+
+                <!-- Condiciones de trabajo -->
+                <div class="config-section">
+                    <h3>Condiciones de trabajo</h3>
+                    
+                    <label class="config-toggle">
+                        <input type="checkbox" id="showWorkConditions" checked>
+                        <span>Mostrar condiciones de trabajo</span>
+                    </label>
+                </div>
+
+                <!-- Presentación del valor -->
+                <div class="config-section">
+                    <h3>Presentación del valor</h3>
                     
                     <div class="config-field">
-                        <label for="reportTitle">Título del informe</label>
-                        <input type="text" id="reportTitle" class="config-input" value="Informe de Tasación">
+                        <label for="valorModalidad">Modalidad de presentación</label>
+                        <select id="valorModalidad" class="config-select">
+                            <option value="tasacion">Solo valor de tasación</option>
+                            <option value="rango">Rango de valor</option>
+                            <option value="publicacion">Valor de tasación + publicación</option>
+                            <option value="cierre">Valor de tasación + publicación + cierre esperado</option>
+                        </select>
                     </div>
 
-                    <div class="config-field">
-                        <label for="reportIntroduction">Introducción</label>
-                        <textarea id="reportIntroduction" class="config-textarea" rows="4">El presente informe tiene como objetivo determinar el valor de mercado del inmueble objeto de tasación, mediante el método de comparación de mercado.</textarea>
-                    </div>
-
-                    <div class="config-field">
-                        <label for="reportObservations">Observaciones finales</label>
-                        <textarea id="reportObservations" class="config-textarea" rows="3">El valor estimado refleja las condiciones actuales del mercado y las características específicas del inmueble.</textarea>
-                    </div>
-
-                    <div class="config-field">
-                        <label for="reportConclusion">Conclusión</label>
-                        <textarea id="reportConclusion" class="config-textarea" rows="3">Se concluye que el valor de mercado del inmueble es el resultado de la homogeneización de los comparables seleccionados.</textarea>
-                    </div>
-                </div>
 
             </div>
         </aside>
@@ -145,10 +165,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Scripts del sistema de informes -->
+    <script src="../js/route-guard.js"></script>
     <script src="../js/storage-cache.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/entidades.js"></script>
     <script src="../js/report-data-adapter.js"></script>
+    <script src="../js/report-paginator.js"></script>
     <script src="../js/report-components.js"></script>
     <script src="../js/vista-previa-informe.js"></script>
 

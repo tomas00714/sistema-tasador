@@ -1,10 +1,16 @@
 import logging
 import os
+import shutil
+import uuid
+import json
+import base64
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from contextlib import asynccontextmanager
+from starlette.responses import RedirectResponse, HTMLResponse
 
 from models import (
     TasacionLoteRequest, TasacionDepartamentoRequest, TasacionCasaRequest, TasacionRequest,
@@ -15,7 +21,10 @@ from models import (
     TasacionCompartirRequest, TasacionCompartirResponse, VistaPreviaTasacionResponse,
     RevocarTasacionCompartidaResponse,
     LoginRequest, RegisterRequest, TokenResponse, ForgotPasswordRequest,
-    EstadoSuscripcionResponse, CrearSuscripcionRequest, MercadoPagoWebhookRequest
+    GoogleAuthUrlResponse,
+    EstadoSuscripcionResponse, CrearSuscripcionRequest, MercadoPagoWebhookRequest,
+    ProfesionalResponse, ProfesionalUpdateRequest, ProfesionalMeResponse,
+    UsuarioInfoResponse
 )
 from services.compartir_service import CompartirService
 from services.suscripcion_service import SuscripcionService
@@ -30,6 +39,7 @@ from repositories.comparable_repository import ComparableRepository
 from repositories.solicitud_repository import SolicitudRepository
 from repositories.solicitud_comparable_aceptacion_repository import SolicitudComparableAceptacionRepository
 from repositories.usuario_repository import UsuarioRepository
+from repositories.profesional_repository import ProfesionalRepository
 from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
 from utils.hybrid_mapper import mapear_tasacion_a_columnas, mapear_comparable_a_columnas
@@ -37,6 +47,14 @@ from utils.id_encoder import generar_codigo_publico, obtener_id_desde_codigo, TI
 from utils.webhook_validator import validate_webhook_signature
 import auth
 import middleware
+from services.google_auth_service import (
+    get_google_oauth_config,
+    create_oauth_state,
+    verify_oauth_state,
+    build_google_auth_url,
+    exchange_code_for_tokens,
+    get_google_user_info,
+)
 
 # Configurar logging
 logging.basicConfig(
@@ -46,6 +64,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SHARE_BASE_URL = os.getenv("SHARE_BASE_URL", "https://tasador.app/compartir/")
+
+# Directorio para archivos subidos por usuarios (fotos de perfil y logos)
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
+
+# Extensiones permitidas para imágenes de perfil/logo
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
+
+def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
+    """Guarda un archivo subido en UPLOAD_DIR con nombre único."""
+    original = upload.filename or 'archivo'
+    _, ext = os.path.splitext(original.lower())
+
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formato no permitido: {ext}. Use {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}"
+        )
+
+    filename = f"{prefix}_{uuid.uuid4().hex}{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+
+    try:
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(upload.file, f)
+    except Exception as e:
+        logger.error(f"Error al guardar archivo subido: {e}")
+        raise HTTPException(status_code=500, detail="Error al guardar el archivo")
+    finally:
+        upload.file.close()
+
+    return filename
 
 
 def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
@@ -98,6 +148,13 @@ async def lifespan(app: FastAPI):
             logger.warning("No se pudo verificar la conexión a PostgreSQL")
     else:
         logger.error("No se pudo inicializar el pool de conexiones")
+
+    # Asegurar que existe el directorio de uploads
+    try:
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        logger.info(f"Directorio de uploads verificado: {UPLOAD_DIR}")
+    except Exception as e:
+        logger.error(f"Error al crear directorio de uploads: {e}")
     
     yield
     
@@ -115,6 +172,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 @app.get("/")
@@ -370,7 +429,10 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         datos_tasacion = {
             'usuario_id': usuario_id,
             'estado': tasacion.estado,
-            'datos': datos_limpios
+            'datos': datos_limpios,
+            'nomenclatura_catastral': tasacion.nomenclatura_catastral,
+            'cliente_nombre': tasacion.cliente_nombre,
+            'finalidad': tasacion.finalidad or 'Tasación comercial'
         }
         datos_tasacion.update(mapear_tasacion_a_columnas(datos_limpios))
         
@@ -388,33 +450,17 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
                     # Obtener el comparable actual para construir snapshot
                     comparable = comp_repo.find_by_id(comp_id_interno)
                     if comparable:
-                        # Construir snapshot
-                        snapshot = {
-                            'direccion': comparable.get('direccion'),
-                            'lat': comparable.get('lat'),
-                            'lon': comparable.get('lon'),
-                            'tipo_inmueble': comparable.get('tipo_inmueble'),
-                            'tipo_valor': comparable.get('tipo_valor'),
-                            'valor': comparable.get('valor'),
-                            'valor_m2': comparable.get('valor_m2'),
-                            'superficie': comparable.get('superficie'),
-                            'frente': comparable.get('frente'),
-                            'fondo': comparable.get('fondo'),
-                            'tipo_lote': comparable.get('tipo_lote'),
-                            'ambientes': comparable.get('ambientes'),
-                            'dormitorios': comparable.get('dormitorios'),
-                            'banos': comparable.get('banos'),
-                            'cochera': comparable.get('cochera'),
-                            'tiene_ascensor': comparable.get('tiene_ascensor'),
-                            'tiene_pileta': comparable.get('tiene_pileta'),
-                            'tiene_jardin': comparable.get('tiene_jardin'),
-                            'datos': comparable.get('datos', {})
-                        }
-                        repo.agregar_comparable(tasacion_creada['id'], comp_id_interno, orden, snapshot)
+                        # Usar el método del repository que construye el snapshot correctamente
+                        snapshot = repo._construir_snapshot_comparable(comparable)
+                        # Convertir a JSONB para PostgreSQL
+                        import psycopg2.extras
+                        snapshot_jsonb = psycopg2.extras.Json(snapshot)
+                        repo.agregar_comparable(tasacion_creada['id'], comp_id_interno, orden, snapshot_jsonb)
         
         # Obtener comparables para la respuesta
         comparables = repo.obtener_comparables(tasacion_creada['id'])
-        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+        # c['id'] ya es el ID público (string) del snapshot, no hay que volver a generarlo
+        comparables_ids = [c['id'] for c in comparables]
         
         # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
         datos_creada = tasacion_creada['datos'].copy()
@@ -432,7 +478,10 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
             datos=datos_creada,
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_creada['fecha_creacion'],
-            fecha_modificacion=tasacion_creada['fecha_modificacion']
+            fecha_modificacion=tasacion_creada['fecha_modificacion'],
+            nomenclatura_catastral=tasacion_creada.get('nomenclatura_catastral'),
+            cliente_nombre=tasacion_creada.get('cliente_nombre'),
+            finalidad=tasacion_creada.get('finalidad')
         )
     except Exception as e:
         logger.error(f"Error al crear tasación: {e}")
@@ -462,11 +511,18 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
         
         # Obtener comparables desde la tabla relacional (snapshots)
         comparables = repo.obtener_comparables(tasacion['id'])
-        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+        logger.info(f"[DEBUG GET] Tasación {tasacion_id}: comparables obtenidos: {len(comparables)}")
+        for i, comp in enumerate(comparables):
+            logger.info(f"[DEBUG GET]  Comparable {i}: id={comp.get('id')}, valor={comp.get('valor')}, direccion={comp.get('direccion')}")
+        
+        # c['id'] ya es el ID público (string) del snapshot, no hay que volver a generarlo
+        comparables_ids = [c['id'] for c in comparables]
+        logger.info(f"[DEBUG GET] comparables_ids: {comparables_ids}")
 
         # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
         datos_tasacion = tasacion['datos'].copy()
         datos_tasacion['comparables'] = comparables  # Snapshots como fuente de verdad
+        logger.info(f"[DEBUG GET] datos_tasacion['comparables'] tiene {len(datos_tasacion['comparables'])} elementos")
 
         # Obtener datos del remitente si la tasación fue recibida por compartir
         compartido_por = None
@@ -483,7 +539,10 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion['fecha_creacion'],
             fecha_modificacion=tasacion['fecha_modificacion'],
-            compartido_por=compartido_por
+            compartido_por=compartido_por,
+            nomenclatura_catastral=tasacion.get('nomenclatura_catastral'),
+            cliente_nombre=tasacion.get('cliente_nombre'),
+            finalidad=tasacion.get('finalidad')
         )
     except HTTPException:
         raise
@@ -514,7 +573,8 @@ def listar_tasaciones(
         for t in tasaciones:
             # Obtener comparables (snapshots) para cada tasación
             comparables = repo.obtener_comparables(t['id'])
-            comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+            # c['id'] ya es el ID público (string) del snapshot, no hay que volver a generarlo
+            comparables_ids = [c['id'] for c in comparables]
             
             # Incluir snapshots en datos.datos.comparables
             datos_tasacion = t['datos'].copy()
@@ -543,6 +603,7 @@ def listar_tasaciones(
 @app.put("/api/tasaciones/{tasacion_id}", response_model=TasacionResponse)
 def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: int = Depends(middleware.get_current_user_id)):
     """Actualiza una tasación por código público."""
+    logger.info(f"[BACKEND PUT] TasacionUpdate recibido: {tasacion}")
     logger.info(f"Actualizando tasación: {tasacion_id}")
     
     try:
@@ -565,14 +626,24 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         datos_actualizacion = {}
         if tasacion.estado is not None:
             datos_actualizacion['estado'] = tasacion.estado
+        if tasacion.nomenclatura_catastral is not None:
+            datos_actualizacion['nomenclatura_catastral'] = tasacion.nomenclatura_catastral
+        if tasacion.cliente_nombre is not None:
+            datos_actualizacion['cliente_nombre'] = tasacion.cliente_nombre
+        if tasacion.finalidad is not None:
+            datos_actualizacion['finalidad'] = tasacion.finalidad
         if tasacion.datos is not None:
             # Limpiar metadatos de procedencia del JSON; esos viven en columnas
             datos_limpios = dict(tasacion.datos)
             datos_limpios.pop('origen', None)
             datos_limpios.pop('origenId', None)
-            datos_actualizacion['datos'] = datos_limpios
+            logger.info(f"[BACKEND PUT] datos_limpios que se guardarán: {datos_limpios}")
+            # Mezclar con datos existentes para no perder información
+            datos_existentes = tasacion_existente.get('datos', {})
+            datos_mergeados = {**datos_existentes, **datos_limpios}
+            datos_actualizacion['datos'] = datos_mergeados
             # Extraer y actualizar columnas específicas desde JSON
-            datos_actualizacion.update(mapear_tasacion_a_columnas(datos_limpios))
+            datos_actualizacion.update(mapear_tasacion_a_columnas(datos_mergeados))
         
         if not datos_actualizacion and tasacion.comparables_ids is None:
             raise HTTPException(status_code=400, detail="No se proporcionaron campos para actualizar")
@@ -586,6 +657,13 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         
         # Actualizar comparables usando upsert para preservar snapshots
         if tasacion.comparables_ids is not None:
+            logger.info(f"[DEBUG PUT] Actualizando comparables. comparables_ids: {tasacion.comparables_ids}")
+            logger.info(f"[DEBUG PUT] comparables_snapshots proporcionados: {tasacion.comparables_snapshots is not None}")
+            if tasacion.comparables_snapshots:
+                logger.info(f"[DEBUG PUT] Cantidad de snapshots: {len(tasacion.comparables_snapshots)}")
+                for i, snap in enumerate(tasacion.comparables_snapshots):
+                    logger.info(f"[DEBUG PUT] Snapshot {i}: {snap}")
+            
             from repositories.comparable_repository import ComparableRepository
             comp_repo = ComparableRepository()
             
@@ -595,16 +673,54 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
             # Si se proporcionan snapshots explícitos, usarlos
             if tasacion.comparables_snapshots:
                 for orden, (comp_id, snapshot) in enumerate(zip(tasacion.comparables_ids, tasacion.comparables_snapshots)):
-                    comp_id_interno = obtener_id_desde_codigo(comp_id)
-                    if comp_id_interno:
+                    # Verificar si es un ID de comparable eliminado (comienza con "deleted_")
+                    if comp_id.startswith('deleted_'):
+                        # Para comparables eliminados, no intentar obtener ID interno
+                        # En su lugar, buscar por snapshot ID existente en la tabla
+                        logger.info(f"[DEBUG PUT] Comparable eliminado detectado: {comp_id}")
+                        # Preservar el snapshot existente sin cambiar comparable_id (que ya es NULL)
                         comparables_data.append({
-                            'comparable_id': comp_id_interno,
+                            'comparable_id': None,  # Mantener NULL
                             'orden': orden,
                             'snapshot': snapshot
                         })
+                    else:
+                        comp_id_interno = obtener_id_desde_codigo(comp_id)
+                        if comp_id_interno:
+                            logger.info(f"[DEBUG PUT] Agregando comparable_data: comp_id_interno={comp_id_interno}, orden={orden}")
+                            logger.info(f"[DEBUG PUT] Snapshot a guardar: {snapshot}")
+                            comparables_data.append({
+                                'comparable_id': comp_id_interno,
+                                'orden': orden,
+                                'snapshot': snapshot
+                            })
             else:
                 # Si no, preservar snapshots existentes o crear nuevos desde estado actual
                 for orden, comp_id in enumerate(tasacion.comparables_ids):
+                    # Verificar si es un ID de comparable eliminado
+                    if comp_id.startswith('deleted_'):
+                        # Para comparables eliminados, no buscar en biblioteca
+                        # Buscar snapshot existente en la tabla
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        try:
+                            cursor.execute(
+                                "SELECT snapshot FROM tasacion_comparable WHERE tasacion_id = %s AND comparable_id IS NULL AND orden = %s",
+                                (tasacion_id_interno, orden)
+                            )
+                            existing = cursor.fetchone()
+                            if existing and existing[0]:
+                                snapshot = existing[0]
+                                comparables_data.append({
+                                    'comparable_id': None,
+                                    'orden': orden,
+                                    'snapshot': snapshot
+                                })
+                        finally:
+                            cursor.close()
+                            release_connection(conn)
+                        continue
+                    
                     comp_id_interno = obtener_id_desde_codigo(comp_id)
                     if comp_id_interno:
                         # Verificar si ya existe relación
@@ -620,24 +736,36 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
                                 # Preservar snapshot existente
                                 snapshot = existing[0]
                             else:
-                                # Crear snapshot desde estado actual
+                                # Crear snapshot desde estado actual - convertir Decimal a nativos
+                                def to_native(value):
+                                    """Convierte Decimal a tipos nativos de Python para JSON serialización"""
+                                    if value is None:
+                                        return None
+                                    try:
+                                        from decimal import Decimal
+                                        if isinstance(value, Decimal):
+                                            return float(value)
+                                    except:
+                                        pass
+                                    return value
+
                                 comparable = comp_repo.find_by_id(comp_id_interno)
                                 if comparable:
                                     snapshot = {
                                         'direccion': comparable.get('direccion'),
-                                        'lat': comparable.get('lat'),
-                                        'lon': comparable.get('lon'),
+                                        'lat': to_native(comparable.get('lat')),
+                                        'lon': to_native(comparable.get('lon')),
                                         'tipo_inmueble': comparable.get('tipo_inmueble'),
                                         'tipo_valor': comparable.get('tipo_valor'),
-                                        'valor': comparable.get('valor'),
-                                        'valor_m2': comparable.get('valor_m2'),
-                                        'superficie': comparable.get('superficie'),
-                                        'frente': comparable.get('frente'),
-                                        'fondo': comparable.get('fondo'),
+                                        'valor': to_native(comparable.get('valor')),
+                                        'valor_m2': to_native(comparable.get('valor_m2')),
+                                        'superficie': to_native(comparable.get('superficie')),
+                                        'frente': to_native(comparable.get('frente')),
+                                        'fondo': to_native(comparable.get('fondo')),
                                         'tipo_lote': comparable.get('tipo_lote'),
-                                        'ambientes': comparable.get('ambientes'),
-                                        'dormitorios': comparable.get('dormitorios'),
-                                        'banos': comparable.get('banos'),
+                                        'ambientes': to_native(comparable.get('ambientes')),
+                                        'dormitorios': to_native(comparable.get('dormitorios')),
+                                        'banos': to_native(comparable.get('banos')),
                                         'cochera': comparable.get('cochera'),
                                         'tiene_ascensor': comparable.get('tiene_ascensor'),
                                         'tiene_pileta': comparable.get('tiene_pileta'),
@@ -662,8 +790,8 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         
         # Obtener comparables para la respuesta (ahora son snapshots)
         comparables = repo.obtener_comparables(tasacion_id_interno)
-        # Los snapshots ya tienen el ID, generar códigos públicos
-        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables if c.get('id')]
+        # c['id'] ya es el ID público (string) del snapshot, no hay que volver a generarlo
+        comparables_ids = [c['id'] for c in comparables if c.get('id')]
         
         # Incluir snapshots en datos.datos.comparables para compatibilidad con frontend
         # Los snapshots son la fuente de verdad, datos.datos.comparables es solo para compatibilidad
@@ -679,7 +807,10 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
             datos=datos_actualizados,
             comparables_ids=comparables_ids,
             fecha_creacion=tasacion_actualizada['fecha_creacion'],
-            fecha_modificacion=tasacion_actualizada['fecha_modificacion']
+            fecha_modificacion=tasacion_actualizada['fecha_modificacion'],
+            nomenclatura_catastral=tasacion_actualizada.get('nomenclatura_catastral'),
+            cliente_nombre=tasacion_actualizada.get('cliente_nombre'),
+            finalidad=tasacion_actualizada.get('finalidad')
         )
     except HTTPException:
         raise
@@ -794,7 +925,8 @@ def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware
 
         repo = TasacionRepository()
         comparables = repo.obtener_comparables(nueva_tasacion['id'])
-        comparables_ids = [generar_codigo_publico(TIPO_COMPARABLE, c['id']) for c in comparables]
+        # c['id'] ya es el ID público (string) del snapshot, no hay que volver a generarlo
+        comparables_ids = [c['id'] for c in comparables]
 
         return TasacionResponse(
             id=generar_codigo_publico(TIPO_TASACION, nueva_tasacion['id']),
@@ -1847,7 +1979,8 @@ def register(request: RegisterRequest):
             email=nuevo_usuario['email'],
             nombre=nuevo_usuario['nombre'],
             apellido=nuevo_usuario['apellido'],
-            is_admin=auth.is_admin(nuevo_usuario['email'])
+            is_admin=auth.is_admin(nuevo_usuario['email']),
+            google_vinculado=bool(nuevo_usuario.get('google_id'))
         )
     except HTTPException:
         raise
@@ -1890,7 +2023,8 @@ def login(request: LoginRequest):
             email=usuario['email'],
             nombre=usuario['nombre'],
             apellido=usuario['apellido'],
-            is_admin=auth.is_admin(usuario['email'])
+            is_admin=auth.is_admin(usuario['email']),
+            google_vinculado=bool(usuario.get('google_id'))
         )
     except HTTPException:
         raise
@@ -1926,6 +2060,370 @@ def forgot_password(request: ForgotPasswordRequest):
     except Exception as e:
         logger.error(f"Error en forgot-password: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================
+#   GOOGLE OAUTH HELPERS
+# =========================
+
+def _google_callback_html(data: Dict[str, Any]) -> HTMLResponse:
+    """Renderiza una página de callback que postea el resultado a window.opener."""
+    payload = base64.b64encode(
+        json.dumps(data, ensure_ascii=False).encode("utf-8")
+    ).decode("utf-8")
+    html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Autenticación con Google</title></head>
+<body>
+    <p>Cerrando ventana...</p>
+    <script>
+        try {{
+            const data = JSON.parse(atob("{payload}"));
+            if (window.opener) {{
+                window.opener.postMessage(data, "*");
+            }}
+        }} catch (e) {{
+            console.error("Error procesando respuesta de Google:", e);
+        }}
+        setTimeout(() => window.close(), 500);
+    </script>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
+def _datos_usuario_token(usuario: Dict[str, Any], access_token: str) -> TokenResponse:
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        usuario_id=usuario['id'],
+        email=usuario['email'],
+        nombre=usuario['nombre'] or '',
+        apellido=usuario['apellido'] or '',
+        is_admin=auth.is_admin(usuario['email']),
+        google_vinculado=bool(usuario.get('google_id'))
+    )
+
+
+# =========================
+#   ENDPOINTS DE AUTENTICACIÓN CON GOOGLE
+# =========================
+
+@app.get("/api/auth/google")
+def iniciar_google_oauth(mode: str = Query(..., regex="^(continue)$")):
+    """Inicia el flujo OAuth 2.0 con Google para login o registro."""
+    config = get_google_oauth_config()
+    if not config["client_id"]:
+        raise HTTPException(status_code=503, detail="Google OAuth no está configurado")
+
+    state = create_oauth_state(mode=mode)
+    auth_url = build_google_auth_url(
+        state=state,
+        client_id=config["client_id"],
+        redirect_uri=config["redirect_uri"]
+    )
+    return RedirectResponse(url=auth_url)
+
+
+@app.post("/api/usuarios/me/google", response_model=GoogleAuthUrlResponse)
+def iniciar_vinculacion_google(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Inicia el flujo OAuth 2.0 con Google para vincular la cuenta actual."""
+    config = get_google_oauth_config()
+    if not config["client_id"]:
+        raise HTTPException(status_code=503, detail="Google OAuth no está configurado")
+
+    state = create_oauth_state(mode="link", user_id=usuario_id)
+    auth_url = build_google_auth_url(
+        state=state,
+        client_id=config["client_id"],
+        redirect_uri=config["redirect_uri"]
+    )
+    return GoogleAuthUrlResponse(auth_url=auth_url)
+
+
+@app.delete("/api/usuarios/me/google")
+def desvincular_google(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Desvincula la cuenta de Google del usuario autenticado."""
+    repo = UsuarioRepository()
+    usuario = repo.find_by_id(usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not repo.has_password(usuario_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Antes de desvincular Google, configurá una contraseña para mantener acceso a tu cuenta."
+        )
+
+    repo.update(usuario_id, {"google_id": None})
+    usuario_actualizado = repo.find_by_id(usuario_id)
+
+    return UsuarioInfoResponse(
+        usuario_id=usuario_actualizado['id'],
+        email=usuario_actualizado['email'],
+        nombre=usuario_actualizado['nombre'] or '',
+        apellido=usuario_actualizado['apellido'] or '',
+        is_admin=auth.is_admin(usuario_actualizado['email']),
+        google_vinculado=bool(usuario_actualizado.get('google_id'))
+    )
+
+
+@app.get("/api/auth/google/callback")
+def google_oauth_callback(
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None
+):
+    """Callback de Google OAuth. Procesa login, registro o vinculación."""
+    if error:
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Google canceló o rechazó la autenticación"
+        })
+
+    if not code or not state:
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Parámetros de OAuth inválidos"
+        })
+
+    config = get_google_oauth_config()
+    if not config["client_id"] or not config["client_secret"]:
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Google OAuth no está configurado en el servidor"
+        })
+
+    # Validar state firmado
+    payload = verify_oauth_state(state)
+    if not payload:
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "State inválido o expirado"
+        })
+
+    mode = payload.get("mode")
+
+    # Intercambiar code y obtener datos de Google
+    try:
+        tokens = exchange_code_for_tokens(
+            code=code,
+            client_id=config["client_id"],
+            client_secret=config["client_secret"],
+            redirect_uri=config["redirect_uri"]
+        )
+        google_user = get_google_user_info(tokens["access_token"])
+    except Exception as e:
+        logger.error(f"Error validando identidad de Google: {e}")
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "No se pudo validar la identidad con Google"
+        })
+
+    google_id = google_user.get("sub")
+    email = google_user.get("email")
+    email_verified = google_user.get("email_verified", False)
+    nombre = google_user.get("given_name") or google_user.get("name") or ""
+    apellido = google_user.get("family_name") or ""
+
+    if not google_id or not email or not email_verified:
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Google no proporcionó email verificado"
+        })
+
+    repo = UsuarioRepository()
+
+    # Modo vinculación desde perfil
+    if mode == "link":
+        user_id = payload.get("uid")
+        if not user_id:
+            return _google_callback_html({
+                "type": "google-link-error",
+                "message": "Sesión de vinculación inválida"
+            })
+
+        usuario = repo.find_by_id(user_id)
+        if not usuario:
+            return _google_callback_html({
+                "type": "google-link-error",
+                "message": "Usuario no encontrado"
+            })
+
+        if usuario.get("google_id") == google_id:
+            return _google_callback_html({"type": "google-link-success", "already": True})
+
+        # Verificar que el Google ID no pertenezca a otro usuario
+        conflicto = repo.find_by_google_id(google_id)
+        if conflicto and conflicto["id"] != user_id:
+            return _google_callback_html({
+                "type": "google-link-error",
+                "message": "Esta cuenta de Google ya está vinculada a otro usuario."
+            })
+
+        try:
+            repo.update(user_id, {"google_id": google_id})
+            return _google_callback_html({"type": "google-link-success"})
+        except Exception as e:
+            logger.error(f"Error vinculando Google: {e}")
+            return _google_callback_html({
+                "type": "google-link-error",
+                "message": "Error interno al vincular la cuenta de Google"
+            })
+
+    # Modo login/registro
+    if mode != "continue":
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Modo de OAuth inválido"
+        })
+
+    # 1. Buscar por google_id
+    usuario = repo.find_by_google_id(google_id)
+    if usuario:
+        if usuario["estado"] != "activo":
+            return _google_callback_html({
+                "type": "google-auth-error",
+                "message": "Usuario no está activo"
+            })
+
+        repo.update_ultimo_acceso(usuario["id"])
+        access_token = auth.create_access_token(data={"sub": str(usuario["id"])})
+        return _google_callback_html({
+            "type": "google-auth-success",
+            "token": _datos_usuario_token(usuario, access_token).model_dump()
+        })
+
+    # 2. Si no existe por google_id, verificar por email
+    usuario_por_email = repo.find_by_email(email)
+    if usuario_por_email:
+        # NO vincular automáticamente. El usuario debe iniciar sesión con password
+        # y vincular desde el perfil de forma explícita.
+        return _google_callback_html({
+            "type": "google-auth-existing",
+            "email": email,
+            "message": "Ya existe una cuenta con este correo. Iniciá sesión con tu contraseña y vinculá Google desde tu perfil."
+        })
+
+    # 3. Crear nuevo usuario con Google
+    try:
+        nuevo_usuario = repo.create_usuario({
+            "email": email,
+            "google_id": google_id,
+            "nombre": nombre,
+            "apellido": apellido,
+            "estado": "activo"
+        })
+        repo.update_ultimo_acceso(nuevo_usuario["id"])
+        access_token = auth.create_access_token(data={"sub": str(nuevo_usuario["id"])})
+        return _google_callback_html({
+            "type": "google-auth-success",
+            "token": _datos_usuario_token(nuevo_usuario, access_token).model_dump()
+        })
+    except Exception as e:
+        logger.error(f"Error creando usuario con Google: {e}")
+        return _google_callback_html({
+            "type": "google-auth-error",
+            "message": "Error interno al crear la cuenta"
+        })
+
+
+# =========================
+#   ENDPOINTS DE PERFIL PROFESIONAL
+# =========================
+
+@app.get("/api/profesionales/me", response_model=ProfesionalMeResponse)
+def obtener_profesional_me(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Obtiene los datos profesionales del usuario autenticado."""
+    try:
+        usuario_repo = UsuarioRepository()
+        profesional_repo = ProfesionalRepository()
+
+        usuario = usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        profesional = profesional_repo.find_by_usuario_id(usuario_id)
+
+        return ProfesionalMeResponse(
+            usuario=UsuarioInfoResponse(
+                usuario_id=usuario['id'],
+                email=usuario['email'],
+                nombre=usuario['nombre'] or '',
+                apellido=usuario['apellido'] or '',
+                is_admin=auth.is_admin(usuario['email']),
+                google_vinculado=bool(usuario.get('google_id'))
+            ),
+            profesional=ProfesionalResponse(**profesional) if profesional else None
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al obtener perfil profesional: {e}")
+        raise HTTPException(status_code=500, detail="Error al obtener perfil profesional")
+
+
+@app.put("/api/profesionales/me", response_model=ProfesionalResponse)
+def actualizar_profesional_me(
+    request: ProfesionalUpdateRequest,
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Crea o actualiza los datos profesionales del usuario autenticado."""
+    try:
+        profesional_repo = ProfesionalRepository()
+
+        data = request.model_dump(exclude_unset=True)
+        profesional = profesional_repo.upsert(usuario_id, data)
+
+        if not profesional:
+            raise HTTPException(status_code=500, detail="No se pudo guardar el perfil profesional")
+
+        return ProfesionalResponse(**profesional)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al actualizar perfil profesional: {e}")
+        raise HTTPException(status_code=500, detail="Error al actualizar perfil profesional")
+
+
+@app.post("/api/profesionales/me/foto-perfil", response_model=ProfesionalResponse)
+def subir_foto_perfil(
+    file: UploadFile = File(...),
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Sube la foto de perfil del usuario autenticado."""
+    try:
+        filename = _guardar_archivo_subido(file, 'foto_perfil')
+
+        profesional_repo = ProfesionalRepository()
+        profesional = profesional_repo.upsert(usuario_id, {"foto_perfil": filename})
+
+        return ProfesionalResponse(**profesional)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al subir foto de perfil: {e}")
+        raise HTTPException(status_code=500, detail="Error al subir foto de perfil")
+
+
+@app.post("/api/profesionales/me/logo-inmobiliaria", response_model=ProfesionalResponse)
+def subir_logo_inmobiliaria(
+    file: UploadFile = File(...),
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Sube el logo de la inmobiliaria del usuario autenticado."""
+    try:
+        filename = _guardar_archivo_subido(file, 'logo_inmobiliaria')
+
+        profesional_repo = ProfesionalRepository()
+        profesional = profesional_repo.upsert(usuario_id, {"logo_inmobiliaria": filename})
+
+        return ProfesionalResponse(**profesional)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al subir logo de inmobiliaria: {e}")
+        raise HTTPException(status_code=500, detail="Error al subir logo de inmobiliaria")
 
 
 @app.get("/api/tablas/valvano")

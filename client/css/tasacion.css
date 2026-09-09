@@ -1048,6 +1048,76 @@ background-position: right 14px center;
     margin-bottom: 22px;
 }
 
+/* Estilos para secciones de informe */
+.ambiente-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.ambiente-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ambiente-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.btn-eliminar-ambiente {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-eliminar-ambiente:hover {
+    background: var(--color-error);
+    color: white;
+}
+
+.ambiente-campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ambiente-campos .input-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.btn-secondary {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--color-border);
+}
+
+.btn-secondary i {
+    font-size: 12px;
+}
+
 #comparablesModalContenido .modal-header .modal-titulo h2 {
 
     margin: 0;

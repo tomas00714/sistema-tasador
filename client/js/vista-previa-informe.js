@@ -2,6 +2,12 @@
  * Vista Previa de Informe - Lógica principal
  */
 
+// Obtener ID de tasación de la URL
+function getTasacionIdFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id');
+}
+
 const reportConfig = {
     showLogo: true,
     showPhotos: true,
@@ -10,16 +16,56 @@ const reportConfig = {
     title: "Informe de Tasación",
     introduction: "El presente informe tiene como objetivo determinar el valor de mercado del inmueble objeto de tasación, mediante el método de comparación de mercado.",
     observations: "El valor estimado refleja las condiciones actuales del mercado y las características específicas del inmueble.",
-    conclusion: "Se concluye que el valor de mercado del inmueble es el resultado de la homogeneización de los comparables seleccionados."
+    conclusion: "Se concluye que el valor de mercado del inmueble es el resultado de la homogeneización de los comparables seleccionados.",
+    // Nuevos campos
+    consideracionesPrevias: "No se consignan consideraciones previas.",
+    finalidadTasacion: "Determinar el valor venal de mercado del inmueble para su venta.",
+    descripcionEntorno: "",
+    puntosInteres: "",
+    textoMetodologia: "Para la determinación del valor se aplica el método comparativo de mercado, tomando como referencia inmuebles de características similares y realizando los ajustes correspondientes mediante los coeficientes de homogeneización.",
+    // Datos profesionales (vienen del perfil del usuario, no de reportConfig)
+    showProfessionalData: true,
+    // Condiciones de trabajo
+    showWorkConditions: true,
+    comision: "",
+    exclusividad: "",
+    plazoTrabajo: "",
+    condicionesAdicionales: "",
+    // Presentación del valor
+    valorModalidad: "tasacion",
+    valorPublicacion: "",
+    valorCierre: "",
+    valorRangoMin: "",
+    valorRangoMax: "",
+    // Propiedades en competencia
+    showCompetition: false,
+    // Análisis FODA
+    showFODA: false,
+    fodaFortalezas: "",
+    fodaOportunidades: "",
+    fodaDebilidades: "",
+    fodaAmenazas: ""
 };
 
 let tasacionCargada = null;
 let comparablesResueltos = [];
 let fotosTasacion = [];
 let selectedComparableIds = new Set();
+let usuarioActual = null;
+let profesionalActual = null;
 
-function initVistaPreviaInforme() {
-    tasacionCargada = obtenerTasacionParaInforme();
+async function initVistaPreviaInforme() {
+    try {
+        const perfil = await obtenerProfesionalAPI();
+        usuarioActual = perfil?.usuario || null;
+        profesionalActual = perfil?.profesional || null;
+    } catch (e) {
+        console.warn('No se pudieron cargar los datos profesionales:', e.message);
+        usuarioActual = null;
+        profesionalActual = null;
+    }
+
+    tasacionCargada = await obtenerTasacionParaInforme();
 
     if (tasacionCargada) {
         comparablesResueltos = resolverComparablesDeTasacion(tasacionCargada);
@@ -27,6 +73,18 @@ function initVistaPreviaInforme() {
         selectedComparableIds = new Set(comparablesResueltos.map(c => c.id));
         setupPhotosState();
         setupComparablesState();
+        
+        // Inicializar valores de rango según el valor de tasación
+        const valorTasacion = tasacionCargada.resultado?.valor_final || tasacionCargada.datosCompletos?.resultado?.valor_final || 0;
+        if (valorTasacion > 0) {
+            reportConfig.valorRangoMin = Math.round(valorTasacion * 0.9);
+            reportConfig.valorRangoMax = Math.round(valorTasacion * 1.1);
+        }
+        
+        // Sincronizar inputs con los valores iniciales
+        sincronizarInputsConConfig();
+        
+        mostrarEstadoVacio(false);
     } else {
         mostrarEstadoVacio(true);
     }
@@ -35,15 +93,177 @@ function initVistaPreviaInforme() {
     setupExpandablePanels();
     renderPhotosPanel();
     renderComparablesPanel();
-    renderReportPreview();
+    actualizarOpcionesSegunTipo();
+    await renderReportPreview();
     setupActionButtons();
+    setupDirectEditing();
+    mostrarAyudaEdicion();
 }
 
-function mostrarEstadoVacio(mostrar) {
-    const emptyState = document.getElementById('reportEmptyState');
+// =========================
+// EDICIÓN DIRECTA DEL INFORME
+// =========================
+// Capa de interacción sobre los elementos marcados con data-editable.
+// Fuente de verdad única: reportConfig. El panel izquierdo ya no contiene
+// campos de texto: todos los textos se editan exclusivamente aquí.
+
+let editingElement = null;
+let editingOriginalText = '';
+let editingOriginalRaw = '';
+let editRenderPending = false;
+let pendingEditKey = null;
+
+function setupDirectEditing() {
     const reportViewer = document.getElementById('reportViewer');
-    if (emptyState) emptyState.hidden = !mostrar;
-    if (reportViewer) reportViewer.style.display = mostrar ? 'none' : '';
+    if (!reportViewer) return;
+
+    reportViewer.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-editable]');
+        if (!el || el === editingElement) return;
+        // Si hay un re-render en curso por el commit anterior, recordar a qué
+        // campo quiso entrar el usuario y re-ingresar sobre el DOM nuevo
+        if (editRenderPending) {
+            pendingEditKey = el.dataset.editable;
+            return;
+        }
+        // Si hay una edición activa, confirmarla primero y re-ingresar
+        // al nuevo campo sobre el DOM regenerado
+        if (editingElement) {
+            pendingEditKey = el.dataset.editable;
+            commitDirectEdit(editingElement);
+            return;
+        }
+        startDirectEdit(el);
+    });
+
+    reportViewer.addEventListener('keydown', (e) => {
+        if (!editingElement) return;
+        const multiline = editingElement.hasAttribute('data-editable-multiline');
+        if (e.key === 'Enter' && !multiline) {
+            e.preventDefault();
+            editingElement.blur(); // dispara commit
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            editingElement.textContent = editingOriginalText;
+            editingElement.classList.toggle('is-empty', editingOriginalText.trim() === '');
+            editingElement.dataset.cancelled = '1';
+            editingElement.blur();
+        }
+    });
+
+    // Pegar como texto plano (sin formato HTML)
+    reportViewer.addEventListener('paste', (e) => {
+        if (!editingElement) return;
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    reportViewer.addEventListener('focusout', (e) => {
+        if (editingElement && e.target === editingElement) {
+            const nextEl = e.relatedTarget && e.relatedTarget.closest
+                ? e.relatedTarget.closest('[data-editable]')
+                : null;
+            const nextKey = nextEl && reportViewer.contains(nextEl)
+                ? nextEl.dataset.editable
+                : null;
+            commitDirectEdit(editingElement, nextKey);
+        }
+    });
+}
+
+function startDirectEdit(el) {
+    if (!el.isConnected) return;
+    if (editingElement === el) return;
+
+    editingElement = el;
+    editingOriginalText = el.textContent;
+    editingOriginalRaw = el.dataset.raw || '';
+    delete el.dataset.cancelled;
+
+    // Campos numéricos: editar el valor crudo, no el formato "$90.000"
+    if (el.hasAttribute('data-editable-number')) {
+        el.textContent = el.dataset.raw || '';
+    }
+
+    el.classList.remove('is-empty');
+    el.classList.add('is-editing');
+    el.contentEditable = 'true';
+    el.spellcheck = true;
+    el.focus();
+}
+
+function commitDirectEdit(el, nextKey = null) {
+    const key = el.dataset.editable;
+    el.contentEditable = 'false';
+    el.classList.remove('is-editing');
+    editingElement = null;
+
+    if (el.dataset.cancelled) {
+        delete el.dataset.cancelled;
+        return;
+    }
+
+    let value = el.innerText.trim();
+    const isNumber = el.hasAttribute('data-editable-number');
+    if (isNumber) {
+        value = value.replace(/[^\d]/g, '');
+    }
+
+    // Persistir en la única fuente de verdad ("" si quedó vacío: el
+    // placeholder nunca se guarda, solo existe en el DOM de pantalla)
+    const original = isNumber ? editingOriginalRaw.trim() : editingOriginalText.trim();
+    if (value !== original) {
+        reportConfig[key] = value;
+    }
+
+    // El pipeline normal siempre se ejecuta al salir de la edición:
+    // reconstruye el DOM (restaura el placeholder si el campo quedó vacío)
+    // y re-pagina si el contenido cambió de longitud.
+    if (nextKey) pendingEditKey = nextKey;
+    editRenderPending = true;
+    renderReportPreview().then(() => {
+        editRenderPending = false;
+        if (pendingEditKey) {
+            const next = document.querySelector(`#reportViewer [data-editable="${pendingEditKey}"]`);
+            pendingEditKey = null;
+            if (next) startDirectEdit(next);
+        }
+    });
+}
+
+// =========================
+// AYUDA INICIAL DE EDICIÓN
+// =========================
+function mostrarAyudaEdicion() {
+    if (localStorage.getItem('vpiEditHintDismissed') === '1') return;
+    const panel = document.querySelector('.preview-panel');
+    if (!panel || document.getElementById('editHintBanner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'editHintBanner';
+    banner.className = 'edit-hint-banner';
+    banner.innerHTML = `
+        <span class="edit-hint-text">✎ Los textos marcados pueden editarse directamente. Hacé clic para modificarlos.</span>
+        <button type="button" class="edit-hint-btn" id="editHintDismiss">Entendido</button>
+    `;
+    panel.appendChild(banner);
+
+    document.getElementById('editHintDismiss').addEventListener('click', () => {
+        localStorage.setItem('vpiEditHintDismissed', '1');
+        banner.remove();
+    });
+}
+
+function mostrarEstadoVacio(mostrar) {    const emptyState = document.getElementById('reportEmptyState');
+    const reportViewer = document.getElementById('reportViewer');
+    if (emptyState) {
+        emptyState.hidden = !mostrar;
+        emptyState.style.display = mostrar ? 'flex' : 'none';
+    }
+    if (reportViewer) {
+        reportViewer.style.display = mostrar ? 'none' : '';
+    }
 }
 
 function setupPhotosState() {
@@ -152,13 +372,24 @@ function renderComparablesPanel() {
     });
 }
 
-function obtenerReportData() {
+async function obtenerReportData() {
     if (!tasacionCargada) return null;
 
-    return tasacionToReportData(tasacionCargada, {
+    return await tasacionToReportData(tasacionCargada, {
         comparablesResueltos,
-        selectedComparableIds: [...selectedComparableIds]
+        selectedComparableIds: [...selectedComparableIds],
+        config: reportConfig,
+        usuario: usuarioActual,
+        profesional: profesionalActual
     });
+}
+
+function sincronizarInputsConConfig() {
+    // Solo quedan controles no textuales en el panel: el selector de modalidad
+    const valorModalidadSelect = document.getElementById('valorModalidad');
+    if (valorModalidadSelect) {
+        valorModalidadSelect.value = reportConfig.valorModalidad;
+    }
 }
 
 function setupConfigListeners() {
@@ -196,40 +427,55 @@ function setupConfigListeners() {
         });
     }
 
-    const titleInput = document.getElementById('reportTitle');
-    if (titleInput) {
-        titleInput.addEventListener('input', (e) => {
-            reportConfig.title = e.target.value;
+    // Propiedades en competencia
+    const showCompetitionCheckbox = document.getElementById('showCompetition');
+    if (showCompetitionCheckbox) {
+        showCompetitionCheckbox.addEventListener('change', (e) => {
+            if (e.target.disabled) return;
+            reportConfig.showCompetition = e.target.checked;
             renderReportPreview();
         });
     }
 
-    const introductionTextarea = document.getElementById('reportIntroduction');
-    if (introductionTextarea) {
-        introductionTextarea.addEventListener('input', (e) => {
-            reportConfig.introduction = e.target.value;
+    // Análisis FODA
+    const showFODACheckbox = document.getElementById('showFODA');
+    if (showFODACheckbox) {
+        showFODACheckbox.addEventListener('change', (e) => {
+            if (e.target.disabled) return;
+            reportConfig.showFODA = e.target.checked;
             renderReportPreview();
         });
     }
 
-    const observationsTextarea = document.getElementById('reportObservations');
-    if (observationsTextarea) {
-        observationsTextarea.addEventListener('input', (e) => {
-            reportConfig.observations = e.target.value;
+    // Datos profesionales
+    const showProfessionalDataCheckbox = document.getElementById('showProfessionalData');
+    if (showProfessionalDataCheckbox) {
+        showProfessionalDataCheckbox.addEventListener('change', (e) => {
+            reportConfig.showProfessionalData = e.target.checked;
             renderReportPreview();
         });
     }
 
-    const conclusionTextarea = document.getElementById('reportConclusion');
-    if (conclusionTextarea) {
-        conclusionTextarea.addEventListener('input', (e) => {
-            reportConfig.conclusion = e.target.value;
+    // Condiciones de trabajo
+    const showWorkConditionsCheckbox = document.getElementById('showWorkConditions');
+    if (showWorkConditionsCheckbox) {
+        showWorkConditionsCheckbox.addEventListener('change', (e) => {
+            reportConfig.showWorkConditions = e.target.checked;
+            renderReportPreview();
+        });
+    }
+
+    // Presentación del valor
+    const valorModalidadSelect = document.getElementById('valorModalidad');
+    if (valorModalidadSelect) {
+        valorModalidadSelect.addEventListener('change', (e) => {
+            reportConfig.valorModalidad = e.target.value;
             renderReportPreview();
         });
     }
 }
 
-function renderReportPreview() {
+async function renderReportPreview() {
     const reportViewer = document.getElementById('reportViewer');
     if (!reportViewer) return;
 
@@ -239,20 +485,68 @@ function renderReportPreview() {
         return;
     }
 
-    mostrarEstadoVacio(false);
-
-    const reportData = obtenerReportData();
-    if (!reportData) return;
+    const reportData = await obtenerReportData();
+    if (!reportData) {
+        mostrarEstadoVacio(true);
+        reportViewer.innerHTML = '';
+        return;
+    }
 
     const showComparables = reportConfig.showComparables && selectedComparableIds.size > 0;
 
-    reportViewer.innerHTML = ReportViewer({
+    reportViewer.innerHTML = await ReportViewerProfessional({
         reportData,
         config: {
             ...reportConfig,
             showComparables
         }
     });
+    
+    // Verificar overflow después de renderizar
+    const paginator = getReportPaginator();
+    await paginator.verifyPageOverflow();
+    
+    // Asegurar que el estado vacío esté oculto después de renderizar exitosamente
+    mostrarEstadoVacio(false);
+}
+
+function actualizarOpcionesSegunTipo() {
+    if (!tasacionCargada) return;
+    
+    const tipo = tasacionCargada.tipo || 'lote';
+    
+    // FODA: solo para casas y departamentos
+    const showFODACheckbox = document.getElementById('showFODA');
+    const fodaSection = showFODACheckbox?.closest('.config-section');
+    if (showFODACheckbox && fodaSection) {
+        if (tipo === 'lote') {
+            showFODACheckbox.disabled = true;
+            showFODACheckbox.checked = false;
+            reportConfig.showFODA = false;
+            fodaSection.style.opacity = '0.5';
+        } else {
+            showFODACheckbox.disabled = false;
+            fodaSection.style.opacity = '1';
+        }
+    }
+    
+    // Propiedades en competencia: más relevante para casas y departamentos
+    const showCompetitionCheckbox = document.getElementById('showCompetition');
+    const competitionSection = showCompetitionCheckbox?.closest('.config-section');
+    if (showCompetitionCheckbox && competitionSection) {
+        if (tipo === 'lote') {
+            showCompetitionCheckbox.disabled = true;
+            showCompetitionCheckbox.checked = false;
+            reportConfig.showCompetition = false;
+            competitionSection.style.opacity = '0.5';
+        } else {
+            showCompetitionCheckbox.disabled = false;
+            competitionSection.style.opacity = '1';
+        }
+    }
+    
+    // Documentación: disponible para todos los tipos, pero principalmente para casas y departamentos
+    // Se mantiene disponible para todos por ahora
 }
 
 function setupActionButtons() {
@@ -279,26 +573,11 @@ function printReport() {
     const reportViewer = document.getElementById('reportViewer');
     if (!reportViewer) return;
 
-    const printContent = reportViewer.innerHTML;
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Informe de Tasación</title>
-            <style>
-                @page { size: A4; margin: 20mm; }
-                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-                .report-page { width: 210mm; min-height: 297mm; background: white; padding: 20mm; box-sizing: border-box; }
-            </style>
-        </head>
-        <body>${printContent}</body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.onload = function() { printWindow.print(); };
+    // Imprimir en la misma ventana: el PDF usa exactamente el mismo DOM,
+    // los mismos .report-page del paginador y las mismas hojas de estilo
+    // (fuentes, variables CSS, tarjetas, tablas) que la Vista Previa.
+    // Las reglas @media print ocultan solo la interfaz de edición.
+    window.print();
 }
 
 function updateReportConfig(newConfig) {
@@ -308,14 +587,27 @@ function updateReportConfig(newConfig) {
 }
 
 function syncConfigInputs() {
+    // El panel solo contiene controles de visibilidad y selectores.
+    // Los textos se editan exclusivamente desde el Preview (edición directa).
     if (document.getElementById('showLogo')) document.getElementById('showLogo').checked = reportConfig.showLogo;
     if (document.getElementById('showPhotos')) document.getElementById('showPhotos').checked = reportConfig.showPhotos;
     if (document.getElementById('showComparables')) document.getElementById('showComparables').checked = reportConfig.showComparables;
     if (document.getElementById('showMethodology')) document.getElementById('showMethodology').checked = reportConfig.showMethodology;
-    if (document.getElementById('reportTitle')) document.getElementById('reportTitle').value = reportConfig.title;
-    if (document.getElementById('reportIntroduction')) document.getElementById('reportIntroduction').value = reportConfig.introduction;
-    if (document.getElementById('reportObservations')) document.getElementById('reportObservations').value = reportConfig.observations;
-    if (document.getElementById('reportConclusion')) document.getElementById('reportConclusion').value = reportConfig.conclusion;
+    
+    // Propiedades en competencia
+    if (document.getElementById('showCompetition')) document.getElementById('showCompetition').checked = reportConfig.showCompetition;
+    
+    // Análisis FODA
+    if (document.getElementById('showFODA')) document.getElementById('showFODA').checked = reportConfig.showFODA;
+    
+    // Datos profesionales
+    if (document.getElementById('showProfessionalData')) document.getElementById('showProfessionalData').checked = reportConfig.showProfessionalData;
+    
+    // Condiciones de trabajo
+    if (document.getElementById('showWorkConditions')) document.getElementById('showWorkConditions').checked = reportConfig.showWorkConditions;
+    
+    // Presentación del valor
+    if (document.getElementById('valorModalidad')) document.getElementById('valorModalidad').value = reportConfig.valorModalidad;
 }
 
 function getReportConfig() {

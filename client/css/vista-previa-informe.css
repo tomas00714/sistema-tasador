@@ -11,6 +11,76 @@ body {
     overflow: hidden;
 }
 
+/* Estilos para nuevos componentes de informe */
+.report-ambientes-detalle {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.report-ambiente-item {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--color-surface);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.report-ambiente-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-ambiente-medidas,
+.report-ambiente-descripcion {
+    margin-bottom: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.report-ambiente-medidas:last-child,
+.report-ambiente-descripcion:last-child {
+    margin-bottom: 0;
+}
+
+.report-ambientes-table-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.report-section-subtitle {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-ambientes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.report-ambientes-table th,
+.report-ambientes-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-ambientes-table th {
+    background: var(--color-surface);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-ambientes-table tr:last-child td {
+    border-bottom: none;
+}
+
 .vista-previa-container {
     display: flex;
     height: 100vh;
@@ -465,7 +535,7 @@ body {
 
 .report-page {
     width: 210mm;
-    min-height: 297mm;
+    height: 297mm;
     background: var(--color-white);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--color-border);
@@ -474,11 +544,1107 @@ body {
     box-sizing: border-box;
     margin-bottom: 32px;
     margin-top: 32px;
+    overflow: hidden;
+    page-break-after: always;
+    position: relative;
+}
+
+.report-page-content {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.report-section-wrapper {
+    margin-bottom: 20px;
+}
+
+.report-temp-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 210mm;
+    padding: 20mm;
+    box-sizing: border-box;
+    background: white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: -1000;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =========================
+   PORTADA DEL INFORME
+========================= */
+
+.report-cover {
+    min-height: 257mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    padding: 40mm 20mm;
+    border-bottom: 3px solid var(--color-primary);
+    margin-bottom: 32px;
+    page-break-after: always;
+}
+
+.report-cover-logo {
+    max-width: 150px;
+    max-height: 80px;
+    margin-bottom: 40px;
+}
+
+.report-cover-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* La portada vive dentro de una .report-page: no debe traer reglas de página propia */
+.report-page-content > .report-cover {
+    min-height: 0;
+    padding: 10mm 0 0;
+    border-bottom: none;
+    margin-bottom: 0;
+    page-break-after: auto;
+}
+
+.report-cover-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.report-cover-subtitle {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin: 0 0 48px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.report-cover-inmobiliaria {
+    margin-bottom: 24px;
+}
+
+.report-cover-inmobiliaria-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.report-cover-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.report-cover-detail {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 1rem;
+}
+
+.report-cover-label {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.report-cover-value {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+/* =========================
+   ÍNDICE DE REFERENCIA
+========================= */
+
+.report-reference-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.report-reference-column {
+    background: var(--color-bg-light);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.report-reference-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.report-reference-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.report-reference-item:last-child {
+    border-bottom: none;
+}
+
+.report-reference-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.report-reference-value {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+}
+
+.report-consideraciones-previas {
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--color-bg-light);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.report-consideraciones-text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* =========================
+   INFORME TÉCNICO
+========================= */
+
+.report-technical-block {
+    margin-bottom: 24px;
+}
+
+.report-technical-subtitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 24px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.report-introduction-block {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--color-bg-light);
+    border-radius: 12px;
+    border-left: 4px solid var(--color-primary);
+}
+
+.report-introduction-text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.report-technical-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.report-technical-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.report-technical-item-full {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    margin-top: 8px;
+}
+
+.report-technical-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-technical-value {
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+/* =========================
+   TABLA DE SUPERFICIES
+========================= */
+
+.report-surfaces-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-top: 16px;
+    table-layout: fixed;
+}
+
+.report-surfaces-table th,
+.report-surfaces-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-surfaces-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-surfaces-table td {
+    color: var(--color-text-secondary);
+}
+
+.report-surfaces-table tfoot td {
+    background: var(--color-primary-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    border-top: 2px solid var(--color-primary);
+}
+
+/* =========================
+   TABLA BÁSICA DE COMPARABLES
+========================= */
+
+.report-comparables-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-top: 16px;
+    table-layout: fixed;
+}
+
+.report-comparables-table th,
+.report-comparables-table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-comparables-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-comparables-table td {
+    color: var(--color-text-secondary);
+}
+
+.report-comparables-table th:nth-child(n+6),
+.report-comparables-table td:nth-child(n+6) {
+    text-align: right;
+}
+
+/* =========================
+   COMPARABLES VISUALES
+========================= */
+
+.report-comparables-visual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.report-comparable-card {
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.report-comparable-card-header {
+    background: var(--color-primary-light);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-comparable-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+}
+
+.report-comparable-card-body {
+    padding: 16px;
+}
+
+.report-comparable-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.report-comparable-card-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.report-comparable-card-item:last-child {
+    border-bottom: none;
+}
+
+.report-comparable-card-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.report-comparable-card-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* =========================
+   TABLA DE COMPETENCIA
+========================= */
+
+.report-competition-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    margin-top: 16px;
+    table-layout: fixed;
+}
+
+.report-competition-table th,
+.report-competition-table td {
+    padding: 8px 6px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-competition-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-competition-table td {
+    color: var(--color-text-secondary);
+}
+
+.report-competition-table th:nth-child(n+5),
+.report-competition-table td:nth-child(n+5) {
+    text-align: right;
+}
+
+/* =========================
+   TABLA TÉCNICA DE COMPARABLES
+========================= */
+
+.report-comparables-technical th:nth-child(8),
+.report-comparables-technical th:nth-child(9) {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.report-comparable-coef,
+.report-comparable-homo {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* =========================
+   TABLA TÉCNICA DE COMPARABLES
+========================= */
+
+.report-comparables-technical {
+    font-size: 0.65rem;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.report-comparables-technical th,
+.report-comparables-technical td {
+    padding: 6px 4px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+.report-comparables-technical th:nth-child(n+6),
+.report-comparables-technical td:nth-child(n+6) {
+    text-align: center;
+}
+
+.report-comparables-technical th:nth-child(6),
+.report-comparables-technical th:nth-child(7),
+.report-comparables-technical td:nth-child(6),
+.report-comparables-technical td:nth-child(7) {
+    text-align: right;
+}
+
+.report-comparables-technical th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.625rem;
+    line-height: 1.2;
+}
+
+.report-comparables-technical td {
+    color: var(--color-text-secondary);
+    line-height: 1.2;
+}
+
+.report-comparables-technical tbody tr:hover {
+    background: var(--color-bg-light);
+}
+
+/* Anchos de columna específicos para tabla técnica */
+.report-comparables-technical th:nth-child(1),
+.report-comparables-technical td:nth-child(1) {
+    width: 20%;
+}
+
+.report-comparables-technical th:nth-child(2),
+.report-comparables-technical td:nth-child(2) {
+    width: 8%;
+}
+
+.report-comparables-technical th:nth-child(3),
+.report-comparables-technical td:nth-child(3) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(4),
+.report-comparables-technical td:nth-child(4) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(5),
+.report-comparables-technical td:nth-child(5) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(6),
+.report-comparables-technical td:nth-child(6) {
+    width: 10%;
+}
+
+.report-comparables-technical th:nth-child(7),
+.report-comparables-technical td:nth-child(7) {
+    width: 10%;
+}
+
+.report-comparables-technical th:nth-child(8),
+.report-comparables-technical td:nth-child(8) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(9),
+.report-comparables-technical td:nth-child(9) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(10),
+.report-comparables-technical td:nth-child(10) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(11),
+.report-comparables-technical td:nth-child(11) {
+    width: 6%;
+}
+
+.report-comparables-technical th:nth-child(12),
+.report-comparables-technical td:nth-child(12) {
+    width: 10%;
+}
+
+/* =========================
+   RESUMEN DE COMPARABLES
+========================= */
+
+.report-comparables-summary {
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--color-primary-light);
+    border-radius: 12px;
+    border: 1px solid var(--color-primary);
+}
+
+.report-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.report-summary-item:last-child {
+    border-bottom: none;
+}
+
+.report-summary-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.report-summary-value {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+}
+
+/* =========================
+   FOTOGRAFÍAS DEL INMUEBLE
+========================= */
+
+.report-photos-section {
+    page-break-inside: avoid;
+}
+
+.report-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.report-photo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    page-break-inside: avoid;
+}
+
+.report-photo-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.report-photo-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.report-photo-caption {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* =========================
+   FOTOGRAFÍAS DE COMPARABLES
+========================= */
+
+.report-comparables-photos-section {
+    page-break-inside: avoid;
+}
+
+.report-comparables-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 16px;
+}
+
+.report-comparable-photo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    page-break-inside: avoid;
+}
+
+.report-comparable-photo-info {
+    padding: 8px 12px;
+    background: var(--color-bg-light);
+    border-radius: 6px;
+    border-left: 3px solid var(--color-primary);
+}
+
+.report-comparable-photo-address {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+}
+
+.report-comparable-photo-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+/* =========================
+   IMPRESIÓN / PDF
+   Capa única: oculta la interfaz de edición y adapta las
+   páginas A4 generadas por el paginador al medio impreso.
+   No redefine estilos de los componentes del informe.
+========================= */
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    /* Ocultar únicamente la interfaz de edición/configuración */
+    .config-panel,
+    .preview-panel-header,
+    .report-empty-state {
+        display: none !important;
+    }
+
+    .vista-previa-container {
+        display: block;
+        height: auto;
+        padding: 0;
+        gap: 0;
+    }
+
+    .preview-panel {
+        display: block;
+        overflow: visible;
+        flex: none;
+        width: auto;
+        height: auto;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .preview-panel-content {
+        overflow: visible;
+        padding: 0;
+        display: block;
+        flex: none;
+    }
+
+    /* El contenedor de páginas es un flex column centrado en pantalla;
+       en impresión debe ser flujo block sin padding residual.
+       El padding-bottom y el comportamiento flex generaban hojas en
+       blanco extra (después de la portada y al final del documento). */
+    #reportViewer {
+        display: block;
+        width: auto;
+        padding: 0;
+    }
+
+    /* Cada .report-page es una hoja A4 física calculada por el paginador.
+       margin: 0 en @page + padding interno de 20mm ya incluido aquí:
+       no hay doble margen. */
+    .report-page {
+        width: 210mm;
+        height: 297mm;
+        padding: 20mm;
+        margin: 0;
+        box-sizing: border-box;
+        background: white;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        overflow: hidden;
+        page-break-after: always;
+        break-after: page;
+    }
+
+    .report-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+    }
+
+    /* Preservar fondos, colores, bordes, radios, tablas, tarjetas,
+       tipografías y la tarjeta destacada de Valor de Tasación */
+    .report-page,
+    .report-page * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* =========================
+   PROPIEDADES EN COMPETENCIA
+========================= */
+
+.report-competition-section {
+    page-break-inside: avoid;
+}
+
+.report-competition-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 0.8125rem;
+}
+
+.report-competition-table th,
+.report-competition-table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-competition-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.75rem;
+}
+
+.report-competition-table td {
+    color: var(--color-text-secondary);
+}
+
+.report-competition-table th:nth-child(n+5),
+.report-competition-table td:nth-child(n+5) {
+    text-align: right;
+}
+
+.report-competition-table tbody tr:hover {
+    background: var(--color-bg-light);
+}
+
+/* =========================
+   ANÁLISIS FODA
+========================= */
+
+.report-foda-section {
+    page-break-inside: avoid;
+}
+
+.report-foda-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.report-foda-block {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    page-break-inside: avoid;
+}
+
+.report-foda-fortalezas {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.report-foda-oportunidades {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.report-foda-debilidades {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.report-foda-amenazas {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, rgba(251, 146, 60, 0.02) 100%);
+    border-color: rgba(251, 146, 60, 0.3);
+}
+
+.report-foda-title {
+    margin: 0 0 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.report-foda-fortalezas .report-foda-title {
+    color: #16a34a;
+}
+
+.report-foda-oportunidades .report-foda-title {
+    color: #3b82f6;
+}
+
+.report-foda-debilidades .report-foda-title {
+    color: #dc2626;
+}
+
+.report-foda-amenazas .report-foda-title {
+    color: #ea580c;
+}
+
+.report-foda-content {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+/* =========================
+   VALUACIÓN DESTACADA
+========================= */
+
+.report-valuation-card {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    padding: 32px;
+    border-radius: 16px;
+    color: white;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.report-valuation-main {
+    margin-bottom: 24px;
+}
+
+.report-valuation-label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 8px;
+}
+
+.report-valuation-value {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.report-valuation-details {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.report-valuation-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.report-valuation-detail-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.report-valuation-detail-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+/* =========================
+   CIERRE DEL INFORME
+========================= */
+
+.report-closing-section {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px solid var(--color-border);
+}
+
+.report-closing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-bottom: 48px;
+}
+
+.report-closing-block {
+    background: var(--color-bg-light);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.report-closing-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.report-closing-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.report-closing-item:last-child {
+    border-bottom: none;
+}
+
+.report-closing-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.report-closing-value {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+}
+
+.report-closing-signature {
+    text-align: center;
+    padding: 32px 0;
+}
+
+.report-closing-signature-line {
+    width: 300px;
+    height: 1px;
+    background: var(--color-text-primary);
+    margin: 0 auto 16px;
+    position: relative;
+}
+
+.report-closing-signature-label {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-white);
+    padding: 0 12px;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.report-closing-signature-date {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+/* =========================
+   ESTILOS DE CONFIGURACIÓN
+========================= */
+
+.config-field {
+    margin-bottom: 16px;
+}
+
+.config-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+.config-input,
+.config-textarea,
+.config-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+    background: var(--color-white);
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.config-input:focus,
+.config-textarea:focus,
+.config-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.config-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.config-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
 }
 
 /* =========================
    SECCIONES DEL INFORME
 ========================= */
+
+.report-section {
+    margin-bottom: 40px;
+    page-break-inside: auto;
+}
+
+.report-section-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--color-primary);
+}
 
 .report-header {
     margin-bottom: 32px;
@@ -577,9 +1743,10 @@ body {
 
 .report-comparables-table th,
 .report-comparables-table td {
-    padding: 12px;
+    padding: 10px 8px;
     text-align: left;
     border-bottom: 1px solid var(--color-border);
+    font-size: 0.8125rem;
 }
 
 .report-comparables-table th {
@@ -590,6 +1757,14 @@ body {
 
 .report-comparables-table td {
     color: var(--color-text-secondary);
+}
+
+.report-comparables-table th:first-child,
+.report-comparables-table td:first-child {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .report-photos-grid {
@@ -651,14 +1826,14 @@ body {
    RESPONSIVE
 ========================= */
 
-@media (max-width: 1200px) {
+@media screen and (max-width: 1200px) {
     .config-panel {
         width: 320px;
         min-width: 320px;
     }
 }
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
     .vista-previa-container {
         flex-direction: column;
         padding: var(--shell-margin, 14px);
@@ -699,6 +1874,140 @@ body {
         padding: 16px;
     }
 }
+
+/* =========================
+   EDICIÓN DIRECTA (solo pantalla)
+   El lápiz, el placeholder y el estado de edición nunca se imprimen.
+========================= */
+
+@media screen {
+    /* Campo editable: cursor de texto, área de hover con padding visual
+       (vía box-shadow, que no modifica el layout) y lápiz flotante
+       posicionado fuera del flujo → no produce reflow del texto */
+    .report-editable {
+        cursor: text;
+        position: relative;
+        border-radius: 4px;
+        transition: box-shadow 0.15s ease;
+        white-space: pre-line;
+    }
+
+    .report-editable:hover {
+        background-color: rgba(59, 130, 246, 0.08);
+        /* Simula padding horizontal sin cambiar el ancho del elemento */
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+    }
+
+    /* Indicador lápiz: insignia circular de tamaño FIJO (independiente de la
+       fuente del texto), posicionada arriba a la derecha del área de hover,
+       fuera del flujo y por encima de cualquier elemento del informe */
+    .report-editable:hover::after {
+        content: '✎';
+        position: absolute;
+        top: -10px;
+        right: -6px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        line-height: 1;
+        color: var(--color-primary);
+        background: var(--color-white);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 9999;
+    }
+
+    /* Estado de edición activa */
+    .report-editable.is-editing {
+        outline: 1px dashed var(--color-primary);
+        outline-offset: 2px;
+        background-color: rgba(59, 130, 246, 0.06);
+        cursor: text;
+    }
+
+    .report-editable.is-editing:hover::after {
+        content: none;
+    }
+
+    /* Placeholder de campos habilitados pero vacíos:
+       existe solo como contenido generado en pantalla;
+       nunca forma parte del texto real del informe */
+    .report-editable.is-empty::before {
+        content: attr(data-ph);
+        color: var(--color-text-secondary);
+        font-style: italic;
+        opacity: 0.65;
+        font-weight: 400;
+    }
+
+    /* Ayuda inicial: banner sutil */
+    .edit-hint-banner {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: var(--color-white);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        padding: 12px 18px;
+        z-index: 50;
+        font-size: 0.8125rem;
+        color: var(--color-text-secondary);
+        max-width: 90%;
+    }
+
+    .edit-hint-btn {
+        background: var(--color-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .edit-hint-btn:hover {
+        background: var(--color-primary-dark, #1d4ed8);
+    }
+
+    .preview-panel {
+        position: relative;
+    }
+}
+
+/* =========================
+   IMPRESIÓN LIMPIA
+========================= */
+
+@media print {
+    /* Elementos que solo existen como ayuda de edición en Preview:
+       placeholders de campos vacíos, bloques habilitados sin contenido,
+       banner de ayuda. El PDF conserva el comportamiento anterior:
+       estos bloques no aparecían cuando no había contenido. */
+    .report-preview-only,
+    .edit-hint-banner {
+        display: none !important;
+    }
+
+    /* Ningún indicador de edición debe imprimirse */
+    .report-editable::after,
+    .report-editable::before {
+        content: none !important;
+    }
+}
+
 
 /* =========================
    MODO OSCURO

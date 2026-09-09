@@ -168,6 +168,9 @@ class TasacionCreate(BaseModel):
     estado: str = 'borrador'  # 'borrador', 'completada'
     datos: Dict[str, Any]  # Datos completos de la tasación (JSONB)
     comparables_ids: List[str] = []  # IDs de comparables asociados
+    nomenclatura_catastral: Optional[str] = None
+    cliente_nombre: Optional[str] = None
+    finalidad: Optional[str] = None
 
 
 class TasacionUpdate(BaseModel):
@@ -175,6 +178,9 @@ class TasacionUpdate(BaseModel):
     datos: Optional[Dict[str, Any]] = None
     comparables_ids: Optional[List[str]] = None
     comparables_snapshots: Optional[List[Dict[str, Any]]] = None  # Lista de {comparable_id, orden, snapshot}
+    nomenclatura_catastral: Optional[str] = None
+    cliente_nombre: Optional[str] = None
+    finalidad: Optional[str] = None
 
 
 class TasacionResponse(BaseModel):
@@ -188,6 +194,9 @@ class TasacionResponse(BaseModel):
     fecha_creacion: datetime
     fecha_modificacion: datetime
     compartido_por: Optional[Dict[str, Any]] = None
+    nomenclatura_catastral: Optional[str] = None
+    cliente_nombre: Optional[str] = None
+    finalidad: Optional[str] = None
 
 
 # Modelos para CRUD de Comparables
@@ -326,6 +335,11 @@ class TokenResponse(BaseModel):
     nombre: str
     apellido: str
     is_admin: bool
+    google_vinculado: bool = False
+
+
+class GoogleAuthUrlResponse(BaseModel):
+    auth_url: str
 
 
 class VerifyEmailRequest(BaseModel):
@@ -447,6 +461,38 @@ class EstadoSuscripcionResponse(BaseModel):
     fecha_inicio: Optional[datetime]
     fecha_fin_periodo: Optional[datetime]
     renovacion_automatica: Optional[bool]
+
+
+# Modelos para datos profesionales del usuario
+class ProfesionalResponse(BaseModel):
+    usuario_id: int
+    matricula: Optional[str] = None
+    nombre_inmobiliaria: Optional[str] = None
+    telefono: Optional[str] = None
+    logo_inmobiliaria: Optional[str] = None
+    foto_perfil: Optional[str] = None
+    fecha_creacion: Optional[datetime] = None
+    fecha_modificacion: Optional[datetime] = None
+
+
+class ProfesionalUpdateRequest(BaseModel):
+    matricula: Optional[str] = None
+    nombre_inmobiliaria: Optional[str] = None
+    telefono: Optional[str] = None
+
+
+class UsuarioInfoResponse(BaseModel):
+    usuario_id: int
+    email: str
+    nombre: str
+    apellido: str
+    is_admin: bool
+    google_vinculado: bool = False
+
+
+class ProfesionalMeResponse(BaseModel):
+    usuario: UsuarioInfoResponse
+    profesional: Optional[ProfesionalResponse] = None
 
 
 class CrearSuscripcionRequest(BaseModel):

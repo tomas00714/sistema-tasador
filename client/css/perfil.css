@@ -7,13 +7,10 @@
     background: var(--color-white);
     border: 1.5px solid var(--color-border);
     border-radius: 24px;
-    
-    
     display: flex;
     flex-direction: column;
     gap: 24px;
     margin: 20px 20px 20px 20px;
-
     width: auto;
     padding: 28px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
@@ -47,26 +44,39 @@
     justify-content: center;
     font-size: 2.5rem;
     color: var(--color-text-secondary);
+    overflow: hidden;
+    position: relative;
+    cursor: default;
 }
 
-.perfil-avatar-upload {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg-light);
-    color: var(--color-text-secondary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
+.perfil-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.perfil-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--color-white);
+    display: none;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    justify-content: center;
+    gap: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    padding: 8px;
 }
 
-.perfil-avatar-upload:hover {
-    background: var(--color-bg-hover);
-    border-color: var(--color-primary);
+.perfil-avatar-overlay i {
+    font-size: 1.2rem;
 }
 
 .perfil-info {
@@ -134,12 +144,84 @@
     gap: 16px;
 }
 
+.perfil-section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 .perfil-section-title {
     font-family: 'Inter', sans-serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--color-text-primary);
     margin: 0;
+}
+
+.perfil-actions {
+    display: flex;
+    gap: 10px;
+}
+
+#perfilAccionesEdicion {
+    display: none;
+}
+
+.perfil-btn-editar {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.perfil-btn-editar:hover {
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+}
+
+.perfil-cuenta-acciones {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.perfil-btn-google {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.perfil-btn-google:hover {
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+}
+
+.perfil-btn-google--desvincular:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
 }
 
 .perfil-info-grid {
@@ -167,72 +249,228 @@
     color: var(--color-text-primary);
 }
 
-.perfil-btn-editar {
-    padding: 10px 20px;
-    border-radius: 12px;
-    border: 1px solid var(--color-border);
-    background: var(--color-white);
-    color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    align-self: flex-start;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+/* Grid de datos */
+.perfil-datos-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
 }
 
-.perfil-btn-editar:hover {
-    background: var(--color-bg-light);
-    border-color: var(--color-primary);
-}
-
-.perfil-config-list {
+.perfil-dato-row {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.perfil-config-item {
-    display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 16px;
-    padding: 14px 16px;
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    background: var(--color-white);
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.perfil-dato-row:last-child {
+    border-bottom: none;
+}
+
+.perfil-dato-label {
+    width: 180px;
+    min-width: 180px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+
+.perfil-dato-contenido {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.perfil-dato-valor,
+.perfil-inmobiliaria-nombre {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    word-break: break-word;
+}
+
+.perfil-input {
+    display: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg-light);
     color: var(--color-text-primary);
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    text-align: left;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
 }
 
-.perfil-config-item:hover {
-    background: var(--color-bg-light);
+.perfil-input:focus {
+    outline: none;
     border-color: var(--color-primary);
 }
 
-.perfil-config-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+/* Tarjeta de inmobiliaria */
+.perfil-inmobiliaria-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 16px;
     background: var(--color-bg-light);
+}
+
+.perfil-inmobiliaria-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.perfil-inmobiliaria-nombre {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.perfil-inmobiliaria-logo {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    border-radius: 50%;
+    background: var(--color-white);
+    border: 2px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.75rem;
     color: var(--color-text-secondary);
-    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    cursor: default;
 }
 
-.perfil-config-text {
-    flex: 1;
+.perfil-inmobiliaria-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.perfil-config-arrow {
-    color: var(--color-text-secondary);
-    flex-shrink: 0;
+.perfil-logo-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--color-white);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    padding: 6px;
+    line-height: 1.1;
+}
+
+.perfil-logo-overlay i {
+    font-size: 1rem;
+}
+
+/* Modo edición */
+.perfil-card.modo-edicion [data-editable="true"] .perfil-dato-valor,
+.perfil-card.modo-edicion .perfil-inmobiliaria-nombre,
+.perfil-card.modo-edicion #perfilAccionesNormal {
+    display: none;
+}
+
+.perfil-card.modo-edicion [data-editable="true"] .perfil-input,
+.perfil-card.modo-edicion .perfil-inmobiliaria-info .perfil-input,
+.perfil-card.modo-edicion #perfilAccionesEdicion,
+.perfil-card.modo-edicion .perfil-avatar-overlay,
+.perfil-card.modo-edicion .perfil-logo-overlay {
+    display: flex;
+}
+
+.perfil-card.modo-edicion .perfil-avatar,
+.perfil-card.modo-edicion .perfil-inmobiliaria-logo {
+    cursor: pointer;
+}
+
+/* Mensajes */
+#mensajeProfesional,
+#errorProfesional {
+    display: none;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+}
+
+#mensajeProfesional {
+    color: #16a34a;
+}
+
+#errorProfesional {
+    color: #dc2626;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .perfil-card {
+        margin: 12px;
+        padding: 20px;
+        border-radius: 18px;
+    }
+
+    .perfil-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .perfil-dato-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .perfil-dato-label {
+        width: auto;
+        min-width: auto;
+    }
+
+    .perfil-dato-contenido {
+        width: 100%;
+    }
+
+    .perfil-input {
+        max-width: none;
+    }
+
+    .perfil-section-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .perfil-inmobiliaria-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .perfil-inmobiliaria-logo {
+        align-self: center;
+    }
 }

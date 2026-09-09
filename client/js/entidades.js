@@ -15,19 +15,33 @@
 async function leerTasaciones() {
     try {
         const tasaciones = await listarTasacionesAPI();
+        console.log('[DEBUG entidades] Tasaciones recibidas de API:', tasaciones.length);
+        
         // Convertir formato de API al formato esperado por el frontend
-        return tasaciones.map(t => ({
-            id: t.id,
-            tipo: t.tipo,
-            estado: t.estado,
-            fechaCreacion: t.fecha_creacion,
-            fechaModificacion: t.fecha_modificacion,
-            ...t.datos,
-            origen: t.origen || 'propia',
-            compartido_por: t.compartido_por || null,
-            comparables: t.comparables_ids || [],
-            datosCompletos: t.datos
-        }));
+        const tasacionesMapeadas = tasaciones.map(t => {
+            const comparables = t.datos?.comparables || [];
+            console.log(`[DEBUG entidades] Tasación ${t.id}: comparables en datos.comparables: ${comparables.length}`);
+            comparables.forEach((c, i) => {
+                console.log(`[DEBUG entidades]   Comparable ${i}: id=${c.id} (tipo: ${typeof c.id}), valor=${c.valor}, direccion=${c.direccion}`);
+            });
+            
+            return {
+                id: t.id,
+                tipo: t.tipo,
+                estado: t.estado,
+                fechaCreacion: t.fecha_creacion,
+                fechaModificacion: t.fecha_modificacion,
+                ...t.datos,
+                origen: t.origen || 'propia',
+                compartido_por: t.compartido_por || null,
+                comparables: comparables,  // Usar snapshots desde datos.comparables
+                comparables_ids: t.comparables_ids || [],  // Mantener IDs por compatibilidad
+                datosCompletos: t.datos
+            };
+        });
+        
+        console.log('[DEBUG entidades] Tasaciones mapeadas:', tasacionesMapeadas.length);
+        return tasacionesMapeadas;
     } catch (e) {
         console.error('Error al leer tasaciones:', e);
         return [];
@@ -418,7 +432,8 @@ async function obtenerTasacionPorID(id) {
             tipo: tasacion.tipo,
             estado: tasacion.estado,
             ...tasacion.datos,
-            comparables: tasacion.comparables_ids || [],
+            comparables: tasacion.datos?.comparables || [],  // Usar snapshots desde datos.comparables
+            comparables_ids: tasacion.comparables_ids || [],  // Mantener IDs por compatibilidad
             datosCompletos: tasacion.datos
         };
     } catch (error) {

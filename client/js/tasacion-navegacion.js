@@ -278,15 +278,28 @@ async function cargarComparablesDesdeIds(comparables) {
 async function verificarModoEdicion() {
     try {
         const tasacionEnEdicion = localStorage.getItem("tasacionEnEdicion");
+        console.log('[DEBUG tasacion-navegacion] verificarModoEdicion - tasacionEnEdicion existe:', !!tasacionEnEdicion);
+        
         if (tasacionEnEdicion) {
             const tasacion = JSON.parse(tasacionEnEdicion);
+            console.log('[DEBUG tasacion-navegacion] Tasación parseada de localStorage:', tasacion);
+            console.log('[DEBUG tasacion-navegacion] tasacion.comparables:', tasacion.comparables);
+            console.log('[DEBUG tasacion-navegacion] tasacion.comparables.length:', tasacion.comparables?.length);
+            if (tasacion.comparables && tasacion.comparables.length > 0) {
+                tasacion.comparables.forEach((c, i) => {
+                    console.log(`[DEBUG tasacion-navegacion]   Comparable ${i}: id=${c.id}, valor=${c.valor}, direccion=${c.direccion}`);
+                });
+            }
 
             tasacionId = 1; // 1 indica que es una edición
             tasacionIdReal = tasacion.id; // Guardar el ID real para usar al guardar
 
             if (tasacion.datosCompletos) {
+                console.log('[DEBUG tasacion-navegacion] Usando datosCompletos');
                 await cargarDatosCompletos(tasacion.datosCompletos);
             } else {
+                console.log('[DEBUG tasacion-navegacion] Usando fallback (sin datosCompletos)');
+                // FALLBACK: Si no hay datosCompletos, usar comparables directos (deben ser snapshots)
                 datosTasacion.tipo = tasacion.tipo;
                 datosTasacion.cantDeEdiciones = tasacion.cantDeEdiciones || 0;
                 datosTasacion.ubicacion = tasacion.ubicacion || { direccion: "", provincia: "", localidad: "", lat: null, lon: null, orientacion: "" };
@@ -299,8 +312,11 @@ async function verificarModoEdicion() {
                     datosTasacion.casa = tasacion.casa || {};
                 }
 
-                // Cargar comparables completos (por si vienen solo como IDs)
-                datosTasacion.comparables = await cargarComparablesDesdeIds(tasacion.comparables || []);
+                // Usar comparables directos (deben ser snapshots)
+                // Con el nuevo modelo, historial.js ya mapea datos.comparables como snapshots
+                datosTasacion.comparables = tasacion.comparables || [];
+                console.log('[DEBUG tasacion-navegacion] datosTasacion.comparables asignado:', datosTasacion.comparables);
+                console.log('[DEBUG tasacion-navegacion] datosTasacion.comparables.length:', datosTasacion.comparables.length);
                 resultadoTasacion = tasacion.resultado || null;
                 pasoActual = 2;
                 tipoSeleccionado = tasacion.tipo;

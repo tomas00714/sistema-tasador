@@ -85,17 +85,19 @@
     <div class="main-layout" id="mainLayout">
         <div class="main-content" id="mainContent">
 
-            <div class="perfil-card">
+            <div class="perfil-card" id="perfilCard">
 
                 <div class="perfil-header">
                     <div class="perfil-avatar-container">
                         <div class="perfil-avatar" id="perfilAvatar">
-                            <i class="fa-solid fa-user"></i>
+                            <img id="perfilAvatarImg" src="" alt="Foto de perfil" style="display: none;">
+                            <i class="fa-solid fa-user" id="perfilAvatarIcon"></i>
+                            <div class="perfil-avatar-overlay" id="avatarOverlay">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Cambiar foto</span>
+                            </div>
                         </div>
-                        <button type="button" class="perfil-avatar-upload" id="btnCambiarFoto">
-                            <i class="fa-solid fa-camera"></i>
-                            <span>Cambiar foto</span>
-                        </button>
+                        <input type="file" id="inputFotoPerfil" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
                     </div>
                     <div class="perfil-info">
                         <h1 class="perfil-nombre" id="perfilNombre">Usuario</h1>
@@ -108,59 +110,120 @@
 
                 <div class="perfil-divider"></div>
 
-                <div class="perfil-section-body">
-                    <h2 class="perfil-section-title">Datos personales</h2>
-                    <div class="perfil-info-grid">
-                        <div class="perfil-info-item">
-                            <span class="perfil-info-label">Nombre</span>
-                            <span class="perfil-info-value" id="infoNombre">—</span>
+                <div class="perfil-section-body" id="perfilDatosSection">
+                    <div class="perfil-section-title-row">
+                        <h2 class="perfil-section-title">Datos</h2>
+                        <div class="perfil-actions" id="perfilAccionesNormal">
+                            <button type="button" class="perfil-btn-editar" id="btnEditarPerfil">
+                                <i class="fa-solid fa-pen"></i> Editar perfil
+                            </button>
                         </div>
-                        <div class="perfil-info-item">
-                            <span class="perfil-info-label">Apellido</span>
-                            <span class="perfil-info-value" id="infoApellido">—</span>
-                        </div>
-                        <div class="perfil-info-item">
-                            <span class="perfil-info-label">Email</span>
-                            <span class="perfil-info-value" id="infoEmail">—</span>
-                        </div>
-                        <div class="perfil-info-item">
-                            <span class="perfil-info-label">Fecha de registro</span>
-                            <span class="perfil-info-value" id="infoFechaRegistro">—</span>
-                        </div>
-                        <div class="perfil-info-item">
-                            <span class="perfil-info-label">Inmobiliaria</span>
-                            <span class="perfil-info-value" id="infoInmobiliaria">No configurado</span>
+                        <div class="perfil-actions" id="perfilAccionesEdicion">
+                            <button type="button" class="perfil-btn-editar" id="btnCancelarEdicion">
+                                Cancelar
+                            </button>
+                            <button type="button" class="perfil-btn-editar" id="btnGuardarCambios">
+                                <i class="fa-solid fa-save"></i> Guardar cambios
+                            </button>
                         </div>
                     </div>
-                    <button type="button" class="perfil-btn-editar" id="btnEditarDatos">
-                        <i class="fa-solid fa-pen"></i> Editar datos
-                    </button>
+
+                    <div class="perfil-datos-grid">
+
+                        <div class="perfil-dato-row" data-editable="false">
+                            <div class="perfil-dato-label">Nombre</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verNombre">—</span>
+                            </div>
+                        </div>
+
+                        <div class="perfil-dato-row" data-editable="false">
+                            <div class="perfil-dato-label">Apellido</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verApellido">—</span>
+                            </div>
+                        </div>
+
+                        <div class="perfil-dato-row" data-editable="false">
+                            <div class="perfil-dato-label">Email</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verEmail">—</span>
+                            </div>
+                        </div>
+
+                        <div class="perfil-dato-row" data-editable="true">
+                            <div class="perfil-dato-label">Matrícula</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verMatricula">—</span>
+                                <input type="text" id="inputMatricula" class="perfil-input" placeholder="Ej: CPI 1234">
+                            </div>
+                        </div>
+
+                        <div class="perfil-dato-row" data-editable="true">
+                            <div class="perfil-dato-label">Teléfono</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verTelefono">—</span>
+                                <input type="text" id="inputTelefono" class="perfil-input" placeholder="Ej: +54 9 11 1234-5678">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="mensajeProfesional" style="display: none; margin-top: 12px; color: #16a34a; font-size: 0.9rem;"></div>
+                    <div id="errorProfesional" style="display: none; margin-top: 12px; color: #dc2626; font-size: 0.9rem;"></div>
                 </div>
 
                 <div class="perfil-divider"></div>
 
-                <div class="perfil-section-body">
-                    <h2 class="perfil-section-title">Configuración</h2>
-                    <div class="perfil-config-list">
-                        <button type="button" class="perfil-config-item" id="configDatos">
-                            <span class="perfil-config-icon"><i class="fa-solid fa-user-gear"></i></span>
-                            <span class="perfil-config-text">Datos personales</span>
-                            <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                <div class="perfil-section-body" id="perfilInmobiliariaSection">
+                    <h2 class="perfil-section-title">Inmobiliaria</h2>
+
+                    <div class="perfil-inmobiliaria-card">
+                        <div class="perfil-inmobiliaria-info">
+                            <div class="perfil-dato-label">Nombre</div>
+                            <div class="perfil-inmobiliaria-nombre" id="verNombreInmobiliaria">—</div>
+                            <input type="text" id="inputNombreInmobiliaria" class="perfil-input" placeholder="Nombre de la inmobiliaria">
+                        </div>
+
+                        <div class="perfil-inmobiliaria-logo" id="logoInmobiliaria">
+                            <img id="logoInmobiliariaImg" src="" alt="Logo" style="display: none;">
+                            <i class="fa-solid fa-building" id="logoInmobiliariaIcon"></i>
+                            <div class="perfil-logo-overlay" id="logoOverlay">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Cambiar logo</span>
+                            </div>
+                            <input type="file" id="inputLogoInmobiliaria" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="perfil-divider"></div>
+
+                <div class="perfil-section-body" id="perfilCuentaSection">
+                    <h2 class="perfil-section-title">Cuenta</h2>
+
+                    <div class="perfil-datos-grid">
+                        <div class="perfil-dato-row" data-editable="false">
+                            <div class="perfil-dato-label">Email</div>
+                            <div class="perfil-dato-contenido">
+                                <span class="perfil-dato-valor" id="verEmailCuenta">—</span>
+                            </div>
+                        </div>
+
+                        <div class="perfil-dato-row" data-editable="false">
+                            <div class="perfil-dato-label">Google</div>
+                            <div class="perfil-dato-contenido" id="estadoGoogleCuenta">
+                                <span class="perfil-dato-valor" id="verEstadoGoogle">No vinculada</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="perfil-cuenta-acciones" id="perfilCuentaAcciones">
+                        <button type="button" class="perfil-btn-google" id="btnVincularGoogle">
+                            <i class="fa-brands fa-google"></i> Vincular con Google
                         </button>
-                        <button type="button" class="perfil-config-item" id="configInmobiliaria">
-                            <span class="perfil-config-icon"><i class="fa-solid fa-building"></i></span>
-                            <span class="perfil-config-text">Información de la inmobiliaria</span>
-                            <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                        </button>
-                        <button type="button" class="perfil-config-item" id="configPreferencias">
-                            <span class="perfil-config-icon"><i class="fa-solid fa-sliders"></i></span>
-                            <span class="perfil-config-text">Preferencias</span>
-                            <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                        </button>
-                        <button type="button" class="perfil-config-item" id="configSeguridad">
-                            <span class="perfil-config-icon"><i class="fa-solid fa-shield-halved"></i></span>
-                            <span class="perfil-config-text">Seguridad y cuenta</span>
-                            <span class="perfil-config-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                        <button type="button" class="perfil-btn-google perfil-btn-google--desvincular" id="btnDesvincularGoogle" style="display: none;">
+                            <i class="fa-brands fa-google"></i> Desvincular Google
                         </button>
                     </div>
                 </div>
@@ -180,6 +243,7 @@
     <script src="../js/sidebar.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/theme.js"></script>
+    <script src="../js/api-client.js"></script>
     <script src="../js/perfil.js"></script>
 </body>
 </html>

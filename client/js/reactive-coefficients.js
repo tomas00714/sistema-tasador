@@ -12,6 +12,7 @@ class ReactiveCoefficients {
 
     // Manejar cambio en coeficiente
     onCoeficienteChange(index, input, valor) {
+        console.log('[REACTIVE] onCoeficienteChange llamado - index:', index, 'valor:', valor);
         // El guardado se maneja en resultados-renderer.js
         // Este método solo maneja el debounce y recálculo
 
@@ -51,6 +52,7 @@ class ReactiveCoefficients {
     }
 
     async recalcularLote() {
+        console.log('[REACTIVE] recalcularLote() iniciado');
         // Reutilizar lógica existente de recalcularConCoeficientes
         if (typeof recalcularConCoeficientes === 'function') {
             await recalcularConCoeficientes();
@@ -88,9 +90,10 @@ class ReactiveCoefficients {
         document.querySelectorAll(".coef-ubicacion-input, .coef-actualizacion-input, .coef-actividad-input, .coef-personalizado-input").forEach(input => {
             const index = input.dataset.index;
             const coefId = input.dataset.coefId;
-            
-            if (coeficientesPersonalizados[index]) {
-                const coef = coeficientesPersonalizados[index].find(c => c.id === coefId);
+
+            // IMPORTANT: Use window.coeficientesPersonalizados as the single source of truth
+            if (window.coeficientesPersonalizados && window.coeficientesPersonalizados[index]) {
+                const coef = window.coeficientesPersonalizados[index].find(c => c.id === coefId);
                 if (coef) {
                     input.value = coef.valor.toFixed(2);
                 }

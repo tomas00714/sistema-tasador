@@ -46,6 +46,15 @@ function renderComparablesDerecha() {
     const wrap = document.getElementById("comparablesListaDinamica");
     const contador = document.getElementById("comparablesContador");
 
+    console.log('[DEBUG tasacion-comparables] renderComparablesDerecha llamada');
+    console.log('[DEBUG tasacion-comparables] datosTasacion.comparables:', datosTasacion.comparables);
+    console.log('[DEBUG tasacion-comparables] datosTasacion.comparables.length:', datosTasacion.comparables?.length);
+    if (datosTasacion.comparables && datosTasacion.comparables.length > 0) {
+        datosTasacion.comparables.forEach((c, i) => {
+            console.log(`[DEBUG tasacion-comparables]   Comparable ${i}: id=${c.id}, valor=${c.valor}, direccion=${c.direccion}`);
+        });
+    }
+
     if (!wrap) {
         return;
     }
@@ -57,6 +66,7 @@ function renderComparablesDerecha() {
     }
 
     if (!n) {
+        console.log('[DEBUG tasacion-comparables] No hay comparables, mostrando mensaje vacío');
         wrap.innerHTML = `
             <div class="comparables-vacio">
                 <div class="comparables-vacio-icono">⊕</div>
@@ -67,6 +77,7 @@ function renderComparablesDerecha() {
         return;
     }
 
+    console.log('[DEBUG tasacion-comparables] Renderizando', n, 'comparables');
     // Usar comparables directamente de memoria (ya son objetos completos)
     wrap.innerHTML = datosTasacion.comparables.map((comparable, idx) => {
         if (!comparable) return '';
@@ -148,7 +159,8 @@ async function leerHistorialDesdeAPI() {
             tipo: t.tipo,
             estado: t.estado,
             ...t.datos,
-            comparables: t.comparables_ids || [],
+            comparables: t.datos?.comparables || [],  // Usar snapshots desde datos.comparables
+            comparables_ids: t.comparables_ids || [],  // Mantener IDs por compatibilidad
             datosCompletos: t.datos
         }));
     } catch (e) {

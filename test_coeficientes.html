@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Coeficientes</title>
+</head>
+<body>
+    <h1>Test de Coeficientes - Reproducción del Problema</h1>
+    <p>Este test simula el flujo de modificación de coeficientes para identificar la causa raíz.</p>
+
+    <div id="output"></div>
+
+    <script>
+        // Simular el estado global
+        let coeficientesPersonalizados = {};
+        let coeficienteIdCounter = 0;
+
+        // Función inicializarCoeficientesFijos (del código real)
+        function inicializarCoeficientesFijos(index) {
+            console.log(`[inicializarCoeficientesFijos] index=${index}`);
+            console.log(`[inicializarCoeficientesFijos] ANTES:`, JSON.stringify(coeficientesPersonalizados));
+
+            if (!coeficientesPersonalizados[index]) {
+                coeficientesPersonalizados[index] = [];
+            }
+
+            // Ensure ubicacion coefficient exists
+            if (!coeficientesPersonalizados[index].find(c => c.id === 'ubicacion')) {
+                console.log(`[inicializarCoeficientesFijos] Creando ubicacion con valor 1.0`);
+                coeficientesPersonalizados[index].push({
+                    id: 'ubicacion',
+                    nombre: 'Ubicación',
+                    valor: 1.0
+                });
+            } else {
+                console.log(`[inicializarCoeficientesFijos] ubicacion ya existe, NO se crea`);
+            }
+
+            // Ensure actualizacion coefficient exists
+            if (!coeficientesPersonalizados[index].find(c => c.id === 'actualizacion')) {
+                console.log(`[inicializarCoeficientesFijos] Creando actualizacion con valor 1.0`);
+                coeficientesPersonalizados[index].push({
+                    id: 'actualizacion',
+                    nombre: 'Actualización',
+                    valor: 1.0
+                });
+            } else {
+                console.log(`[inicializarCoeficientesFijos] actualizacion ya existe, NO se crea`);
+            }
+
+            console.log(`[inicializarCoeficientesFijos] DESPUÉS:`, JSON.stringify(coeficientesPersonalizados));
+        }
+
+        // Simular renderizado del cuadro
+        function renderizarCuadro(tipo) {
+            console.log(`\n=== RENDERIZAR CUADRO (tipo=${tipo}) ===`);
+            inicializarCoeficientesFijos(tipo);
+
+            const coeficientesTipo = (coeficientesPersonalizados[tipo] || []).filter(c => c.id !== 'ubicacion' && c.id !== 'actualizacion');
+            const coefUbicacion = coeficientesPersonalizados[tipo]?.find(c => c.id === 'ubicacion')?.valor || 1.0;
+            const coefActualizacion = coeficientesPersonalizados[tipo]?.find(c => c.id === 'actualizacion')?.valor || 1.0;
+
+            console.log(`[renderizarCuadro] coefUbicacion=${coefUbicacion}, coefActualizacion=${coefActualizacion}`);
+            console.log(`[renderizarCuadro] coeficientesTipo:`, coeficientesTipo);
+
+            return { coefUbicacion, coefActualizacion, coeficientesTipo };
+        }
+
+        // Simular modificación de coeficiente
+        function modificarCoeficiente(index, coefId, nuevoValor) {
+            console.log(`\n=== MODIFICAR COEFICIENTE (index=${index}, coefId=${coefId}, valor=${nuevoValor}) ===`);
+            console.log(`[modificarCoeficiente] ANTES:`, JSON.stringify(coeficientesPersonalizados));
+
+            if (!coeficientesPersonalizados[index]) {
+                coeficientesPersonalizados[index] = [];
+            }
+
+            const coef = coeficientesPersonalizados[index].find(c => c.id === coefId);
+            if (coef) {
+                coef.valor = nuevoValor;
+                console.log(`[modificarCoeficiente] Coeficiente modificado:`, coef);
+            } else {
+                console.log(`[modificarCoeficiente] ERROR: Coeficiente no encontrado`);
+            }
+
+            console.log(`[modificarCoeficiente] DESPUÉS:`, JSON.stringify(coeficientesPersonalizados));
+        }
+
+        // Simular recálculo (que podría causar re-render)
+        function recalcularConCoeficientes() {
+            console.log(`\n=== RECALCULAR CON COEFICIENTES ===`);
+            // El recálculo en el código real puede trigger un re-render
+            // Simulamos que se llama a mostrarPantallaResultado(false)
+            // que a su vez llama a renderer.renderizar()
+        }
+
+        // TEST 1: Modificar coeficiente y re-renderizar
+        function test1() {
+            console.log('\n========================================');
+            console.log('TEST 1: Modificar coeficiente y re-renderizar');
+            console.log('========================================');
+
+            // Render inicial
+            const render1 = renderizarCuadro('medial');
+            console.log(`[TEST 1] Render inicial - ubicacion=${render1.coefUbicacion}`);
+
+            // Modificar coeficiente
+            modificarCoeficiente('medial', 'ubicacion', 1.5);
+
+            // Re-renderizar (esto es lo que podría causar el problema)
+            const render2 = renderizarCuadro('medial');
+            console.log(`[TEST 1] Render después de modificación - ubicacion=${render2.coefUbicacion}`);
+
+            const valorEsperado = 1.5;
+            const valorObtenido = render2.coefUbicacion;
+            const paso = valorObtenido === valorEsperado ? '✅ PASS' : '❌ FAIL';
+
+            console.log(`[TEST 1] RESULTADO: ${paso} (esperado=${valorEsperado}, obtenido=${valorObtenido})`);
+
+            return paso === '✅ PASS';
+        }
+
+        // TEST 2: Verificar que inicializarCoeficientesFijos NO sobrescribe valores existentes
+        function test2() {
+            console.log('\n========================================');
+            console.log('TEST 2: Verificar que inicializarCoeficientesFijos NO sobrescribe');
+            console.log('========================================');
+
+            // Limpiar estado
+            coeficientesPersonalizados = {};
+
+            // Crear manualmente un coeficiente con valor diferente
+            coeficientesPersonalizados['medial'] = [
+                { id: 'ubicacion', nombre: 'Ubicación', valor: 2.5 },
+                { id: 'actualizacion', nombre: 'Actualización', valor: 1.0 }
+            ];
+
+            console.log(`[TEST 2] Estado manual creado:`, JSON.stringify(coeficientesPersonalizados));
+
+            // Llamar a inicializarCoeficientesFijos
+            inicializarCoeficientesFijos('medial');
+
+            const valorUbicacion = coeficientesPersonalizados['medial'].find(c => c.id === 'ubicacion').valor;
+            const valorEsperado = 2.5;
+            const paso = valorUbicacion === valorEsperado ? '✅ PASS' : '❌ FAIL';
+
+            console.log(`[TEST 2] RESULTADO: ${paso} (esperado=${valorEsperado}, obtenido=${valorUbicacion})`);
+
+            return paso === '✅ PASS';
+        }
+
+        // Ejecutar tests
+        const output = document.getElementById('output');
+
+        const test1Result = test1();
+        const test2Result = test2();
+
+        output.innerHTML = `
+            <h2>Resultados</h2>
+            <p>TEST 1: ${test1Result ? '✅ PASS' : '❌ FAIL'}</p>
+            <p>TEST 2: ${test2Result ? '✅ PASS' : '❌ FAIL'}</p>
+            <p>Ver consola para detalles.</p>
+        `;
+
+        console.log('\n========================================');
+        console.log('RESUMEN DE TESTS');
+        console.log('========================================');
+        console.log(`TEST 1: ${test1Result ? '✅ PASS' : '❌ FAIL'}`);
+        console.log(`TEST 2: ${test2Result ? '✅ PASS' : '❌ FAIL'}`);
+    </script>
+</body>
+</html>

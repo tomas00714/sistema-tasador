@@ -28,6 +28,11 @@ function getAuthHeaders() {
     return headers;
 }
 
+function urlArchivo(filename) {
+    if (!filename) return '';
+    return `${API_BASE_URL}/uploads/${filename}`;
+}
+
 function handleAuthError(response) {
     if (response.status === 401) {
         localStorage.removeItem('auth_token');
@@ -81,7 +86,9 @@ async function obtenerTasacionAPI(tasacionId) {
         }
         
         if (!response.ok) {
-            if (response.status === 404) {
+            // 404: Tasación no existe
+            // 403: Usuario no tiene permiso (no es el propietario)
+            if (response.status === 404 || response.status === 403) {
                 return null;
             }
             throw new Error(`Error al obtener tasación: ${response.status}`);
@@ -122,6 +129,10 @@ async function listarTasacionesAPI(estado = null) {
 
 async function actualizarTasacionAPI(tasacionId, datosActualizacion) {
     try {
+        console.log('[DEBUG api-client] actualizarTasacionAPI - tasacionId:', tasacionId);
+        console.log('[DEBUG api-client] actualizarTasacionAPI - datosActualizacion:', JSON.stringify(datosActualizacion, null, 2));
+        console.log('[API PUT] Payload completo enviado:', JSON.stringify(datosActualizacion, null, 2));
+        
         const response = await fetch(`${API_BASE_URL}/api/tasaciones/${tasacionId}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
@@ -133,7 +144,10 @@ async function actualizarTasacionAPI(tasacionId, datosActualizacion) {
         }
         
         if (!response.ok) {
-            throw new Error(`Error al actualizar tasación: ${response.status}`);
+            const errorText = await response.text();
+            console.error('[DEBUG api-client] actualizarTasacionAPI - Response NOT OK:', response.status, response.statusText);
+            console.error('[DEBUG api-client] actualizarTasacionAPI - Error body:', errorText);
+            throw new Error(`Error al actualizar tasación: ${response.status} - ${errorText}`);
         }
         
         return await response.json();
@@ -693,6 +707,115 @@ async function obtenerVistaPreviaCompartirAPI(token) {
     }
 }
 
+// =========================
+//   PERFIL PROFESIONAL
+// =========================
+
+async function obtenerProfesionalAPI() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me`, {
+            headers: getAuthHeaders()
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error al obtener perfil profesional: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en obtenerProfesionalAPI:', error);
+        throw error;
+    }
+}
+
+async function actualizarProfesionalAPI(datos) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(datos)
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al actualizar perfil profesional: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en actualizarProfesionalAPI:', error);
+        throw error;
+    }
+}
+
+async function subirFotoPerfilAPI(archivo) {
+    try {
+        const formData = new FormData();
+        formData.append('file', archivo);
+
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me/foto-perfil`, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al subir foto de perfil: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en subirFotoPerfilAPI:', error);
+        throw error;
+    }
+}
+
+async function subirLogoInmobiliariaAPI(archivo) {
+    try {
+        const formData = new FormData();
+        formData.append('file', archivo);
+
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me/logo-inmobiliaria`, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al subir logo de inmobiliaria: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en subirLogoInmobiliariaAPI:', error);
+        throw error;
+    }
+}
+
 async function guardarTasacionCompartidaAPI(token) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/tasaciones/compartir/${encodeURIComponent(token)}/guardar`, {
@@ -714,4 +837,103 @@ async function guardarTasacionCompartidaAPI(token) {
         console.error('Error en guardarTasacionCompartidaAPI:', error);
         throw error;
     }
+}
+
+// =========================
+// AVATAR DEL USUARIO
+// Sincroniza la foto de perfil real en todos los avatares de la app
+// =========================
+
+function crearAvatarImg(container) {
+    const img = document.createElement('img');
+    img.alt = 'Foto de perfil';
+    img.className = 'avatar-img avatar-img-hidden';
+    img.onerror = function() {
+        img.classList.add('avatar-img-hidden');
+        const icon = container.querySelector('i');
+        if (icon) icon.style.display = '';
+    };
+    img.onload = function() {
+        img.classList.remove('avatar-img-hidden');
+        const icon = container.querySelector('i');
+        if (icon) icon.style.display = 'none';
+    };
+    container.appendChild(img);
+    return img;
+}
+
+async function actualizarAvatares() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    let fotoPerfil = null;
+    try {
+        const data = await obtenerProfesionalAPI();
+        fotoPerfil = data?.profesional?.foto_perfil || null;
+    } catch (error) {
+        console.warn('No se pudo cargar foto de perfil para avatares:', error.message);
+        return;
+    }
+
+    if (!fotoPerfil) return;
+
+    const url = urlArchivo(fotoPerfil);
+    const avatares = document.querySelectorAll('.sidebar-profile-avatar, .nav-user-avatar, .profile-avatar');
+    avatares.forEach(container => {
+        let img = container.querySelector('img.avatar-img');
+        if (!img) img = crearAvatarImg(container);
+        img.src = url;
+    });
+}
+
+async function iniciarVinculacionGoogleAPI() {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/usuarios/me/google`, {
+            method: 'POST',
+            headers: headers
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al iniciar vinculación con Google: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en iniciarVinculacionGoogleAPI:', error);
+        throw error;
+    }
+}
+
+async function desvincularGoogleAPI() {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/usuarios/me/google`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al desvincular Google: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en desvincularGoogleAPI:', error);
+        throw error;
+    }
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', actualizarAvatares);
 }

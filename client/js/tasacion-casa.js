@@ -76,6 +76,8 @@ function mostrarFormularioCasa() {
                 <textarea id="observacionesInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.casa.observaciones || ""}</textarea>
             </div>
         </div>
+
+        ${generarHTMLDatosInforme('casa')}
     `;
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {
@@ -99,6 +101,7 @@ function mostrarFormularioCasa() {
         inicializarSwitchCochera();
         inicializarSwitchBaulera();
         inicializarServicios();
+        inicializarAmbientes();
     });
 }
 
@@ -373,6 +376,11 @@ function guardarDatosPantallaCasa() {
             datosTasacion.casa.servicios.push(checkbox.dataset.servicio);
         }
     });
+
+    // Guardar datos de informe
+    if (typeof guardarDatosInforme === 'function') {
+        guardarDatosInforme();
+    }
 }
 
 function guardarDatosCaracteristicasCasa() {

@@ -75,10 +75,12 @@ function mostrarModalConfirmacionGuardarTasacion() {
                     datosTasacion.resultado = resultadoTasacion;
                     const idGuardado = await guardarTasacion();
                     if (idGuardado) {
-                        localStorage.setItem("tasacionParaInformeId", idGuardado);
+                        // Redirigir a la vista previa con el ID en la URL
+                        window.location.href = `vista-previa-informe.html?id=${idGuardado}`;
+                    } else {
+                        window.location.href = "vista-previa-informe.html";
                     }
                     limpiarDatosTasacion();
-                    window.location.href = "vista-previa-informe.html";
                 }
             }
         ],

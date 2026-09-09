@@ -181,14 +181,20 @@ function mostrarModalAgregarCoeficiente(index) {
         }
 
         // Guardar el coeficiente personalizado (acumulativo)
-        if (!coeficientesPersonalizados[index]) {
-            coeficientesPersonalizados[index] = [];
+        // IMPORTANT: Use window.coeficientesPersonalizados as the single source of truth
+        if (!window.coeficientesPersonalizados[index]) {
+            window.coeficientesPersonalizados[index] = [];
         }
-        coeficientesPersonalizados[index].push({
+        window.coeficientesPersonalizados[index].push({
             id: `coef-${coeficienteIdCounter++}`,
             nombre: razon,
             valor: valor
         });
+
+        // Sync to datosTasacion for persistence
+        if (window.datosTasacion) {
+            window.datosTasacion.coeficientesPersonalizados = window.coeficientesPersonalizados;
+        }
 
         cerrarModal();
 
@@ -227,17 +233,32 @@ function quitarComparable(index) {
 }
 
 async function recalcularConCoeficientes() {
+    console.log('[RECALCULAR] recalcularConCoeficientes() iniciado');
+    console.log('[DEBUG recalcularConCoeficientes] Iniciando recalculo con coeficientes:', JSON.stringify(coeficientesPersonalizados, null, 2));
+    
     // Collect all coefficient values from the unified structure
     const coeficientes = {};
 
     // Get all coefficients (ubicacion, actualizacion, and custom) from the unified structure
+    // IMPORTANT: This must include BOTH numeric indices (comparables) AND string indices (objetivo: 'lote', 'esquina', 'medial')
     Object.keys(coeficientesPersonalizados).forEach(index => {
         coeficientes[index] = coeficientes[index] || {};
+        coeficientes[index].ubicacion = 1;
+        coeficientes[index].actualizacion = 1;
         coeficientes[index].personalizados = {};
+
         coeficientesPersonalizados[index].forEach(coef => {
-            coeficientes[index].personalizados[coef.id] = coef.valor;
+            if (coef.id === 'ubicacion') {
+                coeficientes[index].ubicacion = coef.valor;
+            } else if (coef.id === 'actualizacion') {
+                coeficientes[index].actualizacion = coef.valor;
+            } else {
+                coeficientes[index].personalizados[coef.id] = coef.valor;
+            }
         });
     });
+    
+    console.log('[DEBUG recalcularConCoeficientes] Coeficientes procesados:', JSON.stringify(coeficientes, null, 2));
 
     // Update the comparables with new homogenized values
     const r = resultadoTasacion;
@@ -261,6 +282,19 @@ async function recalcularConCoeficientes() {
             // New formula: original m² / (all coefficients multiplied)
             const coeficienteTotal = coefFitto * coefUbicacion * coefAct * coefPersonalizadoTotal;
             c.valor_m2_homogeneizado = c.valor_m2 / coeficienteTotal;
+
+            console.log(`[RECALCULAR] Comparable ${index}:`, {
+                valor_m2_original: c.valor_m2,
+                coef_ubicacion: coefUbicacion,
+                coef_actualizacion: coefAct,
+                coef_personalizados: coef.personalizados,
+                coef_fitto: coefFitto,
+                coeficiente_total: coeficienteTotal,
+                valor_m2_homogeneizado_antes: 'N/A (primer cálculo)',
+                valor_m2_homogeneizado_despues: c.valor_m2_homogeneizado
+            });
+
+            console.log(`[DEBUG recalcularConCoeficientes] Comparable ${index}: coeficienteTotal=${coeficienteTotal}, valor_m2=${c.valor_m2}, valor_m2_homogeneizado=${c.valor_m2_homogeneizado}`);
         });
 
         // Recalculate average
@@ -296,11 +330,13 @@ async function recalcularConCoeficientes() {
 
             const recalcularBloque = (bloque, key) => {
                 const coefBloque = coeficientes[key] || {};
-                const totalCoef = productoCoeficientes(coefBloque);
+                const coefUbicacionBloque = coefBloque.ubicacion || 1;
+                const coefActualizacionBloque = coefBloque.actualizacion || 1;
+                const totalCoefPersonalizado = productoCoeficientes(coefBloque);
                 const fitto = bloque.coeficiente_fitto_lote || 1;
                 const valvano = key === 'esquina' ? valvanoTotal(bloque) : 1;
                 const superficie = parseFloat(bloque.superficie) || 0;
-                const valorFinal = valorPromedio * superficie * fitto * valvano * totalCoef;
+                const valorFinal = valorPromedio * superficie * fitto * valvano * coefUbicacionBloque * coefActualizacionBloque * totalCoefPersonalizado;
                 bloque.valor_final = valorFinal;
                 bloque.valor_m2 = superficie > 0 ? valorFinal / superficie : 0;
                 bloque.valor_m2_homogeneizado = bloque.valor_m2;
@@ -376,6 +412,13 @@ async function recalcularConCoeficientes() {
             r.coeficiente_ubicacion = coefUbicacionLote;
             r.coeficiente_actualizacion = coefActualizacionLote;
             r.valor_promedio_homogeneizado = valorPromedio;
+
+            console.log('[RECALCULAR] Valores finales de tasación:', {
+                valor_final: r.valor_final,
+                valor_m2: r.valor_m2,
+                coeficiente_ubicacion: r.coeficiente_ubicacion,
+                coeficiente_actualizacion: r.coeficiente_actualizacion
+            });
         }
 
         // Update the display without recalculating (to avoid infinite loop)
@@ -1001,6 +1044,8 @@ async function mostrarPantallaResultado(recalcular = true) {
     console.log('DATOS TASACION (completo):', diagnosticStringify(datosTasacion));
     console.log('COMPARABLES SIN NORMALIZAR:', diagnosticStringify(r.comparables));
     console.log('COEFICIENTES PERSONALIZADOS:', diagnosticStringify(coeficientesPersonalizados));
+
+    console.log('[RENDER] resultadoTasacion antes de renderizar:', JSON.stringify(r, null, 2));
 
     // Usar ResultadosRenderer para normalizar comparables antes de cualquier recalculo
     const renderer = new ResultadosRenderer(contenido, r, tipo);

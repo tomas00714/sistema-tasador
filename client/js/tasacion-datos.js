@@ -5,6 +5,21 @@
 
 let guardandoTasacion = false;
 
+// Nuevos campos para informe
+let datosInforme = {
+    nomenclaturaCatastral: "",
+    clienteNombre: "",
+    finalidad: "Tasación comercial",
+    entorno: {
+        descripcion: "",
+        transporte: "",
+        comercios: "",
+        universidades: "",
+        puntosInteres: ""
+    },
+    ambientes: []
+};
+
 function guardarTodosLosDatos() {
     if (pasoActual === 2) {
         if (datosTasacion.tipo === 'lote') {
@@ -58,6 +73,17 @@ function capturarDatosCompletos() {
         datos.coeficientesPersonalizados = JSON.parse(JSON.stringify(coeficientesPersonalizados));
     }
 
+    console.log('[CAPTURAR] datosCompletos.coeficientesPersonalizados:', JSON.stringify(datos.coeficientesPersonalizados, null, 2));
+
+    // Agregar datos de informe
+    datos.ambientes = datosInforme.ambientes || [];
+    datos.entorno = datosInforme.entorno || {};
+
+    console.log('[CAPTURAR] datosCompletos con informe:', JSON.stringify({
+        ambientes: datos.ambientes,
+        entorno: datos.entorno
+    }, null, 2));
+
     return datos;
 }
 
@@ -72,6 +98,21 @@ function limpiarDatosTasacion() {
             lat: null,
             lon: null,
             orientacion: ""
+        };
+        
+        // Resetear datos de informe
+        datosInforme = {
+            nomenclaturaCatastral: "",
+            clienteNombre: "",
+            finalidad: "Tasación comercial",
+            entorno: {
+                descripcion: "",
+                transporte: "",
+                comercios: "",
+                universidades: "",
+                puntosInteres: ""
+            },
+            ambientes: []
         };
         datosTasacion.lote = {
             tipoLote: "",
@@ -165,6 +206,7 @@ function limpiarDatosTasacion() {
 }
 
 async function cargarDatosCompletos(datosCompletos) {
+    console.log('[CARGAR DATOS] datosCompletos.coeficientesPersonalizados:', JSON.stringify(datosCompletos?.coeficientesPersonalizados, null, 2));
     if (!datosCompletos) return;
     
     datosTasacion.tipo = datosCompletos.tipo;
@@ -202,6 +244,21 @@ async function cargarDatosCompletos(datosCompletos) {
         }
         coeficientesPersonalizados = JSON.parse(JSON.stringify(datosCompletos.coeficientesPersonalizados));
     }
+
+    // Cargar datos de informe (compatibilidad con datos antiguos)
+    datosInforme.nomenclaturaCatastral = datosCompletos.nomenclaturaCatastral || "";
+    datosInforme.clienteNombre = datosCompletos.clienteNombre || "";
+    datosInforme.finalidad = datosCompletos.finalidad || "Tasación comercial";
+    datosInforme.ambientes = datosCompletos.ambientes || [];
+    datosInforme.entorno = datosCompletos.entorno || {
+        descripcion: "",
+        transporte: "",
+        comercios: "",
+        universidades: "",
+        puntosInteres: ""
+    };
+
+    console.log('[CARGAR DATOS] datosInforme cargados:', JSON.stringify(datosInforme, null, 2));
 
     // Establecer el paso actual - siempre ir a pantalla 2 al editar
     pasoActual = 2;
@@ -267,6 +324,7 @@ async function guardarTasacion(estado = 'completada') {
     }
 
     // Capturar datos completos
+    console.log('[GUARDAR] window.coeficientesPersonalizados antes de capturar:', JSON.stringify(window.coeficientesPersonalizados, null, 2));
     const datosCompletos = capturarDatosCompletos();
 
     if (esNueva) {
@@ -276,7 +334,10 @@ async function guardarTasacion(estado = 'completada') {
                 tipo: datosTasacion.tipo,
                 estado: estado,
                 datos: datosCompletos,
-                comparables_ids: comparablesIds
+                comparables_ids: comparablesIds,
+                nomenclatura_catastral: datosInforme.nomenclaturaCatastral,
+                cliente_nombre: datosInforme.clienteNombre,
+                finalidad: datosInforme.finalidad
             });
             idFinal = tasacionCreada.id;
         } catch (e) {
@@ -286,37 +347,59 @@ async function guardarTasacion(estado = 'completada') {
     } else {
         // Actualizar tasación existente en la API
         try {
+            console.log('[DEBUG tasacion-datos] Construyendo comparablesSnapshots desde datosTasacion.comparables');
+            console.log('[DEBUG tasacion-datos] datosTasacion.comparables:', datosTasacion.comparables);
+            
             // Enviar snapshots actuales para preservar ediciones
             const comparablesSnapshots = datosTasacion.comparables.map(c => {
-                // Construir snapshot con los campos necesarios
-                return {
-                    direccion: c.direccion,
-                    lat: c.lat,
-                    lon: c.lon,
-                    tipo_inmueble: c.tipoInmueble || c.tipo_inmueble,
-                    tipo_valor: c.tipoValor || c.tipo_valor,
+                const u = c.ubicacion || {};
+                const snapshot = {
+                    ubicacion: {
+                        direccion: u.direccion,
+                        lat: u.lat,
+                        lon: u.lon,
+                        provincia: u.provincia,
+                        localidad: u.localidad
+                    },
+                    tipoInmueble: c.tipoInmueble,
+                    tipoValor: c.tipoValor,
                     valor: c.valor,
-                    valor_m2: c.valorM2 || c.valor_m2,
+                    valorM2: c.valorM2,
                     superficie: c.superficie,
                     frente: c.frente,
                     fondo: c.fondo,
-                    tipo_lote: c.tipoLote || c.tipo_lote,
+                    tipoLote: c.tipoLote,
                     ambientes: c.ambientes,
                     dormitorios: c.dormitorios,
                     banos: c.banos,
                     cochera: c.cochera,
-                    tiene_ascensor: c.tieneAscensor || c.tiene_ascensor,
-                    tiene_pileta: c.tienePileta || c.tiene_pileta,
-                    tiene_jardin: c.tieneJardin || c.tiene_jardin,
-                    datos: c.datos || {}
+                    tieneAscensor: c.tieneAscensor,
+                    tienePileta: c.tienePileta,
+                    tieneJardin: c.tieneJardin,
+                    datos: c.datos || {},
+                    fuente: c.fuente,
+                    id: c.id,
+                    lote: c.lote,
+                    departamento: c.departamento,
+                    casa: c.casa,
+                    observaciones: c.observaciones || '',
+                    fechaCreacion: c.fechaCreacion,
+                    fechaModificacion: c.fechaModificacion
                 };
+                console.log('[DEBUG tasacion-datos] Snapshot construido para comparable', c.id, ':', snapshot);
+                return snapshot;
             });
+            
+            console.log('[DEBUG tasacion-datos] comparablesSnapshots finales:', comparablesSnapshots);
             
             await actualizarTasacionAPI(idFinal, {
                 estado: estado,
                 datos: datosCompletos,
                 comparables_ids: comparablesIds,
-                comparables_snapshots: comparablesSnapshots
+                comparables_snapshots: comparablesSnapshots,
+                nomenclatura_catastral: datosInforme.nomenclaturaCatastral,
+                cliente_nombre: datosInforme.clienteNombre,
+                finalidad: datosInforme.finalidad
             });
         } catch (e) {
             console.error('Error al actualizar tasación en API:', e);
@@ -341,6 +424,130 @@ function formatearDireccion(direccion) {
         .split(' ')
         .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1))
         .join(' ');
+}
+
+function guardarDatosInforme() {
+    datosInforme.nomenclaturaCatastral = document.getElementById("nomenclaturaCatastralInput")?.value || "";
+    datosInforme.clienteNombre = document.getElementById("clienteNombreInput")?.value || "";
+    datosInforme.finalidad = document.getElementById("finalidadInput")?.value || "Tasación comercial";
+    
+    datosInforme.entorno.descripcion = document.getElementById("entornoDescripcionInput")?.value || "";
+    datosInforme.entorno.transporte = document.getElementById("entornoTransporteInput")?.value || "";
+    datosInforme.entorno.comercios = document.getElementById("entornoComerciosInput")?.value || "";
+    datosInforme.entorno.universidades = document.getElementById("entornoUniversidadesInput")?.value || "";
+    datosInforme.entorno.puntosInteres = document.getElementById("entornoPuntosInteresInput")?.value || "";
+    
+    // Guardar ambientes
+    datosInforme.ambientes = [];
+    document.querySelectorAll('.ambiente-item').forEach((item, index) => {
+        const nombre = item.querySelector('.ambiente-nombre')?.value || "";
+        const medidas = item.querySelector('.ambiente-medidas')?.value || "";
+        const descripcion = item.querySelector('.ambiente-descripcion')?.value || "";
+        
+        if (nombre || medidas || descripcion) {
+            datosInforme.ambientes.push({
+                nombre,
+                medidas,
+                descripcion
+            });
+        }
+    });
+    
+    console.log('[guardarDatosInforme] datosInforme:', JSON.stringify(datosInforme, null, 2));
+}
+
+function inicializarAmbientes() {
+    const btnAgregarAmbiente = document.getElementById('btnAgregarAmbiente');
+    if (!btnAgregarAmbiente) return;
+    
+    // Agregar evento para añadir nuevo ambiente
+    btnAgregarAmbiente.addEventListener('click', () => {
+        const container = document.getElementById('ambientesContainer');
+        if (!container) return;
+        
+        const index = datosInforme.ambientes.length;
+        const nuevoAmbienteHTML = generarHTMLAmbienteItem(index, {});
+        container.insertAdjacentHTML('beforeend', nuevoAmbienteHTML);
+        
+        datosInforme.ambientes.push({
+            nombre: "",
+            medidas: "",
+            descripcion: ""
+        });
+        
+        // Actualizar números de ambientes
+        actualizarNumerosAmbientes();
+        
+        // Inicializar eventos de eliminación para el nuevo ambiente
+        inicializarEventosEliminacionAmbientes();
+    });
+    
+    // Inicializar eventos de eliminación para ambientes existentes
+    inicializarEventosEliminacionAmbientes();
+}
+
+function inicializarEventosEliminacionAmbientes() {
+    document.querySelectorAll('.btn-eliminar-ambiente').forEach(btn => {
+        // Remover evento anterior si existe
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const index = parseInt(newBtn.dataset.index);
+            eliminarAmbiente(index);
+        });
+    });
+}
+
+function eliminarAmbiente(index) {
+    const container = document.getElementById('ambientesContainer');
+    if (!container) return;
+    
+    const ambienteItem = container.querySelector(`.ambiente-item[data-index="${index}"]`);
+    if (ambienteItem) {
+        ambienteItem.remove();
+        
+        // Actualizar array de ambientes
+        datosInforme.ambientes.splice(index, 1);
+        
+        // Actualizar índices en el DOM
+        actualizarIndicesAmbientes();
+        actualizarNumerosAmbientes();
+        
+        console.log('[eliminarAmbiente] Ambiente eliminado, ambientes restantes:', datosInforme.ambientes.length);
+    }
+}
+
+function actualizarIndicesAmbientes() {
+    const container = document.getElementById('ambientesContainer');
+    if (!container) return;
+    
+    container.querySelectorAll('.ambiente-item').forEach((item, newIndex) => {
+        item.dataset.index = newIndex;
+        
+        const nombreInput = item.querySelector('.ambiente-nombre');
+        const medidasInput = item.querySelector('.ambiente-medidas');
+        const descripcionInput = item.querySelector('.ambiente-descripcion');
+        const eliminarBtn = item.querySelector('.btn-eliminar-ambiente');
+        
+        if (nombreInput) nombreInput.dataset.index = newIndex;
+        if (medidasInput) medidasInput.dataset.index = newIndex;
+        if (descripcionInput) descripcionInput.dataset.index = newIndex;
+        if (eliminarBtn) eliminarBtn.dataset.index = newIndex;
+    });
+    
+    // Re-inicializar eventos de eliminación con los nuevos índices
+    inicializarEventosEliminacionAmbientes();
+}
+
+function actualizarNumerosAmbientes() {
+    const container = document.getElementById('ambientesContainer');
+    if (!container) return;
+    
+    container.querySelectorAll('.ambiente-header h4').forEach((header, index) => {
+        header.textContent = `Ambiente ${index + 1}`;
+    });
 }
 
 // Funciones para guardar datos de pantallas específicas
@@ -369,6 +576,9 @@ function guardarDatosPantalla1() {
     datosTasacion.lote.servicios = serviciosSeleccionados;
     datosTasacion.lote.observaciones = document.getElementById("observacionesLoteInput").value;
     datosTasacion.lote.mejoras = document.getElementById("mejorasLoteInput").value;
+
+    // Guardar datos de informe
+    guardarDatosInforme();
 
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();
@@ -421,6 +631,9 @@ function guardarDatosPantallaDepartamento() {
     });
 
     datosTasacion.departamento.observaciones = document.getElementById("observacionesInput").value;
+
+    // Guardar datos de informe
+    guardarDatosInforme();
 
     resultadoCalculado = false;
     actualizarIndicadoresProgreso();

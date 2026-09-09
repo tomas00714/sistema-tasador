@@ -1,6 +1,9 @@
 const TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = 'auth_user';
 
+const GOOGLE_POPUP_NAME = 'google_oauth_popup';
+const GOOGLE_POPUP_FEATURES = 'width=500,height=600,resizable,scrollbars=yes';
+
 function getAuthRedirect() {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
@@ -12,6 +15,23 @@ function getAuthRedirect() {
         return redirect;
     }
     return 'app/index.html';
+}
+
+function getApiUrl() {
+    const stored = localStorage.getItem('apiUrl');
+    if (stored) return stored;
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '';
+    return isLocal ? 'http://127.0.0.1:8080' : 'https://sistema-tasador.onrender.com';
+}
+
+function continuarConGoogle() {
+    const apiUrl = getApiUrl();
+    const popup = window.open(`${apiUrl}/api/auth/google?mode=continue`, GOOGLE_POPUP_NAME, GOOGLE_POPUP_FEATURES);
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        showError('authError', 'El navegador bloqueó la ventana emergente. Permití los popups para este sitio.');
+        return;
+    }
 }
 
 function appendAuthParams(url) {
@@ -26,14 +46,6 @@ function appendAuthParams(url) {
 
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}${newParams.toString()}`;
-}
-
-function getApiUrl() {
-    const stored = localStorage.getItem('apiUrl');
-    if (stored) return stored;
-    const host = window.location.hostname;
-    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '';
-    return isLocal ? 'http://127.0.0.1:8080' : 'https://sistema-tasador.onrender.com';
 }
 
 function setToken(token) {
@@ -164,6 +176,40 @@ function hideSuccess(elementId) {
         successElement.style.display = 'none';
     }
 }
+
+function completarLoginGoogle(tokenData) {
+    setToken(tokenData.access_token);
+    setUserData({
+        usuario_id: tokenData.usuario_id,
+        email: tokenData.email,
+        nombre: tokenData.nombre,
+        apellido: tokenData.apellido,
+        is_admin: tokenData.is_admin
+    });
+    window.location.href = getAuthRedirect();
+}
+
+function handleGoogleAuthMessage(event) {
+    // Solo confiar en el origen del sitio (callback del mismo dominio)
+    if (!event.data || typeof event.data !== 'object') return;
+    const data = event.data;
+
+    switch (data.type) {
+        case 'google-auth-success':
+            if (data.token) {
+                completarLoginGoogle(data.token);
+            }
+            break;
+        case 'google-auth-existing':
+            showError('authError', data.message || `Ya existe una cuenta con ${data.email}. Iniciá sesión con tu contraseña y vinculá Google desde tu perfil.`);
+            break;
+        case 'google-auth-error':
+            showError('authError', data.message || 'Error al autenticar con Google');
+            break;
+    }
+}
+
+window.addEventListener('message', handleGoogleAuthMessage);
 
 document.addEventListener('DOMContentLoaded', function() {
     // Password toggle functionality
