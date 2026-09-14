@@ -131,6 +131,35 @@ function actualizarNombreUsuario() {
     }
 }
 
+function inyectarSubmenuSolicitudes(paginaActual) {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    const sidebarNav = sidebar.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+
+    // Eliminar el link de Solicitudes del menú principal en cualquier página
+    const existingSolicitudes = sidebarNav.querySelector('[data-page="solicitudes"]');
+    if (existingSolicitudes) {
+        existingSolicitudes.remove();
+    }
+
+    // En historial y solicitudes, mostrarlo como sub-item desplegado de "Base de datos"
+    if (paginaActual === 'historial' || paginaActual === 'solicitudes') {
+        const historialLink = sidebarNav.querySelector('[data-page="historial"]');
+        if (historialLink) {
+            historialLink.insertAdjacentHTML('afterend', `
+                <a href="solicitudes.html" class="sidebar-nav-item sidebar-sub-item" data-page="solicitudes">
+                    <span class="sidebar-nav-item-icon">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </span>
+                    <span class="sidebar-nav-item-text">Solicitudes</span>
+                </a>
+            `);
+        }
+    }
+}
+
 // Detectar automáticamente la página actual e inyectar el sidebar
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
@@ -148,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paginaActual = 'admin';
     }
 
+    inyectarSubmenuSolicitudes(paginaActual);
     inyectarSidebar(paginaActual);
     inicializarLogout();
     actualizarNombreUsuario();

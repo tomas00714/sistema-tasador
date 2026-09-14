@@ -168,11 +168,16 @@ class ReactiveCoefficients {
                     </div>
                     <div>
                         <span>Superficie homogeneizada</span>
-                        <strong>${r.superficie ? r.superficie.toFixed(2) : '0.00'} m²</strong>
+                        <strong>${this.formatearSuperficie(r.superficie_homogeneizada ?? r.superficie)} m²</strong>
                     </div>
                 </div>
             `;
         }
+    }
+
+    formatearSuperficie(valor) {
+        const n = parseFloat(valor);
+        return (isFinite(n) ? n : 0).toFixed(2);
     }
 
     formatearMoneda(valor) {

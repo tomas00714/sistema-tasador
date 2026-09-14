@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/shell.css">
     <link rel="stylesheet" href="../css/tasacion.css">
+    <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="../css/solicitudes.css">
 
     <script>
@@ -201,6 +202,17 @@
         </div>
     </div>
 
+    <!-- Modal para perfil de comparable (reutiliza el de historial) -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-tasacion" id="modalTasacion">
+            <button type="button" class="cerrar-modal" id="cerrarModal" aria-label="Cerrar">
+                ✕
+            </button>
+
+            <div id="contenidoModal"></div>
+        </div>
+    </div>
+
     <!-- Modal Genérico Reutilizable -->
     <div class="modal-overlay" id="modalGenerico">
         <div class="modal-confirmacion-salir">
@@ -222,6 +234,7 @@
     <script src="../js/entidades.js"></script>
     <script src="../js/global.js"></script>
     <script src="../js/modal-generico.js"></script>
+    <script src="../js/historial.js"></script>
     <script src="../js/solicitudes.js"></script>
 
 </body>

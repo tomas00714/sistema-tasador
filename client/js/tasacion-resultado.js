@@ -426,8 +426,248 @@ async function recalcularConCoeficientes() {
     }
 }
 
-// recalcularConCoeficientesDepartamento y recalcularConCoeficientesCasa eliminados:
-// el cálculo Ross-Heidecke y el valor final provienen exclusivamente del backend.
+// Restauradas desde la implementación histórica (versión previa a a82f441).
+// Adaptación mínima a la arquitectura actual:
+// - los comparables normalizados exponen los coeficientes con sufijo "Coef"
+//   (ubicacionPlantaCoef, caracteristicaConstructivaCoef, etc.) con fallback a los nombres viejos;
+// - el backend ya devuelve el coeficiente de depreciación Ross-Heidecke C = 1 - K/2
+//   (coeficiente_depreciacion / rossHeidecke), por lo que se usa directamente;
+//   en resultados históricos donde solo existe K (coeficiente_k o rossHeidecke viejo)
+//   se conserva la conversión original 1 - K/2.
+
+// Determina si un comparable de departamento tiene datos propios suficientes
+// para que su Ross-Heidecke sea real. El backend calcula rossHeidecke siempre,
+// cayendo al default estado=7 ("muy malo") cuando falta estado_conservacion,
+// lo que inflaría artificialmente el valor homogeneizado. La misma condición
+// gobierna el cálculo del divisor y el display de la columna Ross-Heidecke.
+// antiguedad = 0 es un dato válido (a estrenar); solo se exige su presencia.
+function comparableTieneDatosRossHeidecke(c) {
+    const estado = c.estadoConservacion ?? c.departamento?.estadoConservacion ?? c.inmueble?.estadoConservacion;
+    const antiguedad = c.antiguedad ?? c.departamento?.antiguedad ?? c.inmueble?.antiguedad;
+    return estado != null && String(estado).trim() !== '' && antiguedad != null;
+}
+
+function recalcularConCoeficientesDepartamento() {
+    const r = resultadoTasacion;
+    if (!r || !r.comparables || r.comparables.length === 0) return;
+
+    // Recopilar coeficientes de comparables y del objetivo
+    const coeficientes = {};
+    Object.keys(coeficientesPersonalizados).forEach(index => {
+        coeficientes[index] = coeficientes[index] || {};
+        coeficientes[index].personalizados = {};
+        coeficientesPersonalizados[index].forEach(coef => {
+            if (coef.id === 'ubicacion') {
+                coeficientes[index].ubicacion = parseFloat(coef.valor) || 1;
+            } else if (coef.id === 'actividad') {
+                coeficientes[index].actividad = parseFloat(coef.valor) || 1;
+            } else {
+                coeficientes[index].personalizados[coef.id] = parseFloat(coef.valor) || 1;
+            }
+        });
+    });
+
+    // Recalcular valores homogeneizados de comparables
+    r.comparables.forEach((c, index) => {
+        const indexStr = index.toString();
+        const coef = coeficientes[indexStr] || {};
+
+        let coefPersonalizadoTotal = 1;
+        if (coef.personalizados) {
+            Object.values(coef.personalizados).forEach(val => {
+                const num = parseFloat(val);
+                if (!isNaN(num) && num > 0) {
+                    coefPersonalizadoTotal *= num;
+                }
+            });
+        }
+
+        // Incluir coeficientes específicos de departamento (coerción numérica)
+        const coefUbicacionPlanta = parseFloat(c.ubicacionPlantaCoef) || parseFloat(c.ubicacionPlanta) || 1;
+        const coefUbicacionPiso = parseFloat(c.ubicacionPisoCoef) || parseFloat(c.ubicacionPiso) || 1;
+        const coefCaracteristicaConstructiva = parseFloat(c.caracteristicaConstructivaCoef) || parseFloat(c.caracteristicaConstructiva) || 1;
+        const coefSuperficieCubierta = parseFloat(c.superficieCubiertaCoef) || parseFloat(c.superficieCubierta) || 1;
+
+        // Incluir coeficientes fijos editables
+        const coefUbicacion = parseFloat(coef.ubicacion) || 1;
+        const coefActividad = parseFloat(coef.actividad) || 1;
+
+        // Ross-Heidecke del comparable: factor adicional del divisor.
+        // Solo si el comparable tiene datos propios suficientes (estado +
+        // antigüedad) y el coeficiente llega numérico y > 0. Sin datos propios
+        // el backend devuelve un RH calculado con defaults que no se aplica.
+        const rossHeideckeComparable = parseFloat(c.rossHeidecke);
+        const aplicaRossHeideckeComparable = comparableTieneDatosRossHeidecke(c)
+            && !isNaN(rossHeideckeComparable) && rossHeideckeComparable > 0;
+
+        // Fórmula completa: valor_m2 / (todos los coeficientes)
+        const valorM2Original = (Number(c.valor) || 0) / (Number(c.superficie) || 1);
+        let coeficienteTotal = coefUbicacionPlanta * coefUbicacionPiso * coefCaracteristicaConstructiva * coefSuperficieCubierta * coefUbicacion * coefActividad * coefPersonalizadoTotal;
+        if (aplicaRossHeideckeComparable) {
+            coeficienteTotal *= rossHeideckeComparable;
+        }
+        c.valor_m2_homogeneizado = valorM2Original / (coeficienteTotal || 1);
+    });
+
+    // Recalcular valor promedio
+    const valorPromedio = r.comparables.reduce((sum, c) => sum + (Number(c.valor_m2_homogeneizado) || 0), 0) / r.comparables.length;
+
+    // Coeficientes del objetivo (departamento a tasar)
+    const depto = datosTasacion.departamento || {};
+    const coefObjetivo = coeficientes['departamento'] || {};
+
+    const targetUbicacion = parseFloat(coefObjetivo.ubicacion) || 1;
+    const targetActividad = parseFloat(coefObjetivo.actividad) || 1;
+    let targetPersonalizadoTotal = 1;
+    if (coefObjetivo.personalizados) {
+        Object.values(coefObjetivo.personalizados).forEach(val => {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num > 0) {
+                targetPersonalizadoTotal *= num;
+            }
+        });
+    }
+
+    const targetUbicacionPlanta = parseFloat(depto.ubicacionPlantaCoef) || parseFloat(depto.ubicacionPlanta) || 1;
+    const targetUbicacionPiso = parseFloat(depto.ubicacionPisoCoef) || parseFloat(depto.ubicacionPiso) || 1;
+    const targetCaracteristicaConstructiva = parseFloat(depto.caracteristicaConstructivaCoef) || parseFloat(depto.caracteristicaConstructiva) || 1;
+    const targetSuperficieCubierta = parseFloat(depto.superficieCubiertaCoef) || parseFloat(depto.superficieCubierta) || 1;
+
+    // Ross-Heidecke del objetivo: el backend devuelve C = 1 - K/2 ya calculado.
+    // Solo si el resultado es viejo (rossHeidecke guardaba K) se aplica la conversión histórica.
+    let targetRossHeidecke;
+    if (r.coeficiente_depreciacion != null) {
+        targetRossHeidecke = parseFloat(r.coeficiente_depreciacion) || 1;
+    } else if (r.coeficiente_k != null) {
+        const k = parseFloat(r.coeficiente_k) || 0;
+        targetRossHeidecke = k > 0 ? 1 - (k / 2) : 1;
+    } else {
+        const k = parseFloat(r.rossHeidecke || depto.rossHeidecke || 0);
+        targetRossHeidecke = k > 0 ? 1 - (k / 2) : 1;
+    }
+
+    const targetCoefTotal = targetUbicacionPlanta * targetUbicacionPiso * targetCaracteristicaConstructiva * targetSuperficieCubierta * targetUbicacion * targetActividad * targetPersonalizadoTotal * targetRossHeidecke;
+
+    // Recalcular valor final
+    const hom = depto.homogeneizacion || {};
+    const superficieHomogeneizada = parseFloat(hom.totalHomogeneizada) || parseFloat(depto.superficieHomogeneizada) || parseFloat(r.superficie_homogeneizada) || parseFloat(r.superficie) || 0;
+
+    r.valor_m2 = valorPromedio * targetCoefTotal;
+    r.valor_final = r.valor_m2 * superficieHomogeneizada;
+    r.valor_promedio_homogeneizado = valorPromedio;
+    r.superficie_homogeneizada = superficieHomogeneizada;
+
+    // El renderizado queda a cargo del llamador (mostrarPantallaResultado o reactive-coefficients)
+}
+
+function recalcularConCoeficientesCasa() {
+    const r = resultadoTasacion;
+    if (!r || !r.comparables) return;
+
+    // Similar a departamento, adaptado a casa
+    const coeficientes = {};
+    Object.keys(coeficientesPersonalizados).forEach(index => {
+        if (index === 'lote' || index === 'esquina' || index === 'medial') return;
+        coeficientes[index] = coeficientes[index] || {};
+        coeficientes[index].personalizados = {};
+        coeficientes[index].ubicacion = 1;
+        coeficientes[index].actualizacion = 1;
+        coeficientesPersonalizados[index].forEach(coef => {
+            const val = parseFloat(coef.valor) || 1;
+            if (coef.id === 'ubicacion') {
+                coeficientes[index].ubicacion = val;
+            } else if (coef.id === 'actualizacion') {
+                coeficientes[index].actualizacion = val;
+            } else {
+                coeficientes[index].personalizados[coef.id] = val;
+            }
+        });
+    });
+
+    // Recalcular valores homogeneizados de comparables
+    r.comparables.forEach((c, index) => {
+        const indexStr = index.toString();
+        const coef = coeficientes[indexStr] || {};
+
+        let coefPersonalizadoTotal = 1;
+        if (coef.personalizados) {
+            Object.values(coef.personalizados).forEach(val => {
+                const num = parseFloat(val);
+                if (!isNaN(num) && num > 0) {
+                    coefPersonalizadoTotal *= num;
+                }
+            });
+        }
+
+        // Incluir coeficientes fijos de casa
+        const coefUbicacion = parseFloat(coef.ubicacion) || 1;
+        const coefActualizacion = parseFloat(coef.actualizacion) || 1;
+
+        // Coeficientes propios del comparable
+        const compSuperficieCubierta = parseFloat(c.superficieCubiertaCoef) || 1;
+        const compSuperficieTotal = parseFloat(c.superficieTotalCoef) || 1;
+        const compCalidadConstruccion = parseFloat(c.caracteristicaConstructivaCoef) || parseFloat(c.calidadConstruccionCoef) || 1;
+        const compEstadoConservacion = parseFloat(c.estadoConservacionCoef) || parseFloat(c.rossHeidecke) || _coeficienteEstadoCasa(c.estadoConservacion, c.antiguedad);
+
+        // Fórmula completa: valor_m2 / (todos los coeficientes)
+        const valorM2Original = (Number(c.valor) || 0) / (Number(c.superficie) || 1);
+        const coeficienteTotal = compSuperficieCubierta * compSuperficieTotal * compCalidadConstruccion * compEstadoConservacion * coefUbicacion * coefActualizacion * coefPersonalizadoTotal;
+        c.valor_m2_homogeneizado = valorM2Original / (coeficienteTotal || 1);
+    });
+
+    // Recalcular valor promedio
+    const valorPromedio = r.comparables.reduce((sum, c) => sum + (Number(c.valor_m2_homogeneizado) || 0), 0) / r.comparables.length;
+
+    // Coeficientes y superficie del objetivo (casa a tasar)
+    const casa = datosTasacion.casa || {};
+    const hom = casa.homogeneizacion || {};
+    const totalHomo = parseFloat(hom.totalHomogeneizada) || parseFloat(casa.superficieHomogeneizada) || 0;
+
+    let superficieHomogeneizada = 0;
+    let incluirSuperficieCubiertaEnCoef = false;
+    if (totalHomo > 0) {
+        superficieHomogeneizada = totalHomo;
+        incluirSuperficieCubiertaEnCoef = true;
+    } else {
+        const rango = (casa.superficieCubierta || "").match(/\d+/g);
+        const coef = parseFloat(casa.superficieCubiertaCoef) || 1;
+        if (rango) {
+            superficieHomogeneizada = rango.reduce((sum, val) => sum + parseInt(val), 0) / rango.length * coef;
+        } else {
+            superficieHomogeneizada = parseFloat(r.superficie_homogeneizada) || parseFloat(r.superficie) || 0;
+        }
+    }
+
+    const coefObjetivo = coeficientes['casa'] || {};
+    const targetUbicacion = parseFloat(coefObjetivo.ubicacion) || 1;
+    const targetActualizacion = parseFloat(coefObjetivo.actualizacion) || 1;
+    let targetPersonalizadoTotal = 1;
+    if (coefObjetivo.personalizados) {
+        Object.values(coefObjetivo.personalizados).forEach(val => {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num > 0) {
+                targetPersonalizadoTotal *= num;
+            }
+        });
+    }
+
+    const targetSuperficieCubierta = incluirSuperficieCubiertaEnCoef ? (parseFloat(casa.superficieCubiertaCoef) || 1) : 1;
+    const targetSuperficieTotal = parseFloat(casa.superficieTotalCoef) || 1;
+    const targetCalidadConstruccion = parseFloat(casa.caracteristicaConstructivaCoef) || parseFloat(casa.calidadConstruccionCoef) || 1;
+    // Ross-Heidecke del objetivo: el backend devuelve el coeficiente de depreciación
+    // ya calculado (rossHeidecke; en resultados antiguos coeficiente_estado).
+    // _coeficienteEstadoCasa queda como fallback histórico.
+    const targetRossHeidecke = parseFloat(r.rossHeidecke) || parseFloat(r.coeficiente_estado) || _coeficienteEstadoCasa(casa.estadoConservacion, casa.antiguedad);
+
+    const targetCoefTotal = targetSuperficieCubierta * targetSuperficieTotal * targetCalidadConstruccion * targetRossHeidecke * targetUbicacion * targetActualizacion * targetPersonalizadoTotal;
+
+    r.valor_m2 = valorPromedio * targetCoefTotal;
+    r.valor_final = r.valor_m2 * superficieHomogeneizada;
+    r.valor_promedio_homogeneizado = valorPromedio;
+    r.superficie_homogeneizada = superficieHomogeneizada;
+
+    // El renderizado lo realiza el llamador
+}
 
 function normalizarTipologiaApi(tipoLote) {
 
@@ -972,7 +1212,9 @@ let valorModificado = false;
 // Store custom coefficients for each comparable
 // Structure: { index: [ { nombre: string, valor: number, id: string } ] }
 // Ubicacion and actualizacion are treated as fixed coefficients with IDs "ubicacion" and "actualizacion"
-let coeficientesPersonalizados = {};
+// `var` (no `let`) para que window.coeficientesPersonalizados sea el MISMO binding:
+// una única fuente de verdad compartida con resultados-renderer.js y reactive-coefficients.js
+var coeficientesPersonalizados = {};
 let coeficienteIdCounter = 0;
 
 // Ensure ubicacion and actualizacion coefficients exist for a given index
@@ -1056,8 +1298,11 @@ async function mostrarPantallaResultado(recalcular = true) {
         const tieneCoeficientes = coeficientesPersonalizados && Object.keys(coeficientesPersonalizados).length > 0;
         if (tipo === 'lote' && tieneCoeficientes && typeof recalcularConCoeficientes === 'function') {
             await recalcularConCoeficientes();
+        } else if (tipo === 'departamento' && typeof recalcularConCoeficientesDepartamento === 'function') {
+            await recalcularConCoeficientesDepartamento();
+        } else if (tipo === 'casa' && typeof recalcularConCoeficientesCasa === 'function') {
+            await recalcularConCoeficientesCasa();
         }
-        // departamento y casa usan el resultado directo del backend (no se recalcula en frontend)
     }
 
     renderer.renderizar();

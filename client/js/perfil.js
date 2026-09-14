@@ -69,22 +69,22 @@ function cargarDatosUsuario() {
 }
 
 function actualizarAvatar(fotoPerfil) {
+    const avatar = document.getElementById('perfilAvatar');
     const img = document.getElementById('perfilAvatarImg');
-    const icon = document.getElementById('perfilAvatarIcon');
+
+    if (!avatar || !img) return;
 
     img.onerror = () => {
-        img.style.display = 'none';
-        if (icon) icon.style.display = 'block';
+        img.removeAttribute('src');
+        avatar.classList.remove('con-foto');
     };
 
     if (fotoPerfil) {
         img.src = urlArchivo(fotoPerfil);
-        img.style.display = 'block';
-        if (icon) icon.style.display = 'none';
+        avatar.classList.add('con-foto');
     } else {
-        img.src = '';
-        img.style.display = 'none';
-        if (icon) icon.style.display = 'block';
+        img.removeAttribute('src');
+        avatar.classList.remove('con-foto');
     }
 }
 
@@ -166,6 +166,10 @@ function mostrarVistaPrevia(file, imgId, iconId) {
         if (img) {
             img.src = e.target.result;
             img.style.display = 'block';
+
+            // El avatar de perfil usa una clase de estado para alternar foto/fallback
+            const avatar = img.closest('.perfil-avatar');
+            if (avatar) avatar.classList.add('con-foto');
         }
         if (icon) icon.style.display = 'none';
     };
@@ -327,6 +331,18 @@ function inicializarEventos() {
 
     const btnVincularGoogle = document.getElementById('btnVincularGoogle');
     const btnDesvincularGoogle = document.getElementById('btnDesvincularGoogle');
+    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+    if (btnCerrarSesion) {
+        btnCerrarSesion.addEventListener('click', () => {
+            mostrarModalConfirmacion(
+                '¿Querés cerrar sesión?',
+                'Si cerrás sesión vas a tener que volver a ingresar.',
+                () => {
+                    logout();
+                }
+            );
+        });
+    }
 
     if (btnVincularGoogle) {
         btnVincularGoogle.addEventListener('click', async () => {

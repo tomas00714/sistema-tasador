@@ -62,13 +62,13 @@ body:not([data-vista="inicio"]) .home-stage {
 
 .ajustes-card {
 
-    background: #f5f7fa;
+    background: var(--color-bg-light);
 
-    border-radius: 18px;
+    border-radius: var(--radius-card);
 
     padding: 22px;
 
-    border: 1px solid #e6ebf0;
+    border: 1px solid var(--color-border);
 
     max-width: 480px;
 }
@@ -77,9 +77,11 @@ body:not([data-vista="inicio"]) .home-stage {
 
     display: block;
 
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
 
-    color: #7d8b99;
+    font-weight: var(--font-weight-label);
+
+    color: var(--color-text-secondary);
 
     margin-bottom: 8px;
 }
@@ -90,11 +92,25 @@ body:not([data-vista="inicio"]) .home-stage {
 
     padding: 12px 14px;
 
-    border-radius: 12px;
+    border-radius: var(--radius-input);
 
-    border: 1px solid #d7dfe7;
+    border: 1px solid var(--color-border);
+
+    background: var(--color-white);
+
+    color: var(--color-text-primary);
 
     font-family: inherit;
 
+    font-size: var(--font-size-body);
+
+    min-height: 44px;
+
     box-sizing: border-box;
+}
+
+.ajustes-card input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }

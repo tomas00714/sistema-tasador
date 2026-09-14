@@ -90,7 +90,7 @@
                 <div class="perfil-header">
                     <div class="perfil-avatar-container">
                         <div class="perfil-avatar" id="perfilAvatar">
-                            <img id="perfilAvatarImg" src="" alt="Foto de perfil" style="display: none;">
+                            <img id="perfilAvatarImg" src="" alt="Foto de perfil">
                             <i class="fa-solid fa-user" id="perfilAvatarIcon"></i>
                             <div class="perfil-avatar-overlay" id="avatarOverlay">
                                 <i class="fa-solid fa-camera"></i>
@@ -228,8 +228,25 @@
                     </div>
                 </div>
 
+                <div class="perfil-divider"></div>
+
+                <div class="perfil-section-body perfil-cerrar-sesion-section" id="perfilCerrarSesionSection">
+                    <button type="button" class="perfil-btn-logout" id="btnCerrarSesion">
+                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                    </button>
+                </div>
+
             </div>
 
+        </div>
+    </div>
+
+    <!-- Modal Genérico Reutilizable -->
+    <div class="modal-overlay" id="modalGenerico">
+        <div class="modal-confirmacion-salir">
+            <h2 class="modal-titulo"></h2>
+            <p class="modal-mensaje"></p>
+            <div class="modal-confirmacion-botones modal-botones"></div>
         </div>
     </div>
 
@@ -244,6 +261,7 @@
     <script src="../js/auth.js"></script>
     <script src="../js/theme.js"></script>
     <script src="../js/api-client.js"></script>
+    <script src="../js/modal-generico.js"></script>
     <script src="../js/perfil.js"></script>
 </body>
 </html>

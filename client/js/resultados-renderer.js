@@ -42,7 +42,11 @@ class ResultadosRenderer {
         this.resultado = resultado;
         this.tipo = tipo;
         this.modo = modo;
-        this.datosTasacion = datosTasacionArg || window.datosTasacion || {};
+        // Fuente de verdad: argumento explícito > global (misma referencia que
+        // el const datosTasacion de tasacion-core.js, expuesto en window)
+        this.datosTasacion = datosTasacionArg
+            || window.datosTasacion
+            || (typeof datosTasacion !== 'undefined' ? datosTasacion : {});
 
         // CRITICAL: Always use the global window.coeficientesPersonalizados as the single source of truth
         // Initialize if it doesn't exist
@@ -109,10 +113,28 @@ class ResultadosRenderer {
             } else if (this.tipo === 'departamento') {
                 console.log('[normalizarComparables] departamento COMP crudo:', diagnosticStringify(comp));
                 const superficie = comp.superficie || inm.superficie || depto.superficieTotal || 0;
-                const superficieHomogeneizada = comp.superficie_homogeneizada ?? superficie;
+                // Superficie homogeneizada real del comparable: vive en su objeto
+                // departamento (homogeneización de la pantalla/modal). El backend
+                // no devuelve superficie_homogeneizada; sin esta fuente la columna
+                // mostraba la superficie cruda.
+                const supHomComp = parseFloat(comp.superficie_homogeneizada)
+                    || parseFloat(depto.homogeneizacion?.totalHomogeneizada)
+                    || parseFloat(depto.superficieHomogeneizada)
+                    || parseFloat(inm.homogeneizacion?.totalHomogeneizada);
+                const superficieHomogeneizada = supHomComp > 0 ? supHomComp : superficie;
                 const valor = comp.valor || 0;
                 const valorM2 = comp.valor_m2 || (superficie > 0 ? valor / superficie : 0);
-                const rossHeidecke = parseFloat(comp.rossHeidecke) || 1;
+                // La misma regla que recalcularConCoeficientesDepartamento:
+                // sin estado/antigüedad propios, el rossHeidecke del backend
+                // proviene de defaults -> la columna muestra '-' y el recálculo
+                // omite el factor.
+                const rossHeideckeCrudo = parseFloat(comp.rossHeidecke);
+                const tieneDatosRH = typeof comparableTieneDatosRossHeidecke === 'function'
+                    ? comparableTieneDatosRossHeidecke(comp)
+                    : false;
+                const rossHeidecke = (tieneDatosRH && !isNaN(rossHeideckeCrudo) && rossHeideckeCrudo > 0)
+                    ? rossHeideckeCrudo
+                    : null;
 
                 const normalizado = {
                     ...comp,
@@ -137,7 +159,11 @@ class ResultadosRenderer {
             } else if (this.tipo === 'casa') {
                 console.log('[normalizarComparables] casa COMP crudo:', diagnosticStringify(comp));
                 const superficie = comp.superficie || inm.superficie || casaComp.superficie || 0;
-                const superficieHomogeneizada = comp.superficie_homogeneizada ?? superficie;
+                const supHomCompCasa = parseFloat(comp.superficie_homogeneizada)
+                    || parseFloat(casaComp.homogeneizacion?.totalHomogeneizada)
+                    || parseFloat(casaComp.superficieHomogeneizada)
+                    || parseFloat(inm.homogeneizacion?.totalHomogeneizada);
+                const superficieHomogeneizada = supHomCompCasa > 0 ? supHomCompCasa : superficie;
                 const valor = comp.valor || 0;
                 const valorM2 = comp.valor_m2 || (superficie > 0 ? valor / superficie : 0);
                 const rossHeidecke = parseFloat(comp.rossHeidecke) || 1;
@@ -183,11 +209,15 @@ class ResultadosRenderer {
 
         const firmaAnterior = window.firmaGeneracionCuadros[this.tipo];
 
-        // Si la firma cambió, resetear coeficientes y resultados
+        // Si la firma cambió, resetear coeficientes (el resultado que se está
+        // renderizando ya es el nuevo: no tocar resultadoTasacion)
         if (firmaAnterior && firmaAnterior !== firmaActual) {
-            console.log('[ResultadosRenderer] Cambio de generación de cuadros detectado, reseteando coeficientes y resultados');
+            console.log('[ResultadosRenderer] Cambio de generación de cuadros detectado, reseteando coeficientes');
             window.coeficientesPersonalizados = {};
-            resultadoTasacion = null;
+            this.coeficientesPersonalizados = window.coeficientesPersonalizados;
+            if (this.datosTasacion) {
+                this.datosTasacion.coeficientesPersonalizados = window.coeficientesPersonalizados;
+            }
         }
 
         // Guardar la firma actual
@@ -272,11 +302,16 @@ class ResultadosRenderer {
                     </div>
                     <div>
                         <span>Superficie homogeneizada</span>
-                        <strong>${r.superficie ? r.superficie.toFixed(2) : '0.00'} m²</strong>
+                        <strong>${this.formatearSuperficie(r.superficie_homogeneizada ?? r.superficie)} m²</strong>
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    formatearSuperficie(valor) {
+        const n = parseFloat(valor);
+        return (isFinite(n) ? n : 0).toFixed(2);
     }
 
     renderizarSecciones() {

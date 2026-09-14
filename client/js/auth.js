@@ -90,7 +90,7 @@ function validatePassword(password) {
 function logout() {
     removeToken();
     removeUserData();
-    window.location.href = 'login.html';
+    window.location.href = '../index.html';
 }
 
 async function login(email, password) {

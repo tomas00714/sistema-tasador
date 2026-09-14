@@ -15,8 +15,8 @@
 }
 
 .admin-header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
     margin-bottom: 0.35rem;
 }
@@ -41,7 +41,7 @@
     color: var(--color-text-secondary);
     font-weight: 500;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     transition: all 0.15s ease;
 }
 
@@ -82,21 +82,21 @@
 
 .admin-card {
     background: var(--color-white);
-    border: 1.5px solid var(--color-border);
-    border-radius: clamp(12px, 2.2vw, 18px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .admin-card:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border-color: var(--color-primary);
 }
 
 .admin-card-value {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: var(--font-size-number);
+    font-weight: var(--font-weight-heading);
     color: var(--color-primary);
     margin-bottom: 0.25rem;
 }
@@ -110,11 +110,11 @@
 .admin-recent,
 .admin-table-wrapper {
     background: var(--color-white);
-    border: 1.5px solid var(--color-border);
-    border-radius: clamp(12px, 2.2vw, 18px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .admin-tipo-box h3,
@@ -133,14 +133,14 @@
 
 .admin-tipo-item {
     background: var(--color-bg-light);
-    border-radius: 20px;
+    border-radius: var(--radius-tag);
     padding: 0.45rem 1rem;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     color: var(--color-text-primary);
 }
 
 .admin-tipo-count {
-    font-weight: 700;
+    font-weight: var(--font-weight-heading);
     color: var(--color-primary);
 }
 
@@ -230,30 +230,33 @@
 .admin-filter-input,
 .admin-filter-select {
     padding: 0.55rem 0.85rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
     background: var(--color-white);
     color: var(--color-text-primary);
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     min-width: 180px;
+    min-height: 44px;
 }
 
 .admin-filter-input:focus,
 .admin-filter-select:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .admin-filter-button {
     padding: 0.55rem 1.25rem;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-button);
     background: var(--color-primary);
     color: var(--color-white);
-    font-weight: 500;
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     transition: background 0.15s ease;
+    min-height: 44px;
 }
 
 .admin-filter-button:hover {
@@ -294,8 +297,9 @@
     max-height: 90vh;
     overflow-y: auto;
     background: var(--color-white);
-    border-radius: clamp(12px, 2.2vw, 18px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-modal);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     z-index: 1;
 }
 
@@ -353,7 +357,7 @@
     gap: 0.25rem;
     padding: 0.75rem;
     background: var(--color-bg-light);
-    border-radius: 10px;
+    border-radius: var(--radius-card-small);
 }
 
 .admin-profile-label {

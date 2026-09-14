@@ -4,15 +4,16 @@
 
 .solicitudes-section {
     background: var(--color-white);
-    padding: 20px;
+    padding: 24px;
     box-sizing: border-box;
-    border: 1.5px solid var(--color-border);
-    border-radius: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     display: flex;
     flex-direction: column;
+    gap: 20px;
     height: calc(100dvh - 40px);
     min-height: 0;
-    margin: 20px 20px 0 0;
+    margin: 20px;
 }
 
 .solicitudes-container {
@@ -45,41 +46,43 @@
 /* Segmented Control */
 .segmented-control {
     position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     height: 40px;
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: var(--radius-button);
     padding: 4px;
     box-sizing: border-box;
-    width: 320px;
+    max-width: 100%;
     flex-shrink: 0;
 }
 
 .segmented-pill {
     position: absolute;
     top: 4px;
-    left: 4px;
+    left: 0;
     height: calc(100% - 8px);
-    width: calc(25% - 4px);
+    width: 0;
     background: var(--color-primary);
-    border-radius: 16px;
-    transition: transform 0.2s ease;
+    border-radius: var(--radius-button);
+    transition: transform 0.2s ease, width 0.2s ease;
 }
 
 .btn-segment {
-    flex: 1;
+    flex: 0 0 auto;
     height: 100%;
     border: none;
     background: transparent;
     color: var(--color-text-secondary);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     z-index: 1;
     transition: color 0.2s;
+    white-space: nowrap;
+    padding: 0 14px;
 }
 
 .btn-segment.active {
@@ -97,6 +100,10 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 16px;
+    border-radius: var(--radius-card);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
 }
 
 .solicitudes-cargando,
@@ -158,16 +165,16 @@
     display: flex;
     flex-direction: column;
     background: var(--color-white);
-    border-radius: 18px;
-    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-border);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     padding: 16px 20px;
     gap: 12px;
 }
 
 .solicitud-card:hover {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     border-color: var(--color-primary);
 }
 
@@ -182,8 +189,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
 }
 
@@ -193,9 +200,9 @@
 
 .solicitud-card-estado {
     padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+    border-radius: var(--radius-tag);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-label);
     text-transform: capitalize;
 }
 
@@ -260,11 +267,11 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     background: var(--color-white);
     color: var(--color-text-primary);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -276,13 +283,41 @@
 /* Modal styles */
 .modal-tasacion {
     background: var(--color-white);
-    border-radius: 24px;
-    padding: 32px;
+    border-radius: var(--radius-modal);
+    border: 1px solid var(--color-border);
+    padding: 60px 32px 32px 32px;
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+}
+
+.modal-tasacion > .cerrar-modal {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    right: auto;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+    z-index: 10;
+}
+
+.modal-tasacion > .cerrar-modal:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
 }
 
 .modal-solicitud-detalle {
@@ -291,8 +326,8 @@
 
 .modal-titulo {
     margin: 0 0 24px 0;
-    font-size: 20px;
-    font-weight: 600;
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
 }
 
@@ -304,8 +339,8 @@
 }
 
 .form-label {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
     color: var(--color-text-primary);
 }
 
@@ -319,18 +354,20 @@
 .form-textarea {
     padding: 12px;
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    background: var(--color-bg-light);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    border-radius: var(--radius-input);
+    background: var(--color-white);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
     color: var(--color-text-primary);
     box-sizing: border-box;
+    min-height: 44px;
 }
 
 .form-select:focus,
 .form-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .form-textarea {
@@ -350,49 +387,52 @@
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    border-radius: 14px;
+    border-radius: var(--radius-button);
     border: none;
     background: var(--color-primary);
     color: var(--color-white);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     transition: background 0.2s;
+    min-height: 44px;
 }
 
 .btn-primary:hover {
-    background: var(--color-primary-dark);
+    background: var(--color-primary-hover);
 }
 
 .btn-confirmar {
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-button);
     border: none;
     background: var(--color-primary);
     color: var(--color-white);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     transition: background 0.2s;
+    min-height: 44px;
 }
 
 .btn-confirmar:hover {
-    background: var(--color-primary-dark);
+    background: var(--color-primary-hover);
 }
 
 .btn-cancelar {
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     background: var(--color-white);
-    color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
+    color: var(--color-primary);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     transition: background 0.2s;
+    min-height: 44px;
 }
 
 .btn-cancelar:hover {
@@ -400,13 +440,13 @@
 }
 
 .btn-rechazar {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+    background: var(--color-white);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-bg-hover);
 }
 
 .btn-rechazar:hover {
-    background: #fecaca;
+    background: var(--color-error-bg);
 }
 
 /* Detalle de solicitud */
@@ -421,16 +461,16 @@
 }
 
 .solicitud-detalle-tipo {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
 }
 
 .solicitud-detalle-estado {
     padding: 6px 14px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 500;
+    border-radius: var(--radius-tag);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
     text-transform: capitalize;
 }
 
@@ -468,7 +508,7 @@
 .solicitud-detalle-mensaje {
     padding: 16px;
     background: var(--color-bg-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     font-size: 14px;
     color: var(--color-text-primary);
     line-height: 1.5;
@@ -478,7 +518,7 @@
     margin-top: 16px;
     padding: 16px;
     background: var(--color-bg-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 
 .solicitud-detalle-link strong {
@@ -497,11 +537,12 @@
     flex: 1;
     padding: 8px 12px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     background: var(--color-white);
-    font-size: 13px;
+    font-size: var(--font-size-small);
     color: var(--color-text-secondary);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
+    min-height: 40px;
 }
 
 .btn-copiar-link-detalle {
@@ -509,7 +550,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
     background: var(--color-white);
     color: var(--color-text-primary);
@@ -548,9 +589,17 @@
 
 .solicitud-detalle-comparable {
     padding: 16px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-white);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+
+.solicitud-detalle-comparable:hover {
+    border-color: var(--color-primary);
     background: var(--color-bg-light);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .solicitud-detalle-comparable-header {
@@ -574,9 +623,9 @@
 
 .solicitud-detalle-comparable-estado {
     padding: 4px 10px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 500;
+    border-radius: var(--radius-tag);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-label);
     text-transform: capitalize;
 }
 
@@ -604,7 +653,7 @@
 .solicitud-detalle-comparable-observaciones {
     padding: 8px 12px;
     background: var(--color-white);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     font-size: 13px;
     color: var(--color-text-secondary);
     line-height: 1.4;
@@ -618,7 +667,7 @@
 
 .solicitud-detalle-comparable-acciones button {
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
     background: var(--color-white);
     font-size: 13px;
@@ -656,7 +705,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     font-size: 13px;
     font-weight: 500;
 }
@@ -679,12 +728,12 @@
     padding: 12px 20px;
     background: var(--color-text-primary);
     color: var(--color-white);
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: var(--radius-card);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
     z-index: 10000;
     display: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive */
@@ -701,11 +750,17 @@
 
     .solicitudes-filtros {
         width: 100%;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
     }
 
     .segmented-control {
-        width: 100%;
+        width: auto;
+    }
+
+    .btn-segment {
+        font-size: 12px;
+        padding: 0 8px;
     }
 
     .btn-primary {
@@ -719,7 +774,7 @@
 
     .modal-tasacion {
         max-width: 95%;
-        padding: 20px;
+        padding: 52px 20px 20px 20px;
     }
 
     .solicitud-detalle-meta {

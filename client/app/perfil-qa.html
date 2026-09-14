@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>QA Perfil</title>
+</head>
+<body>
+    <script>
+        localStorage.setItem('apiUrl', 'http://127.0.0.1:8081');
+        localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMyIsImV4cCI6MTc4OTA3ODA5Mn0.wXduTwQLwlLNV2Pc_aWe75IkUiqN_8Aav4vIb_PVWyg');
+        localStorage.setItem('auth_user', JSON.stringify({
+            usuario_id: 33,
+            email: 'qa_avatar_test_20260909@example.com',
+            nombre: 'QA',
+            apellido: 'Avatar',
+            is_admin: false
+        }));
+        window.location.replace('perfil.html?api_base_url=http://127.0.0.1:8081');
+    </script>
+</body>
+</html>

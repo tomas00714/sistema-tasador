@@ -5,15 +5,15 @@
 
 .perfil-card {
     background: var(--color-white);
-    border: 1.5px solid var(--color-border);
-    border-radius: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     display: flex;
     flex-direction: column;
     gap: 24px;
     margin: 20px 20px 20px 20px;
     width: auto;
     padding: 28px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     box-sizing: border-box;
     max-width: none;
     max-height: none;
@@ -50,10 +50,34 @@
 }
 
 .perfil-avatar img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: none;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.perfil-avatar i,
+.perfil-avatar > svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    color: var(--color-text-secondary);
+    z-index: 0;
+}
+
+.perfil-avatar.con-foto img {
     display: block;
+}
+
+.perfil-avatar.con-foto i,
+.perfil-avatar.con-foto > svg {
+    display: none;
 }
 
 .perfil-avatar-overlay {
@@ -67,12 +91,13 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     text-align: center;
     padding: 8px;
+    z-index: 2;
 }
 
 .perfil-avatar-overlay i {
@@ -87,15 +112,15 @@
 }
 
 .perfil-nombre {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.75rem;
-    font-weight: 600;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
     margin: 0;
 }
 
 .perfil-email {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 1rem;
     color: var(--color-text-secondary);
     margin: 0;
@@ -109,12 +134,12 @@
 
 .perfil-badge {
     padding: 6px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-tag);
     background: var(--color-info-light);
     color: var(--color-info);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
 }
 
 .perfil-badge-admin {
@@ -124,12 +149,12 @@
 
 .perfil-estado {
     padding: 6px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-tag);
     background: var(--color-success-light);
     color: var(--color-success);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
 }
 
 .perfil-divider {
@@ -153,9 +178,9 @@
 }
 
 .perfil-section-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
     margin: 0;
 }
@@ -171,13 +196,13 @@
 
 .perfil-btn-editar {
     padding: 10px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     background: var(--color-white);
-    color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 500;
+    color: var(--color-primary);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -200,13 +225,13 @@
 
 .perfil-btn-google {
     padding: 10px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     background: var(--color-white);
     color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -220,8 +245,36 @@
 }
 
 .perfil-btn-google--desvincular:hover {
-    border-color: var(--color-error);
-    color: var(--color-error);
+    border-color: var(--color-error-text);
+    color: var(--color-error-text);
+}
+
+.perfil-cerrar-sesion-section {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+}
+
+.perfil-btn-logout {
+    padding: 12px 24px;
+    border-radius: var(--radius-button);
+    border: 1px solid var(--color-error-bg-hover);
+    background: var(--color-white);
+    color: var(--color-error-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    width: 30%;
+}
+
+.perfil-btn-logout:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
 }
 
 .perfil-info-grid {
@@ -237,14 +290,14 @@
 }
 
 .perfil-info-label {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--color-text-secondary);
 }
 
 .perfil-info-value {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 1rem;
     color: var(--color-text-primary);
 }
@@ -272,7 +325,7 @@
 .perfil-dato-label {
     width: 180px;
     min-width: 180px;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--color-text-secondary);
@@ -289,7 +342,7 @@
 
 .perfil-dato-valor,
 .perfil-inmobiliaria-nombre {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 1rem;
     color: var(--color-text-primary);
     word-break: break-word;
@@ -298,20 +351,22 @@
 .perfil-input {
     display: none;
     padding: 10px 14px;
-    border-radius: 8px;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-bg-light);
+    border-radius: var(--radius-input);
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
     color: var(--color-text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
     width: 100%;
     max-width: 400px;
     box-sizing: border-box;
+    min-height: 44px;
 }
 
 .perfil-input:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 /* Tarjeta de inmobiliaria */
@@ -321,8 +376,8 @@
     justify-content: space-between;
     gap: 16px;
     padding: 20px 24px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     background: var(--color-bg-light);
 }
 
@@ -335,9 +390,9 @@
 }
 
 .perfil-inmobiliaria-nombre {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-label);
     color: var(--color-text-primary);
 }
 
@@ -376,7 +431,7 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 0.65rem;
     font-weight: 500;
     cursor: pointer;
@@ -415,15 +470,15 @@
     display: none;
     margin-top: 12px;
     font-size: 0.9rem;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
 }
 
 #mensajeProfesional {
-    color: #16a34a;
+    color: var(--color-primary);
 }
 
 #errorProfesional {
-    color: #dc2626;
+    color: var(--color-error-text);
 }
 
 /* Responsive */
@@ -431,7 +486,7 @@
     .perfil-card {
         margin: 12px;
         padding: 20px;
-        border-radius: 18px;
+        border-radius: var(--radius-card);
     }
 
     .perfil-header {

@@ -138,8 +138,17 @@ async function crearComparable(datos) {
             nombreCreador: datos.nombreCreador || null,
             fuenteInformacion: datos.fuenteInformacion || null,
             lote: datos.lote || null,
-            departamento: datos.departamento || null,
-            casa: datos.casa || null,
+            // Si el comparable vino normalizado (modelo canónico), sus datos de
+            // inmueble están en `inmueble`: se transportan en el slot del tipo
+            // correspondiente para que los coeficientes y la homogeneización
+            // sobrevivan el round-trip API/snapshot. No se duplica estado: es el
+            // mismo objeto, en la única clave que el resto del sistema lee.
+            departamento: datos.departamento
+                || (datos.tipoInmueble === 'departamento' ? datos.inmueble : null)
+                || null,
+            casa: datos.casa
+                || (datos.tipoInmueble === 'casa' ? datos.inmueble : null)
+                || null,
             observaciones: datos.observaciones || '',
             fechaCreacion: new Date().toISOString()
         };

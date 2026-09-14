@@ -196,6 +196,7 @@ function limpiarDatosTasacion() {
         // Resetear coeficientes personalizados
         if (typeof coeficientesPersonalizados !== 'undefined') {
             coeficientesPersonalizados = {};
+            datosTasacion.coeficientesPersonalizados = coeficientesPersonalizados;
         }
         if (typeof coeficienteIdCounter !== 'undefined') {
             coeficienteIdCounter = 0;
@@ -244,6 +245,8 @@ async function cargarDatosCompletos(datosCompletos) {
         }
         coeficientesPersonalizados = JSON.parse(JSON.stringify(datosCompletos.coeficientesPersonalizados));
     }
+    // Mantener la misma referencia en datosTasacion (única fuente de verdad)
+    datosTasacion.coeficientesPersonalizados = coeficientesPersonalizados;
 
     // Cargar datos de informe (compatibilidad con datos antiguos)
     datosInforme.nomenclaturaCatastral = datosCompletos.nomenclaturaCatastral || "";

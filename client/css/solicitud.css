@@ -25,9 +25,9 @@
     width: min(1200px, calc(100% - 28px));
     margin: 0 auto;
     background: var(--color-white);
-    border-radius: 24px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-border);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     padding: 20px 24px;
     display: flex;
     align-items: center;
@@ -39,15 +39,15 @@
     align-items: center;
     gap: 10px;
     color: var(--color-primary);
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: var(--font-weight-heading);
+    font-size: var(--font-size-body);
     flex-shrink: 0;
 }
 
 .solicitud-encabezado-marca .marca-logo {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     background: var(--color-primary-light);
     color: var(--color-primary);
     display: flex;
@@ -61,7 +61,8 @@
 
 .solicitud-encabezado-datos h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-heading);
     color: var(--color-text-primary);
 }
 
@@ -84,9 +85,9 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    border-radius: var(--radius-tag);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
     background: var(--color-primary-light);
     color: var(--color-primary);
 }
@@ -175,11 +176,11 @@
     min-width: 22px;
     height: 22px;
     padding: 0 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-tag);
     background: var(--color-primary-light);
     color: var(--color-primary);
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-heading);
 }
 
 .solicitud-lista {
@@ -212,13 +213,13 @@
 
 .btn-solicitud-editar,
 .btn-solicitud-eliminar {
-    border: none;
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
     padding: 8px 12px;
-    background: var(--color-bg-lighter);
+    background: var(--color-white);
     color: var(--color-text-secondary);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
 }
@@ -226,23 +227,25 @@
 .btn-solicitud-editar:hover {
     background: var(--color-primary-light);
     color: var(--color-primary);
+    border-color: var(--color-primary);
 }
 
 .btn-solicitud-eliminar:hover {
     background: var(--color-error-bg);
     color: var(--color-error-text);
+    border-color: var(--color-error-bg-hover);
 }
 
 .btn-agregar-comparable {
     margin-top: 16px;
     margin-bottom: 24px;
     padding: 14px 24px;
-    border-radius: 14px;
-    border: 1.5px dashed var(--color-primary);
+    border-radius: var(--radius-button);
+    border: 1px dashed var(--color-primary);
     background: var(--color-primary-light);
     color: var(--color-primary);
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     width: 100%;
     font-family: inherit;
@@ -257,17 +260,18 @@
     display: none;
     margin-top: 24px;
     padding: 32px;
-    border-radius: 18px;
+    border-radius: var(--radius-card);
     background: var(--color-white);
     border: 1px solid var(--color-border);
     text-align: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .solicitud-mensaje-envio h3 {
     margin: 0 0 8px;
     color: var(--color-text-primary);
-    font-size: 1.25rem;
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-heading);
 }
 
 .solicitud-mensaje-envio p {
@@ -304,11 +308,11 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border: 1.5px solid var(--color-border);
+    border: 1px solid var(--color-border);
     background: var(--color-white);
     color: var(--color-text-secondary);
-    border-radius: 12px;
-    font-size: 0.9rem;
+    border-radius: var(--radius-button);
+    font-size: var(--font-size-small);
     cursor: pointer;
     font-family: inherit;
     transition: background 0.15s ease;
@@ -323,11 +327,11 @@
     max-width: 100%;
     max-height: none;
     height: auto;
-    border-radius: 24px;
+    border-radius: var(--radius-card);
     display: block;
     overflow: visible;
     transform: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 #solicitudEditor.comparable-editor .comparable-editor-content {

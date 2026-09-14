@@ -687,14 +687,14 @@ function mostrarPantallaComparables() {
             <div class="comparables-columna-izq">
                 <div class="comparables-acciones">
                     <div class="accion-comparable" data-accion-comparable="manual" role="button" tabindex="0">
-                        <div class="accion-icono">➕</div>
+                        <div class="accion-icono"><i class="fa-solid fa-plus"></i></div>
                         <div>
                             <h3>Agregar manualmente</h3>
                             <p>Crear un comparable cargando sus características.</p>
                         </div>
                     </div>
                     <div class="accion-comparable" data-accion-comparable="historial" role="button" tabindex="0">
-                        <div class="accion-icono">🕘</div>
+                        <div class="accion-icono"><i class="fa-solid fa-clock"></i></div>
                         <div>
                             <h3>Usar tasación/comparable existente</h3>
                             <p>Seleccionar una tasación o un comparable previo del historial.</p>

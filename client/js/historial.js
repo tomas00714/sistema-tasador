@@ -1135,18 +1135,23 @@ window.cerrarPerfil = function() {
         ?.classList.remove("active");
 }
 
-window.abrirPerfilComparable = async function(id) {
+window.abrirPerfilComparable = async function(comparableOrId) {
     try {
         const modalOverlay = document.getElementById("modalOverlay");
         const contenidoModal = document.getElementById("contenidoModal");
 
-        let comparable = comparables.find(c => c.id === id);
+        let comparable;
+        if (comparableOrId && typeof comparableOrId === 'object') {
+            comparable = comparableOrId;
+        } else {
+            comparable = comparables.find(c => c.id === comparableOrId);
+        }
 
         if (!comparable || !contenidoModal) {
             return;
         }
 
-        comparablePerfilAbiertoId = id;
+        comparablePerfilAbiertoId = comparable.id;
 
         const tipo = comparable.tipoInmueble || 'lote';
         const esLote = tipo === 'lote';
@@ -1268,6 +1273,42 @@ window.abrirPerfilComparable = async function(id) {
         const fuenteTipo = comparable.fuenteInformacion?.tipo || comparable.fuente || '—';
         const fuenteDetalle = comparable.fuenteInformacion?.detalle || comparable.fuenteDetalle || '';
 
+        let accionesHtml;
+        if (comparable.estadoAceptacion === 'pendiente') {
+            accionesHtml = `
+                <div class="perfil-barra-inferior">
+                    <div class="perfil-barra-inferior-derecha">
+                        <button type="button" class="perfil-btn-accion" id="btnAceptarPerfil" style="background: #d1fae5; color: #065f46; border: 1px solid #d1fae5;">
+                            <i class="fa-solid fa-check"></i> Aceptar
+                        </button>
+                        <button type="button" class="perfil-btn-accion" id="btnRechazarPerfil" style="background: #fee2e2; color: #991b1b; border: 1px solid #fee2e2;">
+                            <i class="fa-solid fa-times"></i> Rechazar
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (comparable.estadoAceptacion === 'rechazado') {
+            accionesHtml = `
+                <div class="perfil-barra-inferior">
+                    <div class="perfil-barra-inferior-derecha">
+                        <span class="solicitud-detalle-comparable-feedback rechazado">
+                            <i class="fa-solid fa-times-circle"></i> Rechazado
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            accionesHtml = `
+                <div class="perfil-barra-inferior">
+                    <div class="perfil-barra-inferior-derecha">
+                        <button type="button" class="perfil-btn-accion perfil-btn-eliminar" id="btnEliminarPerfil">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         contenidoModal.innerHTML = `
             <div class="perfil-card-container">
 
@@ -1338,14 +1379,7 @@ window.abrirPerfilComparable = async function(id) {
 
                 </div>
 
-                <!-- Barra inferior fija -->
-                <div class="perfil-barra-inferior">
-                    <div class="perfil-barra-inferior-derecha">
-                        <button type="button" class="perfil-btn-accion perfil-btn-eliminar" id="btnEliminarPerfil">
-                            <i class="fa-solid fa-trash"></i> Eliminar
-                        </button>
-                    </div>
-                </div>
+                ${accionesHtml}
 
             </div>
         `;
@@ -1356,9 +1390,29 @@ window.abrirPerfilComparable = async function(id) {
             btnVolver.addEventListener("click", cerrarPerfil);
         }
 
-        const btnEliminar = document.getElementById("btnEliminarPerfil");
-        if (btnEliminar) {
-            btnEliminar.addEventListener("click", () => eliminarComparable(comparable.id));
+        if (comparable.estadoAceptacion === 'pendiente') {
+            const btnAceptar = document.getElementById("btnAceptarPerfil");
+            if (btnAceptar) {
+                btnAceptar.addEventListener("click", () => {
+                    if (typeof window.aceptarComparableSolicitud === 'function') {
+                        window.aceptarComparableSolicitud(comparable.solicitudId, comparable.id);
+                    }
+                });
+            }
+
+            const btnRechazar = document.getElementById("btnRechazarPerfil");
+            if (btnRechazar) {
+                btnRechazar.addEventListener("click", () => {
+                    if (typeof window.rechazarComparableSolicitud === 'function') {
+                        window.rechazarComparableSolicitud(comparable.solicitudId, comparable.id);
+                    }
+                });
+            }
+        } else {
+            const btnEliminar = document.getElementById("btnEliminarPerfil");
+            if (btnEliminar) {
+                btnEliminar.addEventListener("click", () => eliminarComparable(comparable.id));
+            }
         }
 
         // Add perfil-modal class (same as tasaciones)

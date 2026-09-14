@@ -95,7 +95,7 @@ function renderSolicitudes() {
 
     lista.innerHTML = '';
 
-    solicitudes.forEach(solicitud => {
+    solicitudes.slice().reverse().forEach(solicitud => {
         const card = crearTarjetaSolicitud(solicitud);
         lista.appendChild(card);
     });
@@ -334,7 +334,53 @@ function crearItemComparable(comparable, solicitud) {
         </div>
     `;
 
+    item.addEventListener('click', async (e) => {
+        if (e.target.closest('button')) return;
+        await mostrarPerfilComparableSolicitud(comparable, solicitud.id);
+    });
+
     return item;
+}
+
+async function mostrarPerfilComparableSolicitud(comparableAPI, solicitudId) {
+    const datos = comparableAPI.datos || {};
+    const datosSinId = { ...datos };
+    delete datosSinId.id;
+
+    const tipo = datosSinId.tipoInmueble || datosSinId.tipo || comparableAPI.tipo_inmueble || 'lote';
+    const camposEspecificos = {};
+    if (tipo === 'casa') {
+        camposEspecificos.superficie = datosSinId.superficieCubierta ?? datosSinId.superficie ?? null;
+        camposEspecificos.superficieTerreno = datosSinId.superficieTerreno ?? null;
+        camposEspecificos.antiguedad = datosSinId.antiguedad ?? null;
+    } else if (tipo === 'departamento') {
+        camposEspecificos.superficie = datosSinId.superficieTotal ?? datosSinId.superficie ?? null;
+        camposEspecificos.antiguedad = datosSinId.antiguedad ?? null;
+    } else if (tipo === 'lote') {
+        camposEspecificos.frente = datosSinId.frente ?? null;
+        camposEspecificos.fondo = datosSinId.fondo ?? null;
+        camposEspecificos.superficie = datosSinId.superficie ?? null;
+        camposEspecificos.tipoLote = datosSinId.tipoLote ?? null;
+    }
+
+    const comparable = {
+        ...datosSinId,
+        ...camposEspecificos,
+        id: comparableAPI.id,
+        fuente: comparableAPI.fuente || datosSinId.fuente || null,
+        tasacionOrigenId: comparableAPI.tasacion_origen_id || datosSinId.tasacionOrigenId || null,
+        fechaCreacion: comparableAPI.fecha_creacion,
+        fechaModificacion: comparableAPI.fecha_modificacion,
+        tipoInmueble: tipo,
+        solicitudId: solicitudId,
+        estadoAceptacion: comparableAPI.estado_aceptacion || 'pendiente'
+    };
+
+    if (typeof window.abrirPerfilComparable === 'function') {
+        await window.abrirPerfilComparable(comparable);
+    } else {
+        mostrarToast('No se pudo abrir el perfil del comparable');
+    }
 }
 
 function abrirModalCrearSolicitud() {
@@ -464,6 +510,20 @@ async function crearSolicitud(e) {
     }
 }
 
+window.aceptarComparableSolicitud = async function(solicitudId, comparableId) {
+    await aceptarComparable(solicitudId, comparableId);
+    if (typeof window.cerrarPerfil === 'function') {
+        window.cerrarPerfil();
+    }
+};
+
+window.rechazarComparableSolicitud = function(solicitudId, comparableId) {
+    abrirModalRechazar(solicitudId, comparableId);
+    if (typeof window.cerrarPerfil === 'function') {
+        window.cerrarPerfil();
+    }
+};
+
 function initSolicitudes() {
     // Cargar solicitudes iniciales
     cargarSolicitudes();
@@ -475,8 +535,10 @@ function initSolicitudes() {
     
     if (segmentedControl && segmentedPill) {
         const actualizarPill = (index) => {
-            const btnWidth = segmentedControl.offsetWidth / 4;
-            segmentedPill.style.transform = `translateX(${index * btnWidth}px)`;
+            const btn = filtros[index];
+            if (!btn) return;
+            segmentedPill.style.width = `${btn.offsetWidth}px`;
+            segmentedPill.style.transform = `translateX(${btn.offsetLeft}px)`;
         };
         
         // Inicializar pill en la primera posición
@@ -548,23 +610,39 @@ function initSolicitudes() {
     }
 
     // Cerrar modales al hacer clic fuera
-    document.getElementById('modalCrearSolicitud').addEventListener('click', (e) => {
-        if (e.target.id === 'modalCrearSolicitud') {
-            cerrarModalCrearSolicitud();
-        }
-    });
+    if (document.getElementById('modalCrearSolicitud')) {
+        document.getElementById('modalCrearSolicitud').addEventListener('click', (e) => {
+            if (e.target.id === 'modalCrearSolicitud') {
+                cerrarModalCrearSolicitud();
+            }
+        });
+    }
 
-    document.getElementById('modalDetalleSolicitud').addEventListener('click', (e) => {
-        if (e.target.id === 'modalDetalleSolicitud') {
-            cerrarModalDetalleSolicitud();
-        }
-    });
+    if (document.getElementById('modalDetalleSolicitud')) {
+        document.getElementById('modalDetalleSolicitud').addEventListener('click', (e) => {
+            if (e.target.id === 'modalDetalleSolicitud') {
+                cerrarModalDetalleSolicitud();
+            }
+        });
+    }
 
-    document.getElementById('modalRechazarComparable').addEventListener('click', (e) => {
-        if (e.target.id === 'modalRechazarComparable') {
-            cerrarModalRechazarComparable();
-        }
-    });
+    if (document.getElementById('modalRechazarComparable')) {
+        document.getElementById('modalRechazarComparable').addEventListener('click', (e) => {
+            if (e.target.id === 'modalRechazarComparable') {
+                cerrarModalRechazarComparable();
+            }
+        });
+    }
+
+    // Cerrar perfil de comparable al hacer clic en el overlay
+    const modalOverlay = document.getElementById('modalOverlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay' && typeof window.cerrarPerfil === 'function') {
+                window.cerrarPerfil();
+            }
+        });
+    }
     
 }
 

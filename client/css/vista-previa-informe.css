@@ -7,7 +7,9 @@ body {
     margin: 0;
     padding: 0;
     background: var(--color-bg-light);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
+    color: var(--color-text-primary);
     overflow: hidden;
 }
 
@@ -22,7 +24,7 @@ body {
     margin-bottom: 16px;
     padding: 12px;
     background: var(--color-surface);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
 }
 
@@ -99,9 +101,9 @@ body {
     min-width: 380px;
     margin-bottom: var(--shell-margin, 14px);
     background: var(--color-white);
-    border: 1.5px solid var(--color-border);
-    border-radius: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -117,14 +119,14 @@ body {
 
 .config-panel-header h2 {
     margin: 0 0 8px;
-    font-size: 1.25rem;
+    font-size: var(--font-size-h3);
     color: var(--color-text-primary);
-    font-weight: 700;
+    font-weight: var(--font-weight-heading);
 }
 
 .config-panel-header p {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: var(--font-size-small);
     color: var(--color-text-secondary);
     line-height: 1.5;
 }
@@ -153,8 +155,8 @@ body {
 .config-section label:not(.config-toggle) {
     display: block;
     margin-bottom: 8px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
     color: var(--color-text-secondary);
 }
 
@@ -162,22 +164,30 @@ body {
 .config-input,
 .config-textarea {
     width: 100%;
-    padding: 14px;
+    padding: 12px 14px;
     border: 1px solid var(--color-border);
-    border-radius: 14px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
+    border-radius: var(--radius-input);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
     color: var(--color-text-primary);
-    background: var(--color-bg-light);
+    background: var(--color-white);
     box-sizing: border-box;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 44px;
+}
+
+.config-select::placeholder,
+.config-input::placeholder,
+.config-textarea::placeholder {
+    color: #9A9F9C;
 }
 
 .config-select:focus,
 .config-input:focus,
 .config-textarea:focus {
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .config-select:disabled {
@@ -194,7 +204,7 @@ body {
 .config-hint {
     display: block;
     margin-top: 6px;
-    font-size: 0.75rem;
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
 }
 
@@ -204,9 +214,9 @@ body {
     align-items: center;
     gap: 10px;
     padding: 12px 14px;
-    border-radius: 12px;
-    background: var(--color-bg-light);
-    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-input);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     cursor: pointer;
     user-select: none;
     margin-bottom: 8px;
@@ -231,11 +241,11 @@ body {
 
 .config-toggle:has(input:checked) {
     background: var(--color-primary-light);
-    border: 2px solid var(--color-primary);
+    border: 1px solid var(--color-primary);
 }
 
 .config-toggle span {
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     color: var(--color-text-primary);
 }
 
@@ -258,9 +268,9 @@ body {
 .config-toggle-expand-btn {
     width: 44px;
     flex-shrink: 0;
-    border: 1.5px solid var(--color-border);
-    border-radius: 12px;
-    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
+    background: var(--color-white);
     color: var(--color-text-secondary);
     cursor: pointer;
     display: flex;
@@ -280,15 +290,15 @@ body {
 }
 
 .config-toggle-expand-btn i {
-    font-size: 0.85rem;
+    font-size: var(--font-size-small);
     transition: transform 0.2s ease;
 }
 
 .config-toggle-panel {
     margin-top: 8px;
     padding: 12px;
-    border-radius: 12px;
-    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-input);
+    border: 1px solid var(--color-border);
     background: var(--color-bg-light);
 }
 
@@ -302,7 +312,7 @@ body {
 }
 
 .config-toggle-disabled:has(input:checked) {
-    border: 1.5px solid var(--color-border);
+    border: 1px solid var(--color-border);
     background: var(--color-bg-light);
 }
 
@@ -325,8 +335,8 @@ body {
 .config-photo-thumb {
     flex: 0 0 120px;
     height: 90px;
-    border-radius: 10px;
-    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-card-small);
+    border: 1px solid var(--color-border);
     background: var(--color-white);
     overflow: hidden;
     scroll-snap-align: start;
@@ -362,12 +372,12 @@ body {
     gap: 10px;
     width: 100%;
     padding: 10px 12px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card-small);
     background: var(--color-white);
     cursor: pointer;
     text-align: left;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 0.85rem;
     color: var(--color-text-primary);
     transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -463,17 +473,17 @@ body {
     padding: 16px 24px;
     margin: 0 var(--shell-margin, 14px) 0 0;
     background: var(--color-white);
-    border: 1.5px solid var(--color-border);
-    border-radius: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     flex-shrink: 0;
 }
 
 .preview-panel-header h2 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: var(--font-size-h3);
     color: var(--color-text-primary);
-    font-weight: 700;
+    font-weight: var(--font-weight-heading);
 }
 
 .preview-actions {
@@ -484,9 +494,9 @@ body {
 .btn-preview-action {
     width: 40px;
     height: 40px;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-bg-light);
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    border-radius: var(--radius-input);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -537,9 +547,9 @@ body {
     width: 210mm;
     height: 297mm;
     background: var(--color-white);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--color-border);
-    border-radius: 4px;
+    border-radius: var(--radius-input);
     padding: 20mm;
     box-sizing: border-box;
     margin-bottom: 32px;
@@ -567,7 +577,7 @@ body {
     padding: 20mm;
     box-sizing: border-box;
     background: white;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-family-base);
     z-index: -1000;
     opacity: 0;
     pointer-events: none;
@@ -615,7 +625,7 @@ body {
 
 .report-cover-title {
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-text-primary);
     margin: 0 0 16px;
     letter-spacing: 2px;
@@ -681,7 +691,7 @@ body {
 .report-reference-column {
     background: var(--color-bg-light);
     padding: 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-border);
 }
 
@@ -721,7 +731,7 @@ body {
     margin-top: 24px;
     padding: 20px;
     background: var(--color-bg-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-border);
 }
 
@@ -753,7 +763,7 @@ body {
     margin-bottom: 24px;
     padding: 20px;
     background: var(--color-bg-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border-left: 4px solid var(--color-primary);
 }
 
@@ -776,7 +786,7 @@ body {
     gap: 4px;
     padding: 12px;
     background: var(--color-bg-light);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
 }
 
@@ -785,7 +795,7 @@ body {
     justify-content: space-between;
     padding: 12px;
     background: var(--color-bg-light);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
     margin-top: 8px;
 }
@@ -888,7 +898,7 @@ body {
 .report-comparable-card {
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     overflow: hidden;
 }
 
@@ -1107,7 +1117,7 @@ body {
     margin-top: 24px;
     padding: 20px;
     background: var(--color-primary-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-primary);
 }
 
@@ -1115,7 +1125,7 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    border-bottom: 1px solid rgba(40, 92, 77, 0.2);
 }
 
 .report-summary-item:last-child {
@@ -1160,7 +1170,7 @@ body {
     width: 100%;
     height: 180px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
 }
 
@@ -1171,7 +1181,7 @@ body {
     align-items: center;
     justify-content: center;
     background: var(--color-bg-light);
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
     font-size: 0.875rem;
@@ -1224,7 +1234,7 @@ body {
     width: 100%;
     height: 200px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: var(--radius-input);
     border: 1px solid var(--color-border);
 }
 
@@ -1382,7 +1392,7 @@ body {
 
 .report-foda-block {
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-border);
     page-break-inside: avoid;
 }
@@ -1393,8 +1403,8 @@ body {
 }
 
 .report-foda-oportunidades {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(40, 92, 77, 0.05) 0%, rgba(40, 92, 77, 0.02) 100%);
+    border-color: rgba(40, 92, 77, 0.3);
 }
 
 .report-foda-debilidades {
@@ -1419,7 +1429,7 @@ body {
 }
 
 .report-foda-oportunidades .report-foda-title {
-    color: #3b82f6;
+    color: var(--color-primary);
 }
 
 .report-foda-debilidades .report-foda-title {
@@ -1447,7 +1457,7 @@ body {
     border-radius: 16px;
     color: white;
     text-align: center;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .report-valuation-main {
@@ -1465,7 +1475,7 @@ body {
 .report-valuation-value {
     display: block;
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 1px;
 }
 
@@ -1513,7 +1523,7 @@ body {
 .report-closing-block {
     background: var(--color-bg-light);
     padding: 24px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--color-border);
 }
 
@@ -1604,7 +1614,7 @@ body {
     font-size: 0.9375rem;
     color: var(--color-text-primary);
     background: var(--color-white);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -1613,7 +1623,7 @@ body {
 .config-select:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .config-textarea {
@@ -1639,7 +1649,7 @@ body {
 
 .report-section-title {
     font-size: 1.375rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-text-primary);
     margin: 0 0 20px;
     padding-bottom: 12px;
@@ -1660,7 +1670,7 @@ body {
 
 .report-title {
     font-size: 1.75rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-text-primary);
     margin: 0 0 8px;
 }
@@ -1720,7 +1730,7 @@ body {
     padding: 12px;
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
 }
 
 .report-characteristics-label {
@@ -1777,7 +1787,7 @@ body {
     aspect-ratio: 4/3;
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1794,7 +1804,7 @@ body {
 .report-conclusion {
     background: var(--color-primary-light);
     padding: 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border-left: 4px solid var(--color-primary);
 }
 
@@ -1846,7 +1856,7 @@ body {
         max-height: 40vh;
         margin-bottom: 0;
         align-self: stretch;
-        border-radius: 18px;
+        border-radius: var(--radius-card);
     }
 
     .preview-panel {
@@ -1856,7 +1866,7 @@ body {
 
     .preview-panel-header {
         margin: 0;
-        border-radius: 18px;
+        border-radius: var(--radius-card);
         padding: 14px 18px;
     }
 
@@ -1893,9 +1903,9 @@ body {
     }
 
     .report-editable:hover {
-        background-color: rgba(59, 130, 246, 0.08);
+        background-color: rgba(40, 92, 77, 0.08);
         /* Simula padding horizontal sin cambiar el ancho del elemento */
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
     }
 
     /* Indicador lápiz: insignia circular de tamaño FIJO (independiente de la
@@ -1915,7 +1925,7 @@ body {
         line-height: 1;
         color: var(--color-primary);
         background: var(--color-white);
-        border: 1px solid rgba(59, 130, 246, 0.35);
+        border: 1px solid rgba(40, 92, 77, 0.35);
         border-radius: 50%;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         white-space: nowrap;
@@ -1927,7 +1937,7 @@ body {
     .report-editable.is-editing {
         outline: 1px dashed var(--color-primary);
         outline-offset: 2px;
-        background-color: rgba(59, 130, 246, 0.06);
+        background-color: rgba(40, 92, 77, 0.06);
         cursor: text;
     }
 
@@ -1957,8 +1967,8 @@ body {
         gap: 16px;
         background: var(--color-white);
         border: 1px solid var(--color-border);
-        border-radius: 12px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        border-radius: var(--radius-card);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         padding: 12px 18px;
         z-index: 50;
         font-size: 0.8125rem;
@@ -1970,7 +1980,7 @@ body {
         background: var(--color-primary);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-input);
         padding: 6px 14px;
         font-size: 0.8125rem;
         font-weight: 600;
@@ -1979,7 +1989,7 @@ body {
     }
 
     .edit-hint-btn:hover {
-        background: var(--color-primary-dark, #1d4ed8);
+        background: var(--color-primary-dark, #1E493D);
     }
 
     .preview-panel {

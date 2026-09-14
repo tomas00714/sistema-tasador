@@ -42,7 +42,7 @@ let resultadoCalculado = false;
 let comparablesContenidoClickInicializado = false;
 let comparablePanelModo = null;
 const comparableManualDocListeners = [];
-let resultadoTasacion = null;
+var resultadoTasacion = null;
 
 // Configuración API
 const API_TASACION = "http://127.0.0.1:8080";
@@ -128,3 +128,7 @@ const datosTasacion = {
     },
     comparables: []
 };
+
+// Exponer en window la MISMA referencia (datosTasacion es const y nunca se reasigna),
+// para que los módulos que leen window.datosTasacion usen la única fuente de verdad.
+window.datosTasacion = datosTasacion;

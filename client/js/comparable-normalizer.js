@@ -78,7 +78,11 @@ function normalizarDesdeTasacion(normalizado, datos, tipo) {
             vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || datosInmueble.superficieTotal || 0,
-            superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0
+            superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0,
+            // Preservar la homogeneización de superficie del comparable para que
+            // sobreviva el transporte (crearComparable → API → snapshot)
+            homogeneizacion: datosInmueble.homogeneizacion || datos.homogeneizacion || null,
+            superficieHomogeneizada: datos.superficieHomogeneizada ?? datosInmueble.superficieHomogeneizada ?? null
         };
     } else if (tipo === 'casa') {
         normalizado.inmueble = {
@@ -88,7 +92,9 @@ function normalizarDesdeTasacion(normalizado, datos, tipo) {
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
             vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
-            superficie: datos.superficie || datosInmueble.superficie || 0
+            superficie: datos.superficie || datosInmueble.superficie || 0,
+            homogeneizacion: datosInmueble.homogeneizacion || datos.homogeneizacion || null,
+            superficieHomogeneizada: datos.superficieHomogeneizada ?? datosInmueble.superficieHomogeneizada ?? null
         };
     }
 
@@ -173,7 +179,11 @@ function normalizarDesdeObjetoAnidado(normalizado, datos, tipo) {
             vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
             superficie: datos.superficie || datosInmueble.superficie || datosInmueble.superficieTotal || 0,
-            superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0
+            superficieTotal: datos.superficieTotal || datosInmueble.superficieTotal || datos.superficie || 0,
+            // Preservar la homogeneización de superficie del comparable para que
+            // sobreviva el transporte (crearComparable → API → snapshot)
+            homogeneizacion: datosInmueble.homogeneizacion || datos.homogeneizacion || null,
+            superficieHomogeneizada: datos.superficieHomogeneizada ?? datosInmueble.superficieHomogeneizada ?? null
         };
     } else if (tipo === 'casa') {
         normalizado.inmueble = {
@@ -183,7 +193,9 @@ function normalizarDesdeObjetoAnidado(normalizado, datos, tipo) {
             antiguedad: datos.antiguedad ?? datosInmueble.antiguedad ?? null,
             vidaUtil: datos.vidaUtil ?? datosInmueble.vidaUtil ?? 80,
             estadoConservacion: datos.estadoConservacion ?? datosInmueble.estadoConservacion ?? null,
-            superficie: datos.superficie || datosInmueble.superficie || 0
+            superficie: datos.superficie || datosInmueble.superficie || 0,
+            homogeneizacion: datosInmueble.homogeneizacion || datos.homogeneizacion || null,
+            superficieHomogeneizada: datos.superficieHomogeneizada ?? datosInmueble.superficieHomogeneizada ?? null
         };
     }
 
