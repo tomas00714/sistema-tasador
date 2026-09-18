@@ -13,9 +13,17 @@ class BaseRepository(ABC):
     def __init__(self, table_name: str):
         self.table_name = table_name
     
-    def execute_query(self, query: str, params: tuple = None, fetch: bool = True):
-        """Ejecuta una query y retorna los resultados."""
-        conn = get_connection()
+    def execute_query(self, query: str, params: tuple = None, fetch: bool = True, conn=None):
+        """Ejecuta una query y retorna los resultados.
+
+        Si se pasa ``conn``, la query se ejecuta dentro de esa transacción:
+        no se hace commit/rollback ni se libera la conexión (responsabilidad
+        del llamador). Sin ``conn`` se obtiene una conexión del pool y se
+        commitea automáticamente, como siempre.
+        """
+        own_conn = conn is None
+        if own_conn:
+            conn = get_connection()
         cursor = conn.cursor()
 
         try:
@@ -24,19 +32,23 @@ class BaseRepository(ABC):
             if fetch:
                 columns = [desc[0] for desc in cursor.description]
                 rows = cursor.fetchall()
-                conn.commit()  # Commit después de leer para no cerrar el portal antes de fetchall
+                if own_conn:
+                    conn.commit()  # Commit después de leer para no cerrar el portal antes de fetchall
                 results = [dict(zip(columns, row)) for row in rows]
                 return results
             else:
-                conn.commit()
+                if own_conn:
+                    conn.commit()
                 return cursor.rowcount
         except Exception as e:
-            conn.rollback()
+            if own_conn:
+                conn.rollback()
             logger.error(f"Error en query: {e}")
             raise
         finally:
             cursor.close()
-            release_connection(conn)
+            if own_conn:
+                release_connection(conn)
     
     def find_by_id(self, id: int) -> Optional[Dict[str, Any]]:
         """Busca un registro por ID."""
@@ -55,7 +67,7 @@ class BaseRepository(ABC):
         
         return self.execute_query(query)
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, data: Dict[str, Any], conn=None) -> Dict[str, Any]:
         """Crea un nuevo registro."""
         columns = data.keys()
         values = []
@@ -64,20 +76,20 @@ class BaseRepository(ABC):
                 values.append(json.dumps(value))
             else:
                 values.append(value)
-        
+
         placeholders = ', '.join(['%s'] * len(values))
         columns_str = ', '.join(columns)
-        
+
         query = f"""
             INSERT INTO {self.table_name} ({columns_str})
             VALUES ({placeholders})
             RETURNING *
         """
-        
-        results = self.execute_query(query, tuple(values))
+
+        results = self.execute_query(query, tuple(values), conn=conn)
         return results[0] if results else None
-    
-    def update(self, id: int, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+
+    def update(self, id: int, data: Dict[str, Any], conn=None) -> Optional[Dict[str, Any]]:
         """Actualiza un registro."""
         columns = data.keys()
         values = []
@@ -86,18 +98,18 @@ class BaseRepository(ABC):
                 values.append(json.dumps(value))
             else:
                 values.append(value)
-        
+
         set_clause = ', '.join([f"{col} = %s" for col in columns])
-        
+
         query = f"""
             UPDATE {self.table_name}
             SET {set_clause}
             WHERE id = %s
             RETURNING *
         """
-        
+
         params = tuple(values) + (id,)
-        results = self.execute_query(query, params)
+        results = self.execute_query(query, params, conn=conn)
         return results[0] if results else None
     
     def delete(self, id: int) -> bool:

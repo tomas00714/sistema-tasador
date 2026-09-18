@@ -1,3 +1,4 @@
+import re
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
@@ -254,6 +255,7 @@ class SolicitudResponse(BaseModel):
     tipo_inmueble: Optional[str] = None
     fecha_expiracion: Optional[datetime] = None
     fecha_completacion: Optional[datetime] = None
+    resumen_comparables: Optional[Dict[str, int]] = None
 
     @model_validator(mode='before')
     @classmethod
@@ -325,6 +327,23 @@ class RegisterRequest(BaseModel):
     apellido: str
     email: str
     password: str
+
+    @field_validator('email')
+    @classmethod
+    def email_formato_valido(cls, v: str) -> str:
+        v = v.strip()
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', v):
+            raise ValueError('El email no tiene un formato válido')
+        return v
+
+    @field_validator('password')
+    @classmethod
+    def password_politica(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('La contraseña debe tener al menos 8 caracteres')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('La contraseña debe tener al menos una mayúscula')
+        return v
 
 
 class TokenResponse(BaseModel):

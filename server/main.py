@@ -4,6 +4,7 @@ import shutil
 import uuid
 import json
 import base64
+from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Depends, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,6 +45,7 @@ from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
 from utils.hybrid_mapper import mapear_tasacion_a_columnas, mapear_comparable_a_columnas
 from utils.id_encoder import generar_codigo_publico, obtener_id_desde_codigo, TIPO_TASACION, TIPO_COMPARABLE, TIPO_SOLICITUD
+from utils.public_links import link_solicitud_publico, link_compartir_publico
 from utils.webhook_validator import validate_webhook_signature
 import auth
 import middleware
@@ -62,8 +64,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-SHARE_BASE_URL = os.getenv("SHARE_BASE_URL", "https://tasador.app/compartir/")
 
 # Directorio para archivos subidos por usuarios (fotos de perfil y logos)
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
@@ -89,6 +89,8 @@ def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
     try:
         with open(path, 'wb') as f:
             shutil.copyfileobj(upload.file, f)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al guardar archivo subido: {e}")
         raise HTTPException(status_code=500, detail="Error al guardar el archivo")
@@ -99,7 +101,8 @@ def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
 
 
 def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
-                      datos: Dict[str, Any], solicitud_origen_id: int = None) -> Dict[str, Any]:
+                      datos: Dict[str, Any], solicitud_origen_id: int = None,
+                      conn=None) -> Dict[str, Any]:
     """Crea un comparable nuevo. Retorna el registro recién creado."""
     repo = ComparableRepository()
 
@@ -128,7 +131,9 @@ def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
     datos_comparable.update(columnas)
 
     try:
-        return repo.create(datos_comparable)
+        return repo.create(datos_comparable, conn=conn)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error de base de datos al crear comparable: columnas={list(datos_comparable.keys())} error={e}")
         raise
@@ -165,9 +170,26 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# CORS: orígenes explícitos. CORS_ORIGINS (separados por coma) puede
+# sobreescribir la lista; el default cubre el frontend de producción y los
+# servidores estáticos habituales de desarrollo local.
+_CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "").strip()
+if _CORS_ORIGINS_ENV:
+    CORS_ORIGINS = [o.strip().rstrip("/") for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
+else:
+    CORS_ORIGINS = [
+        "https://sistema-tasador.vercel.app",
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -195,6 +217,8 @@ def endpoint_run_migrations(usuario_id: int = Depends(middleware.require_admin))
             return {"mensaje": "Migraciones ejecutadas exitosamente", "status": "success"}
         else:
             raise HTTPException(status_code=500, detail="Error al ejecutar migraciones")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en endpoint de migraciones: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -219,6 +243,8 @@ def endpoint_migration_status(usuario_id: int = Depends(middleware.require_admin
             "total_ejecutadas": len(executed),
             "total_pendientes": len(pending)
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al obtener estado de migraciones: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -404,6 +430,8 @@ def endpoint_tasar(request: TasacionRequest, usuario_id: int = Depends(middlewar
     except ValidationError as e:
         logger.error(f"ValidationError en endpoint_tasar: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en endpoint_tasar: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -483,6 +511,8 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
             cliente_nombre=tasacion_creada.get('cliente_nombre'),
             finalidad=tasacion_creada.get('finalidad')
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al crear tasación: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -595,6 +625,8 @@ def listar_tasaciones(
             )
         
         return tasaciones_response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al listar tasaciones: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -880,7 +912,7 @@ def crear_compartir_tasacion(
             dias_expiracion=request.dias_expiracion
         )
 
-        link = f"{SHARE_BASE_URL}{record['token']}"
+        link = link_compartir_publico(record['token'])
 
         return TasacionCompartirResponse(
             token=record['token'],
@@ -1081,6 +1113,8 @@ def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int =
             )
             for c in comparables_filtrados
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al obtener comparables batch: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1122,6 +1156,8 @@ def listar_comparables(
             )
             for c in comparables
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al listar comparables: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1331,7 +1367,7 @@ def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middle
         codigo_publico = generar_codigo_publico(TIPO_SOLICITUD, solicitud_creada['id'])
 
         # Generar link público dinámicamente
-        link_publico = f"https://tasador.app/s/{codigo_publico}"
+        link_publico = link_solicitud_publico(codigo_publico)
 
         # Preparar tasacion_id para la respuesta (código público si existe)
         tasacion_id_publico = None
@@ -1351,6 +1387,8 @@ def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middle
             fecha_expiracion=solicitud_creada.get('fecha_expiracion'),
             fecha_completacion=solicitud_creada.get('fecha_completacion')
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al crear solicitud: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1376,12 +1414,15 @@ def obtener_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.ge
         # Verificar que la solicitud pertenezca al usuario autenticado
         if solicitud['usuario_id'] != usuario_id:
             raise HTTPException(status_code=403, detail="No tienes permiso para acceder a esta solicitud")
-        
+
+        # Materializar expiración: una pendiente vencida no debe presentarse como pendiente
+        solicitud = _expirar_si_vencida(repo, solicitud)
+
         # Generar código público para la tasación asociada
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud['tasacion_id']) if solicitud['tasacion_id'] else None
         
         # Generar link público dinámicamente
-        link_publico = f"https://tasador.app/s/{solicitud_id}"
+        link_publico = link_solicitud_publico(solicitud_id)
         
         return SolicitudResponse(
             id=solicitud_id,
@@ -1416,6 +1457,9 @@ def listar_solicitudes(
     try:
         repo = SolicitudRepository()
         
+        # Materializar expiración: pendientes con fecha_expiracion vencida pasan a expirada
+        repo.materializar_expiradas(usuario_id=usuario_id)
+        
         if estado:
             solicitudes = repo.get_by_usuario_and_estado(usuario_id, estado, limit=limit, offset=offset)
         else:
@@ -1428,22 +1472,28 @@ def listar_solicitudes(
             tasaciones = TasacionRepository().find_by_ids(tasacion_ids)
             tasacion_public_ids = {t['id']: generar_codigo_publico(TIPO_TASACION, t['id']) for t in tasaciones}
         
+        # Conteo de comparables recibidos y su estado de decisión (una sola query)
+        conteos = repo.conteo_comparables([s['id'] for s in solicitudes])
+        
         return [
             SolicitudResponse(
                 id=generar_codigo_publico(TIPO_SOLICITUD, s['id']),
                 usuario_id=s['usuario_id'],
                 tasacion_id=tasacion_public_ids.get(s['tasacion_id']),
-                link_publico=f"https://tasador.app/s/{generar_codigo_publico(TIPO_SOLICITUD, s['id'])}",
+                link_publico=link_solicitud_publico(generar_codigo_publico(TIPO_SOLICITUD, s['id'])),
                 estado=s['estado'],
                 datos=s['datos'],
                 fecha_creacion=s['fecha_creacion'],
                 fecha_modificacion=s['fecha_modificacion'],
                 tipo_inmueble=s.get('tipo_inmueble'),
                 fecha_expiracion=s.get('fecha_expiracion'),
-                fecha_completacion=s.get('fecha_completacion')
+                fecha_completacion=s.get('fecha_completacion'),
+                resumen_comparables=conteos.get(s['id'])
             )
             for s in solicitudes
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al listar solicitudes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1463,7 +1513,8 @@ def obtener_comparables_de_solicitud(link_publico: str):
         solicitud = solicitud_repo.find_by_link_publico(link_publico)
         if not solicitud:
             raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-        
+
+        solicitud = _expirar_si_vencida(solicitud_repo, solicitud)
         solicitud_id_interno = solicitud['id']
         
         comparables = repo.find_by_link_publico(link_publico)
@@ -1492,9 +1543,32 @@ def obtener_comparables_de_solicitud(link_publico: str):
             )
             for c in comparables
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al obtener comparables de solicitud: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _expirar_si_vencida(repo: SolicitudRepository, solicitud: dict) -> dict:
+    """
+    Si la solicitud está 'pendiente' y su fecha_expiracion ya pasó, la marca
+    como 'expirada' en DB y devuelve el registro actualizado. Misma condición
+    que SolicitudRepository.find_expiradas/materializar_expiradas.
+    """
+    if solicitud.get('estado') != 'pendiente':
+        return solicitud
+    fecha_expiracion = solicitud.get('fecha_expiracion')
+    if not fecha_expiracion:
+        return solicitud
+    if isinstance(fecha_expiracion, str):
+        fecha_expiracion = datetime.fromisoformat(fecha_expiracion.replace('Z', '+00:00'))
+    if getattr(fecha_expiracion, 'tzinfo', None) is not None:
+        fecha_expiracion = fecha_expiracion.replace(tzinfo=None)
+    if fecha_expiracion < datetime.utcnow():
+        actualizada = repo.update(solicitud['id'], {'estado': 'expirada'})
+        return actualizada or {**solicitud, 'estado': 'expirada'}
+    return solicitud
 
 
 @app.get("/api/solicitudes/link/{link_publico:path}", response_model=SolicitudResponse)
@@ -1509,12 +1583,15 @@ def obtener_solicitud_por_link(link_publico: str):
         if not solicitud:
             raise HTTPException(status_code=404, detail="Solicitud no encontrada")
         
+        # Materializar expiración: una pendiente vencida no debe presentarse como pendiente
+        solicitud = _expirar_si_vencida(repo, solicitud)
+        
         # Generar código público para la solicitud y tasación
         codigo_publico = generar_codigo_publico(TIPO_SOLICITUD, solicitud['id'])
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud['tasacion_id']) if solicitud['tasacion_id'] else None
-        
+
         # Generar link público dinámicamente
-        link_publico = f"https://tasador.app/s/{codigo_publico}"
+        link_publico = link_solicitud_publico(codigo_publico)
         
         return SolicitudResponse(
             id=codigo_publico,
@@ -1597,7 +1674,7 @@ def actualizar_solicitud(solicitud_id: str, solicitud: SolicitudUpdate, usuario_
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud_actualizada['tasacion_id']) if solicitud_actualizada['tasacion_id'] else None
         
         # Generar link público dinámicamente
-        link_publico = f"https://tasador.app/s/{solicitud_id}"
+        link_publico = link_solicitud_publico(solicitud_id)
         
         return SolicitudResponse(
             id=solicitud_id,
@@ -1670,15 +1747,10 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
         if solicitud['estado'] != 'pendiente':
             raise HTTPException(status_code=400, detail="La solicitud ya fue respondida o expiró")
 
-        # Validar expiración por fecha
-        if solicitud.get('fecha_expiracion'):
-            fecha_expiracion = solicitud['fecha_expiracion']
-            if isinstance(fecha_expiracion, str):
-                fecha_expiracion = datetime.fromisoformat(fecha_expiracion.replace('Z', '+00:00'))
-            if fecha_expiracion < datetime.utcnow():
-                # Actualizar estado a expirada
-                repo.update(solicitud['id'], {'estado': 'expirada'})
-                raise HTTPException(status_code=400, detail="La solicitud expiró y ya no acepta respuestas")
+        # Validar expiración por fecha (misma condición que _expirar_si_vencida)
+        solicitud = _expirar_si_vencida(repo, solicitud)
+        if solicitud['estado'] != 'pendiente':
+            raise HTTPException(status_code=400, detail="La solicitud expiró y ya no acepta respuestas")
 
         if not payload.comparables:
             raise HTTPException(status_code=400, detail="No se proporcionaron comparables")
@@ -1689,6 +1761,8 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
         id_creador = colaborador.get('usuario_id')
         nombre_creador = colaborador.get('nombre')
 
+        # Validar todos los comparables ANTES de escribir nada
+        comparables_validados = []
         for item in payload.comparables:
             datos = item.get('datos') or item
             if not isinstance(datos, dict):
@@ -1706,35 +1780,56 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
             if 'origen_id' not in datos and item.get('originalId'):
                 datos['origen_id'] = item.get('originalId')
 
-            comparable_creado = _crear_comparable(
-                usuario_id=usuario_id,
-                tipo_inmueble=tipo_inmueble,
-                fuente=fuente,
-                datos=datos,
-                solicitud_origen_id=id_interno
-            )
+            comparables_validados.append((datos, tipo_inmueble, fuente))
 
-            # Guardar metadatos del colaborador en el comparable
-            ComparableRepository().update(
-                comparable_creado['id'],
-                {
-                    'id_creador': id_creador,
-                    'nombre_creador': nombre_creador
-                }
-            )
+        # Persistencia atómica: comparables + cambio de estado en una sola
+        # transacción. Si cualquier paso falla, no quedan escrituras parciales.
+        conn = get_connection()
+        try:
+            comp_repo = ComparableRepository()
+            for datos, tipo_inmueble, fuente in comparables_validados:
+                comparable_creado = _crear_comparable(
+                    usuario_id=usuario_id,
+                    tipo_inmueble=tipo_inmueble,
+                    fuente=fuente,
+                    datos=datos,
+                    solicitud_origen_id=id_interno,
+                    conn=conn
+                )
 
-        # Completar la solicitud
-        solicitud_actualizada = repo.update(id_interno, {
-            'estado': 'completada',
-            'fecha_completacion': 'now()'
-        })
+                # Guardar metadatos del colaborador en el comparable
+                comp_repo.update(
+                    comparable_creado['id'],
+                    {
+                        'id_creador': id_creador,
+                        'nombre_creador': nombre_creador
+                    },
+                    conn=conn
+                )
+
+            # Completar la solicitud (fecha generada por la aplicación, no un
+            # literal SQL pasado como parámetro)
+            solicitud_actualizada = repo.update(id_interno, {
+                'estado': 'completada',
+                'fecha_completacion': datetime.utcnow()
+            }, conn=conn)
+
+            if not solicitud_actualizada:
+                raise HTTPException(status_code=500, detail="No se pudo actualizar la solicitud")
+
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            release_connection(conn)
 
         # Generar código público para la solicitud y tasación
         codigo_publico = generar_codigo_publico(TIPO_SOLICITUD, solicitud_actualizada['id'])
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud_actualizada['tasacion_id']) if solicitud_actualizada['tasacion_id'] else None
 
         # Generar link público dinámicamente
-        link_publico = f"https://tasador.app/s/{codigo_publico}"
+        link_publico = link_solicitud_publico(codigo_publico)
 
         return SolicitudResponse(
             id=codigo_publico,
@@ -2057,6 +2152,8 @@ def forgot_password(request: ForgotPasswordRequest):
         # Generar token y enviar email
         
         return {"mensaje": "Funcionalidad de recuperación de contraseña preparada para implementación futura"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en forgot-password: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2441,6 +2538,8 @@ def get_valvano_data():
     except FileNotFoundError:
         logger.error("Archivo valvano_data.json no encontrado")
         raise HTTPException(status_code=404, detail="Archivo de coeficientes Valvano no encontrado")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al leer valvano_data.json: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2467,6 +2566,8 @@ def endpoint_clean_db(usuario_id: int = Depends(middleware.require_admin)):
             "status": "success",
             "tablas_afectadas": tablas
         }
+    except HTTPException:
+        raise
     except Exception as e:
         conn.rollback()
         logger.error(f"Error al limpiar base de datos: {e}")
@@ -2543,6 +2644,8 @@ def admin_stats(usuario_id: int = Depends(middleware.require_admin)):
                 for t in ultimas_tasaciones
             ]
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en admin_stats: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener métricas")
@@ -2598,6 +2701,8 @@ def admin_tasaciones(
             }
             for row in rows
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en admin_tasaciones: {e}")
         raise HTTPException(status_code=500, detail="Error al listar tasaciones")
@@ -2650,6 +2755,8 @@ def admin_usuarios(
             }
             for row in rows
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en admin_usuarios: {e}")
         raise HTTPException(status_code=500, detail="Error al listar usuarios")
@@ -2786,6 +2893,8 @@ def admin_comparables(
             }
             for row in rows
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en admin_comparables: {e}")
         raise HTTPException(status_code=500, detail="Error al listar comparables")
@@ -2828,6 +2937,8 @@ def obtener_estado_suscripcion(usuario_id: int = Depends(middleware.get_current_
         suscripcion_service = SuscripcionService()
         estado = suscripcion_service.obtener_estado(usuario_id)
         return estado
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error al obtener estado de suscripción: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener estado de suscripción")

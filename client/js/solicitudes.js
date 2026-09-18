@@ -4,8 +4,8 @@
 ========================= */
 
 let solicitudes = [];
-let estadoFiltro = 'todas';
 let solicitudActual = null;
+let vistaHistorial = false;
 
 const ETIQUETAS_TIPO = {
     lote: 'Lote',
@@ -54,31 +54,27 @@ function escapeHtml(text) {
 
 async function cargarSolicitudes() {
     const cargando = document.getElementById('solicitudesCargando');
+    const cargandoHistorial = document.getElementById('historialCargando');
     const vacio = document.getElementById('solicitudesVacio');
     const lista = document.getElementById('solicitudesLista');
 
     if (cargando) cargando.style.display = 'flex';
+    if (cargandoHistorial) cargandoHistorial.style.display = 'flex';
     if (vacio) vacio.style.display = 'none';
 
     try {
-        const params = estadoFiltro !== 'todas' ? `?estado=${estadoFiltro}` : '';
-        const data = await obtenerSolicitudesAPI(params);
+        const data = await obtenerSolicitudesAPI('');
         solicitudes = data || [];
 
         if (cargando) cargando.style.display = 'none';
+        if (cargandoHistorial) cargandoHistorial.style.display = 'none';
 
-        if (solicitudes.length === 0) {
-            if (vacio) vacio.style.display = 'flex';
-            if (cargando) cargando.style.display = 'none';
-            lista.innerHTML = '';
-            if (vacio) lista.appendChild(vacio);
-        } else {
-            if (vacio) vacio.style.display = 'none';
-            renderSolicitudes();
-        }
+        renderSolicitudes();
+        renderHistorial();
     } catch (error) {
         console.error('Error al cargar solicitudes:', error);
         if (cargando) cargando.style.display = 'none';
+        if (cargandoHistorial) cargandoHistorial.style.display = 'none';
         if (vacio) {
             vacio.style.display = 'flex';
             const h3 = vacio.querySelector('h3');
@@ -89,16 +85,100 @@ async function cargarSolicitudes() {
     }
 }
 
+// El backend adjunta resumen_comparables {recibidos, aceptados, rechazados,
+// pendientes} calculado desde solicitud_comparable_aceptacion (un comparable
+// sin decisión registrada cuenta como pendiente).
+function conteoDe(solicitud) {
+    return solicitud.resumen_comparables || null;
+}
+
+// Una solicitud requiere atención si está pendiente de respuesta, o si está
+// completada pero todavía tiene comparables sin decidir. resumen ausente en
+// una completada = no recibió comparables = nada que decidir → historial.
+function requiereAtencion(solicitud) {
+    if (solicitud.estado === 'pendiente') return true;
+    if (solicitud.estado === 'completada') {
+        return (conteoDe(solicitud)?.pendientes ?? 0) > 0;
+    }
+    return false; // expirada u otro estado almacenado
+}
+
 function renderSolicitudes() {
     const lista = document.getElementById('solicitudesLista');
+    const vacio = document.getElementById('solicitudesVacio');
     if (!lista) return;
 
-    lista.innerHTML = '';
+    lista.querySelectorAll('.solicitud-card').forEach(el => el.remove());
 
-    solicitudes.slice().reverse().forEach(solicitud => {
+    const enAtencion = solicitudes.filter(requiereAtencion);
+
+    if (enAtencion.length === 0) {
+        if (vacio) vacio.style.display = 'flex';
+        return;
+    }
+
+    if (vacio) vacio.style.display = 'none';
+
+    enAtencion.slice().reverse().forEach(solicitud => {
         const card = crearTarjetaSolicitud(solicitud);
         lista.appendChild(card);
     });
+}
+
+function renderHistorial() {
+    const lista = document.getElementById('historialLista');
+    const vacio = document.getElementById('historialVacio');
+    if (!lista) return;
+
+    lista.querySelectorAll('.solicitud-card').forEach(el => el.remove());
+
+    const historial = solicitudes.filter(s => !requiereAtencion(s));
+
+    if (historial.length === 0) {
+        if (vacio) vacio.style.display = 'flex';
+        return;
+    }
+
+    if (vacio) vacio.style.display = 'none';
+
+    historial.slice().reverse().forEach(solicitud => {
+        const card = crearTarjetaSolicitud(solicitud);
+        lista.appendChild(card);
+    });
+}
+
+function mostrarHistorial() {
+    vistaHistorial = true;
+    document.getElementById('solicitudesLista').style.display = 'none';
+    document.getElementById('solicitudesHistorial').style.display = 'flex';
+    actualizarBotonHistorial();
+    renderHistorial();
+}
+
+function mostrarPrincipal() {
+    vistaHistorial = false;
+    document.getElementById('solicitudesHistorial').style.display = 'none';
+    document.getElementById('solicitudesLista').style.display = 'flex';
+    actualizarBotonHistorial();
+    renderSolicitudes();
+}
+
+// El mismo botón alterna entre las dos vistas: en principal ofrece ir al
+// historial; en historial ofrece volver.
+function actualizarBotonHistorial() {
+    const btn = document.getElementById('btnToggleHistorial');
+    if (!btn) return;
+    btn.innerHTML = vistaHistorial
+        ? '<i class="fa-solid fa-arrow-left"></i> Volver a solicitudes'
+        : '<i class="fa-solid fa-clock-rotate-left"></i> Ver historial de solicitudes';
+}
+
+function toggleHistorial() {
+    if (vistaHistorial) {
+        mostrarPrincipal();
+    } else {
+        mostrarHistorial();
+    }
 }
 
 function crearTarjetaSolicitud(solicitud) {
@@ -122,6 +202,20 @@ function crearTarjetaSolicitud(solicitud) {
     const fechaExpiracion = formatearFecha(solicitud.fecha_expiracion);
     const linkPublico = solicitud.link_publico || '';
 
+    let resumenComparables;
+    const conteo = conteoDe(solicitud);
+    if (solicitud.estado === 'pendiente') {
+        resumenComparables = 'Esperando respuesta';
+    } else if (solicitud.estado === 'completada' && conteo) {
+        resumenComparables = `${conteo.recibidos} comparables recibidos · ${conteo.aceptados} aceptados · ${conteo.rechazados} rechazados · ${conteo.pendientes} pendientes`;
+    } else if (solicitud.estado === 'completada') {
+        resumenComparables = 'Sin comparables recibidos';
+    } else if (solicitud.estado === 'expirada') {
+        resumenComparables = 'Expirada sin respuesta';
+    } else {
+        resumenComparables = '—';
+    }
+
     card.innerHTML = `
         <div class="solicitud-card-header">
             <div class="solicitud-card-tipo">
@@ -144,7 +238,7 @@ function crearTarjetaSolicitud(solicitud) {
             ${mensaje ? `<div class="solicitud-card-mensaje">${escapeHtml(mensaje)}</div>` : ''}
             <div class="solicitud-card-comparables">
                 <i class="fa-solid fa-list"></i>
-                <span>${solicitud.estado === 'completada' ? 'Comparables recibidos' : 'Esperando respuestas'}</span>
+                <span>${resumenComparables}</span>
             </div>
             ${linkPublico ? `
                 <div class="solicitud-card-link">
@@ -424,10 +518,11 @@ async function aceptarComparable(solicitudId, comparableId) {
         await aceptarComparableSolicitudAPI(solicitudId, comparableId);
         mostrarToast('Comparable aceptado');
         
-        // Recargar comparables
+        // Recargar comparables y reclasificar listas
         if (solicitudActual) {
             await cargarComparablesDeSolicitud(solicitudActual);
         }
+        cargarSolicitudes();
     } catch (error) {
         console.error('Error al aceptar comparable:', error);
         mostrarToast('Error al aceptar comparable');
@@ -466,10 +561,11 @@ async function rechazarComparable(e) {
         mostrarToast('Comparable rechazado');
         cerrarModalRechazarComparable();
         
-        // Recargar comparables
+        // Recargar comparables y reclasificar listas
         if (solicitudActual) {
             await cargarComparablesDeSolicitud(solicitudActual);
         }
+        cargarSolicitudes();
     } catch (error) {
         console.error('Error al rechazar comparable:', error);
         mostrarToast('Error al rechazar comparable');
@@ -528,49 +624,18 @@ function initSolicitudes() {
     // Cargar solicitudes iniciales
     cargarSolicitudes();
 
-    // Filtros de estado
-    const filtros = document.querySelectorAll('.btn-segment[data-estado]');
-    const segmentedControl = document.querySelector('.segmented-control');
-    const segmentedPill = document.querySelector('.segmented-pill');
-    
-    if (segmentedControl && segmentedPill) {
-        const actualizarPill = (index) => {
-            const btn = filtros[index];
-            if (!btn) return;
-            segmentedPill.style.width = `${btn.offsetWidth}px`;
-            segmentedPill.style.transform = `translateX(${btn.offsetLeft}px)`;
-        };
-        
-        // Inicializar pill en la primera posición
-        actualizarPill(0);
-        
-        filtros.forEach((btn, index) => {
-            btn.addEventListener('click', () => {
-                filtros.forEach(f => f.classList.remove('active'));
-                btn.classList.add('active');
-                estadoFiltro = btn.dataset.estado;
-                actualizarPill(index);
-                cargarSolicitudes();
-            });
-        });
-    } else {
-        // Fallback si no existe el segmented control
-        filtros.forEach(btn => {
-            btn.addEventListener('click', () => {
-                filtros.forEach(f => f.classList.remove('active'));
-                btn.classList.add('active');
-                estadoFiltro = btn.dataset.estado;
-                cargarSolicitudes();
-            });
-        });
-    }
-
     // Botón crear solicitud
     const btnCrear = document.getElementById('btnCrearSolicitud');
     if (btnCrear) {
         btnCrear.addEventListener('click', () => {
             abrirModalCrearSolicitud();
         });
+    }
+
+    // Botón toggle historial / principal
+    const btnToggleHistorial = document.getElementById('btnToggleHistorial');
+    if (btnToggleHistorial) {
+        btnToggleHistorial.addEventListener('click', toggleHistorial);
     }
 
     // Modal crear solicitud

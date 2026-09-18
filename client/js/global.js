@@ -640,8 +640,8 @@ var MapaCore = (function() {
     'use strict';
 
     const TILE_URLS = {
-        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        dark: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+        light: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        dark: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     };
 
     const VISTA_POR_DEFECTO = { lat: -34.6037, lon: -58.3816, zoom: 13 };
@@ -708,9 +708,8 @@ var MapaCore = (function() {
         const isDark = modo === 'dark' || (modo !== 'light' && document.body.classList.contains('dark-mode'));
         const url = isDark ? TILE_URLS.dark : TILE_URLS.light;
         return L.tileLayer(url, {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
         });
     }
 

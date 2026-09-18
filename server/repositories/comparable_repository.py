@@ -116,27 +116,18 @@ class ComparableRepository(BaseRepository):
         return self.find_where({"solicitud_origen_id": solicitud_id})
 
     def find_by_link_publico(self, link_publico: str) -> List[Dict[str, Any]]:
-        """Busca comparables creados como respuesta a una solicitud a partir de su link público."""
-        query = """
-            SELECT c.*
-            FROM comparables c
-            INNER JOIN solicitudes s ON c.solicitud_origen_id = s.id
-            WHERE s.link_publico = %s
-        """
-        conn = get_connection()
-        cursor = conn.cursor()
+        """Busca comparables creados como respuesta a una solicitud a partir de su link público.
 
-        try:
-            cursor.execute(query, (link_publico,))
-            columns = [desc[0] for desc in cursor.description]
-            results = [dict(zip(columns, row)) for row in cursor.fetchall()]
-            return results
-        except Exception as e:
-            logger.error(f"Error al buscar comparables por link público: {e}")
+        La columna solicitudes.link_publico fue eliminada (migración 015): la
+        solicitud se resuelve decodificando el código público y luego se busca
+        por solicitud_origen_id.
+        """
+        from repositories.solicitud_repository import SolicitudRepository
+
+        solicitud = SolicitudRepository().find_by_link_publico(link_publico)
+        if not solicitud:
             return []
-        finally:
-            cursor.close()
-            release_connection(conn)
+        return self.find_by_solicitud_origen(solicitud['id'])
 
     def create_comparable(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Crea un nuevo comparable."""

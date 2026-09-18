@@ -96,17 +96,11 @@
             </div>
 
             <div class="solicitudes-header">
-                <div class="solicitudes-filtros">
-                    <div class="segmented-control" role="tablist" aria-label="Estado de solicitudes">
-                        <div class="segmented-pill"></div>
-                        <button type="button" class="btn-segment active" data-estado="todas">Todas</button>
-                        <button type="button" class="btn-segment" data-estado="pendiente">Pendientes</button>
-                        <button type="button" class="btn-segment" data-estado="completada">Completadas</button>
-                        <button type="button" class="btn-segment" data-estado="expirada">Expiradas</button>
-                    </div>
-                </div>
                 <button type="button" class="btn-primary" id="btnCrearSolicitud">
                     <i class="fa-solid fa-plus"></i> Nueva solicitud
+                </button>
+                <button type="button" class="btn-ver-historial" id="btnToggleHistorial">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Ver historial de solicitudes
                 </button>
             </div>
 
@@ -121,8 +115,31 @@
                     <div class="vacio-icono">
                         <i class="fa-solid fa-inbox"></i>
                     </div>
-                    <h3>No hay solicitudes</h3>
-                    <p>Crea tu primera solicitud para recibir comparables de otras personas.</p>
+                    <h3>No hay solicitudes que requieran atención</h3>
+                    <p>Las solicitudes pendientes de respuesta o con comparables por revisar aparecen acá.</p>
+                </div>
+            </div>
+
+            <!-- Vista historial: solicitudes resueltas o expiradas -->
+            <div class="solicitudes-historial" id="solicitudesHistorial" style="display: none;">
+                <div class="solicitudes-historial-header">
+                    <h2>Historial de solicitudes</h2>
+                    <p>Solicitudes completadas con todos sus comparables revisados, o expiradas.</p>
+                </div>
+                <div class="solicitudes-lista" id="historialLista">
+                    <div class="solicitudes-cargando" id="historialCargando">
+                        <div class="loading-spinner-inline">
+                            <div class="spinner-small"></div>
+                            <span>Cargando historial...</span>
+                        </div>
+                    </div>
+                    <div class="solicitudes-vacio" id="historialVacio" style="display: none;">
+                        <div class="vacio-icono">
+                            <i class="fa-solid fa-box-archive"></i>
+                        </div>
+                        <h3>Historial vacío</h3>
+                        <p>Todavía no hay solicitudes resueltas o expiradas.</p>
+                    </div>
                 </div>
             </div>
 

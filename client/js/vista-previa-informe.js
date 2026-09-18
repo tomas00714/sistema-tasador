@@ -485,27 +485,50 @@ async function renderReportPreview() {
         return;
     }
 
-    const reportData = await obtenerReportData();
+    // La tasación sí está cargada: un fallo de render no debe mostrar
+    // "No hay tasación cargada", sino un error explícito.
+    const mostrarErrorRender = (err) => {
+        console.error('Error al renderizar el informe:', err);
+        mostrarEstadoVacio(false);
+        reportViewer.innerHTML = `
+            <div class="report-render-error" style="padding: 40px; text-align: center; color: var(--color-text-secondary, #666);">
+                <p><strong>No se pudo generar la vista previa del informe.</strong></p>
+                <p>La tasación está cargada pero ocurrió un error al armar el documento.</p>
+            </div>
+        `;
+    };
+
+    let reportData;
+    try {
+        reportData = await obtenerReportData();
+    } catch (err) {
+        mostrarErrorRender(err);
+        return;
+    }
     if (!reportData) {
-        mostrarEstadoVacio(true);
-        reportViewer.innerHTML = '';
+        mostrarErrorRender(new Error('obtenerReportData devolvió vacío'));
         return;
     }
 
     const showComparables = reportConfig.showComparables && selectedComparableIds.size > 0;
 
-    reportViewer.innerHTML = await ReportViewerProfessional({
-        reportData,
-        config: {
-            ...reportConfig,
-            showComparables
-        }
-    });
-    
-    // Verificar overflow después de renderizar
-    const paginator = getReportPaginator();
-    await paginator.verifyPageOverflow();
-    
+    try {
+        reportViewer.innerHTML = await ReportViewerProfessional({
+            reportData,
+            config: {
+                ...reportConfig,
+                showComparables
+            }
+        });
+
+        // Verificar overflow después de renderizar
+        const paginator = getReportPaginator();
+        await paginator.verifyPageOverflow();
+    } catch (err) {
+        mostrarErrorRender(err);
+        return;
+    }
+
     // Asegurar que el estado vacío esté oculto después de renderizar exitosamente
     mostrarEstadoVacio(false);
 }

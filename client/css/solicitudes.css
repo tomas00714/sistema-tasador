@@ -34,63 +34,53 @@
     z-index: 1;
 }
 
-.solicitudes-filtros {
-    display: flex;
-    gap: 12px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    flex: 1;
-    min-width: 0;
-}
-
-/* Segmented Control */
-.segmented-control {
-    position: relative;
+.btn-ver-historial {
     display: inline-flex;
     align-items: center;
-    height: 40px;
-    background: var(--color-bg-light);
-    border: 1px solid var(--color-border);
+    gap: 8px;
+    padding: 10px 16px;
     border-radius: var(--radius-button);
-    padding: 4px;
-    box-sizing: border-box;
-    max-width: 100%;
-    flex-shrink: 0;
-}
-
-.segmented-pill {
-    position: absolute;
-    top: 4px;
-    left: 0;
-    height: calc(100% - 8px);
-    width: 0;
-    background: var(--color-primary);
-    border-radius: var(--radius-button);
-    transition: transform 0.2s ease, width 0.2s ease;
-}
-
-.btn-segment {
-    flex: 0 0 auto;
-    height: 100%;
     border: none;
     background: transparent;
     color: var(--color-text-secondary);
     font-family: var(--font-family-base);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-label);
     cursor: pointer;
-    z-index: 1;
-    transition: color 0.2s;
-    white-space: nowrap;
-    padding: 0 14px;
+    transition: color 0.2s, background 0.2s;
+    min-height: 44px;
 }
 
-.btn-segment.active {
-    color: var(--color-white);
-}
-
-.btn-segment:hover:not(.active) {
+.btn-ver-historial:hover {
     color: var(--color-text-primary);
+    background: var(--color-bg-light);
+}
+
+.solicitudes-historial {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.solicitudes-historial-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.solicitudes-historial-header h2 {
+    margin: 0;
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-heading);
+    color: var(--color-text-primary);
+}
+
+.solicitudes-historial-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
 }
 
 .solicitudes-lista {
@@ -746,21 +736,6 @@
     .solicitudes-header {
         flex-direction: column;
         align-items: stretch;
-    }
-
-    .solicitudes-filtros {
-        width: 100%;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-    }
-
-    .segmented-control {
-        width: auto;
-    }
-
-    .btn-segment {
-        font-size: 12px;
-        padding: 0 8px;
     }
 
     .btn-primary {

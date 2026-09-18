@@ -4,7 +4,22 @@ from jose import JWTError, jwt
 import bcrypt
 from os import getenv
 
-JWT_SECRET_KEY = getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+import logging
+
+logger = logging.getLogger(__name__)
+
+JWT_SECRET_KEY = getenv("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    if getenv("APP_ENV", "").lower() in ("production", "prod"):
+        raise RuntimeError(
+            "JWT_SECRET_KEY no está configurada. En producción es obligatorio "
+            "definirla como variable de entorno con un valor seguro."
+        )
+    logger.critical(
+        "JWT_SECRET_KEY no está configurada: se usa un valor inseguro solo "
+        "apta para desarrollo local. Definí JWT_SECRET_KEY en el entorno."
+    )
+    JWT_SECRET_KEY = "dev-only-insecure-secret-do-not-use-in-production"
 JWT_ALGORITHM = getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_HOURS = int(getenv("JWT_ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 
