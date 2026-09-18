@@ -1,0 +1,78 @@
+JWT_SECRET_KEY no está configurada: se usa un valor inseguro solo apta para desarrollo local. Definí JWT_SECRET_KEY en el entorno.
+C:\Users\tomas\Desktop\proyecto-tasador\server\main.py:2210: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  def iniciar_google_oauth(mode: str = Query(..., regex="^(continue)$")):
+INFO:     Started server process [7764]
+INFO:     Waiting for application startup.
+2026-09-17 20:22:14,929 - main - INFO - Iniciando pool de conexiones a PostgreSQL...
+2026-09-17 20:22:14,929 - database - INFO - Inicializando pool desde variables DB_*: host=localhost, database=tasador, user=postgres
+2026-09-17 20:22:15,014 - database - INFO - Pool de conexiones a PostgreSQL inicializado correctamente
+2026-09-17 20:22:15,014 - main - INFO - Pool de conexiones inicializado correctamente
+2026-09-17 20:22:15,015 - database - INFO - Conexión exitosa a PostgreSQL. Base=tasador, usuario=postgres, host=localhost, versión=PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-09-17 20:22:15,015 - main - INFO - Conexión a PostgreSQL verificada
+2026-09-17 20:22:15,016 - main - INFO - Directorio de uploads verificado: C:\Users\tomas\Desktop\proyecto-tasador\server\uploads
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+2026-09-17 20:22:17,783 - main - INFO - Intentando registrar usuario: audit_a_1789687337@test.local
+INFO:     127.0.0.1:51276 - "POST /api/auth/register HTTP/1.1" 200 OK
+2026-09-17 20:22:18,192 - main - INFO - Intentando registrar usuario: audit_b_1789687337@test.local
+INFO:     127.0.0.1:51277 - "POST /api/auth/register HTTP/1.1" 200 OK
+2026-09-17 20:22:18,580 - main - INFO - Intentando login: audit_a_1789687337@test.local
+INFO:     127.0.0.1:51279 - "POST /api/auth/login HTTP/1.1" 200 OK
+2026-09-17 20:22:18,976 - main - INFO - Intentando login: audit_b_1789687337@test.local
+INFO:     127.0.0.1:51280 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51281 - "GET /api/usuarios/me HTTP/1.1" 404 Not Found
+2026-09-17 20:22:19,360 - main - INFO - Creando solicitud para usuario: 73, tipo: lote
+INFO:     127.0.0.1:51282 - "POST /api/solicitudes HTTP/1.1" 200 OK
+2026-09-17 20:22:19,370 - main - INFO - Creando tasación de tipo: lote
+INFO:     127.0.0.1:51283 - "POST /api/tasaciones HTTP/1.1" 200 OK
+2026-09-17 20:22:19,384 - main - INFO - Obteniendo solicitud por link: S4p5Fl1vSPX
+INFO:     127.0.0.1:51284 - "GET /api/solicitudes/link/S4p5Fl1vSPX HTTP/1.1" 200 OK
+2026-09-17 20:22:19,391 - main - INFO - Obteniendo solicitud por link: http://127.0.0.1:5500/client/solicitud.html?link=S4p5Fl1vSPX
+INFO:     127.0.0.1:51285 - "GET /api/solicitudes/link/http%3A//127.0.0.1%3A5500/client/solicitud.html%3Flink%3DS4p5Fl1vSPX HTTP/1.1" 200 OK
+2026-09-17 20:22:19,399 - main - INFO - Obteniendo solicitud por link: https://tasador.app/s/S4p5Fl1vSPX
+INFO:     127.0.0.1:51286 - "GET /api/solicitudes/link/https%3A//tasador.app/s/S4p5Fl1vSPX HTTP/1.1" 200 OK
+2026-09-17 20:22:19,406 - main - INFO - Obteniendo solicitud por link: http://x/solicitud.html?link=S4p5Fl1vSPX
+INFO:     127.0.0.1:51287 - "GET /api/solicitudes/link/http%3A//x/solicitud.html%3Flink%3DS4p5Fl1vSPX HTTP/1.1" 200 OK
+2026-09-17 20:22:19,415 - main - INFO - Contribuyendo a solicitud: S4p5Fl1vSPX
+INFO:     127.0.0.1:51289 - "POST /api/solicitudes/link/S4p5Fl1vSPX/contribuir HTTP/1.1" 200 OK
+2026-09-17 20:22:19,431 - main - INFO - Obteniendo comparables de solicitud por link: S4p5Fl1vSPX
+INFO:     127.0.0.1:51290 - "GET /api/solicitudes/link/S4p5Fl1vSPX/comparables HTTP/1.1" 200 OK
+2026-09-17 20:22:19,442 - main - INFO - Obteniendo solicitud por link: S4p5Fl1vSPX
+INFO:     127.0.0.1:51291 - "GET /api/solicitudes/link/S4p5Fl1vSPX HTTP/1.1" 200 OK
+2026-09-17 20:22:19,451 - main - INFO - Obteniendo comparables de solicitud por ID: S4p5Fl1vSPX
+INFO:     127.0.0.1:51292 - "GET /api/solicitudes/S4p5Fl1vSPX/comparables HTTP/1.1" 200 OK
+2026-09-17 20:22:19,462 - main - INFO - Aceptando comparable CGiTxwvh4j4 de solicitud S4p5Fl1vSPX por usuario 73
+INFO:     127.0.0.1:51293 - "POST /api/solicitudes/S4p5Fl1vSPX/comparables/CGiTxwvh4j4/aceptar HTTP/1.1" 200 OK
+2026-09-17 20:22:19,472 - main - INFO - Obteniendo comparables de solicitud por link: SZZZZZZ
+INFO:     127.0.0.1:51294 - "GET /api/solicitudes/link/SZZZZZZ/comparables HTTP/1.1" 404 Not Found
+2026-09-17 20:22:19,477 - main - INFO - Creando solicitud para usuario: 73, tipo: lote
+INFO:     127.0.0.1:51295 - "POST /api/solicitudes HTTP/1.1" 200 OK
+2026-09-17 20:22:19,608 - main - INFO - Obteniendo solicitud por link: S4uExrBQ8jc
+INFO:     127.0.0.1:51297 - "GET /api/solicitudes/link/S4uExrBQ8jc HTTP/1.1" 200 OK
+2026-09-17 20:22:19,614 - main - INFO - Contribuyendo a solicitud: S4uExrBQ8jc
+INFO:     127.0.0.1:51298 - "POST /api/solicitudes/link/S4uExrBQ8jc/contribuir HTTP/1.1" 400 Bad Request
+2026-09-17 20:22:19,622 - main - INFO - Listando solicitudes para usuario: 73, estado: None
+INFO:     127.0.0.1:51299 - "GET /api/solicitudes HTTP/1.1" 200 OK
+2026-09-17 20:22:19,632 - main - INFO - Obteniendo solicitud: S4uExrBQ8jc
+INFO:     127.0.0.1:51300 - "GET /api/solicitudes/S4uExrBQ8jc HTTP/1.1" 200 OK
+2026-09-17 20:22:19,639 - main - INFO - Obteniendo tasación: TAOZuPI5C6w
+INFO:     127.0.0.1:51301 - "GET /api/tasaciones/TAOZuPI5C6w HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,648 - main - INFO - [BACKEND PUT] TasacionUpdate recibido: estado='borrador' datos=None comparables_ids=None comparables_snapshots=None nomenclatura_catastral=None cliente_nombre=None finalidad=None
+2026-09-17 20:22:19,648 - main - INFO - Actualizando tasación: TAOZuPI5C6w
+INFO:     127.0.0.1:51302 - "PUT /api/tasaciones/TAOZuPI5C6w HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,655 - main - INFO - Eliminando tasación: TAOZuPI5C6w
+INFO:     127.0.0.1:51303 - "DELETE /api/tasaciones/TAOZuPI5C6w HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,662 - main - INFO - Listando tasaciones para usuario: 74, estado: None
+INFO:     127.0.0.1:51304 - "GET /api/tasaciones HTTP/1.1" 200 OK
+2026-09-17 20:22:19,667 - main - INFO - Obteniendo solicitud: S4p5Fl1vSPX
+INFO:     127.0.0.1:51305 - "GET /api/solicitudes/S4p5Fl1vSPX HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,674 - main - INFO - Actualizando solicitud: S4p5Fl1vSPX
+INFO:     127.0.0.1:51306 - "PUT /api/solicitudes/S4p5Fl1vSPX HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,682 - main - INFO - Rechazando comparable CGiTxwvh4j4 de solicitud S4p5Fl1vSPX por usuario 74
+INFO:     127.0.0.1:51307 - "POST /api/solicitudes/S4p5Fl1vSPX/comparables/CGiTxwvh4j4/rechazar HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,688 - main - INFO - Obteniendo comparables de solicitud por ID: S4p5Fl1vSPX
+INFO:     127.0.0.1:51308 - "GET /api/solicitudes/S4p5Fl1vSPX/comparables HTTP/1.1" 403 Forbidden
+2026-09-17 20:22:19,694 - main - INFO - Eliminando comparable: CGiTxwvh4j4
+INFO:     127.0.0.1:51309 - "DELETE /api/comparables/CGiTxwvh4j4 HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:51310 - "GET /api/migrations/status HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:51311 - "POST /api/admin/clean-db HTTP/1.1" 403 Forbidden
