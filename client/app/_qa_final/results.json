@@ -1,0 +1,520 @@
+{
+  "casa": {
+    "tipo": "casa",
+    "indice": {
+      "filas": [
+        {
+          "label": "Tipo:",
+          "valor": "Casa",
+          "editable": false
+        },
+        {
+          "label": "Dirección:",
+          "valor": "Av. Prueba 100",
+          "editable": false
+        },
+        {
+          "label": "Localidad:",
+          "valor": "-",
+          "editable": false
+        },
+        {
+          "label": "Provincia:",
+          "valor": "-",
+          "editable": false
+        },
+        {
+          "label": "Ambientes:",
+          "valor": "3",
+          "editable": false
+        },
+        {
+          "label": "Superficie cubierta:",
+          "valor": "120 m2",
+          "editable": false
+        },
+        {
+          "label": "Antigüedad:",
+          "valor": "20 años",
+          "editable": false
+        },
+        {
+          "label": "Cliente / Solicitante:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Nomenclatura catastral:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Finalidad:",
+          "valor": "Tasación comercial",
+          "editable": false
+        }
+      ],
+      "colsAlturaOk": [
+        1,
+        1
+      ]
+    },
+    "tecnico": {
+      "grids": 3,
+      "vacios": 0,
+      "overflow": [],
+      "solapes": 0,
+      "estructura": [
+        "grid",
+        "grid",
+        "grid"
+      ]
+    },
+    "superficies": {
+      "filas": [
+        [
+          "Cubierto",
+          "120.00 m2",
+          "1.00",
+          "120.00 m2"
+        ]
+      ],
+      "chartCols": 0
+    },
+    "tablas": {
+      "n": 2,
+      "gapAB": 64,
+      "paginaA": 5011.640625,
+      "paginaB": 5172.109375,
+      "headersA": [
+        "Dirección",
+        "Valor",
+        "Valor m²",
+        "Superficie",
+        "Superficie homogeneizada"
+      ],
+      "headersB": [
+        "Dirección",
+        "Ross-Heidecke",
+        "Sup. Cubierta",
+        "Sup. Total",
+        "Características constructivas",
+        "Ubicacion",
+        "Actualización",
+        "Valor m² homogeneizado"
+      ],
+      "thBg": "rgb(40, 92, 77)",
+      "thColor": "rgb(255, 255, 255)",
+      "td1Bg": "rgb(234, 242, 239)",
+      "borderColor": "rgb(40, 92, 77)",
+      "resumenOk": true
+    },
+    "paridad": {
+      "refHeaders": [
+        "Dirección",
+        "Superficie",
+        "Superficie homogeneizada",
+        "Ross-Heidecke",
+        "Sup. Cubierta",
+        "Sup. Total",
+        "Características constructivas",
+        "Ubicacion",
+        "Actualización",
+        "Valor",
+        "Valor por m²"
+      ],
+      "pdfHeaders": [
+        "Dirección",
+        "Valor",
+        "Valor m²",
+        "Superficie",
+        "Superficie homogeneizada",
+        "Dirección",
+        "Ross-Heidecke",
+        "Sup. Cubierta",
+        "Sup. Total",
+        "Características constructivas",
+        "Ubicacion",
+        "Actualización",
+        "Valor m² homogeneizado"
+      ],
+      "faltan": [
+        "Valor por m²"
+      ]
+    },
+    "cards": {
+      "n": 1,
+      "apiladas": true,
+      "anchos": [
+        641
+      ],
+      "seccionFotosComparables": false,
+      "tituloFotosComp": false,
+      "seccionInmueble": false
+    },
+    "decimales": {
+      "total": 12,
+      "malos": []
+    },
+    "overflow": [],
+    "paginas": 7,
+    "pdfBytes": 250103,
+    "errores": []
+  },
+  "departamento": {
+    "tipo": "departamento",
+    "indice": {
+      "filas": [
+        {
+          "label": "Tipo:",
+          "valor": "Departamento",
+          "editable": false
+        },
+        {
+          "label": "Dirección:",
+          "valor": "Moreno 760",
+          "editable": false
+        },
+        {
+          "label": "Localidad:",
+          "valor": "La Paz",
+          "editable": false
+        },
+        {
+          "label": "Provincia:",
+          "valor": "Entre Ríos",
+          "editable": false
+        },
+        {
+          "label": "Ambientes:",
+          "valor": "3",
+          "editable": false
+        },
+        {
+          "label": "Superficie cubierta:",
+          "valor": "De 30 a 50m²",
+          "editable": false
+        },
+        {
+          "label": "Antigüedad:",
+          "valor": "14 años",
+          "editable": false
+        },
+        {
+          "label": "Cliente / Solicitante:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Nomenclatura catastral:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Finalidad:",
+          "valor": "Tasación comercial",
+          "editable": false
+        }
+      ],
+      "colsAlturaOk": [
+        1,
+        1
+      ]
+    },
+    "tecnico": {
+      "grids": 4,
+      "vacios": 0,
+      "overflow": [],
+      "solapes": 0,
+      "estructura": [
+        "grid",
+        "grid",
+        "grid",
+        "grid"
+      ]
+    },
+    "superficies": {
+      "filas": [
+        [
+          "Cubierto",
+          "60.00 m2",
+          "1.03",
+          "61.80 m2"
+        ],
+        [
+          "Balcón descubierto",
+          "8.00 m2",
+          "0.30",
+          "2.40 m2"
+        ],
+        [
+          "Semicubierto",
+          "7.00 m2",
+          "0.50",
+          "3.50 m2"
+        ],
+        [
+          "Balcón terraza",
+          "20.00 m2",
+          "0.50",
+          "10.00 m2"
+        ]
+      ],
+      "chartCols": 4
+    },
+    "tablas": {
+      "n": 2,
+      "gapAB": 564,
+      "paginaA": 6668.75,
+      "paginaB": 7364.0625,
+      "headersA": [
+        "Dirección",
+        "Valor",
+        "Valor m²",
+        "Superficie",
+        "Superficie homogeneizada"
+      ],
+      "headersB": [
+        "Dirección",
+        "Ross-Heidecke",
+        "Ubic. Planta",
+        "Ubic. Piso",
+        "Características constructivas",
+        "Sup. Cubierta",
+        "Ubicacion",
+        "Actividad",
+        "Valor m² homogeneizado"
+      ],
+      "thBg": "rgb(40, 92, 77)",
+      "thColor": "rgb(255, 255, 255)",
+      "td1Bg": "rgb(234, 242, 239)",
+      "borderColor": "rgb(40, 92, 77)",
+      "resumenOk": true
+    },
+    "paridad": {
+      "refHeaders": [
+        "Dirección",
+        "Superficie",
+        "Superficie homogeneizada",
+        "Ross-Heidecke",
+        "Ubic. Planta",
+        "Ubic. Piso",
+        "Características constructivas",
+        "Sup. Cubierta",
+        "Valor promedio de comp.",
+        "Ubicacion",
+        "Actividad",
+        "Valor",
+        "Valor por m²"
+      ],
+      "pdfHeaders": [
+        "Dirección",
+        "Valor",
+        "Valor m²",
+        "Superficie",
+        "Superficie homogeneizada",
+        "Dirección",
+        "Ross-Heidecke",
+        "Ubic. Planta",
+        "Ubic. Piso",
+        "Características constructivas",
+        "Sup. Cubierta",
+        "Ubicacion",
+        "Actividad",
+        "Valor m² homogeneizado"
+      ],
+      "faltan": [
+        "Valor promedio de comp.",
+        "Valor por m²"
+      ]
+    },
+    "cards": {
+      "n": 2,
+      "apiladas": true,
+      "anchos": [
+        641,
+        641
+      ],
+      "seccionFotosComparables": false,
+      "tituloFotosComp": false,
+      "seccionInmueble": false
+    },
+    "decimales": {
+      "total": 17,
+      "malos": []
+    },
+    "overflow": [],
+    "paginas": 9,
+    "pdfBytes": 306538,
+    "persistencia": {
+      "editCliente": "ok",
+      "editNomen": "ok",
+      "configTrasEdit": {
+        "c": "QA Cliente Persistente",
+        "n": "CIR-QA-999"
+      },
+      "trasRerender": true
+    },
+    "errores": [],
+    "persistenciaRecarga": {
+      "config": {
+        "c": "QA Cliente Persistente",
+        "n": "CIR-QA-999"
+      },
+      "enDom": true,
+      "errores": []
+    },
+    "restaurado": {
+      "cliente_col": "QA Cliente Persistente",
+      "config_blob": true
+    }
+  },
+  "lote": {
+    "tipo": "lote",
+    "indice": {
+      "filas": [
+        {
+          "label": "Tipo:",
+          "valor": "Lote",
+          "editable": false
+        },
+        {
+          "label": "Dirección:",
+          "valor": "San Martin 3400",
+          "editable": false
+        },
+        {
+          "label": "Localidad:",
+          "valor": "Santa Fe",
+          "editable": false
+        },
+        {
+          "label": "Provincia:",
+          "valor": "Santa Fe",
+          "editable": false
+        },
+        {
+          "label": "Tipo de lote:",
+          "valor": "Medial",
+          "editable": false
+        },
+        {
+          "label": "Superficie:",
+          "valor": "144.00 m2",
+          "editable": false
+        },
+        {
+          "label": "Antigüedad:",
+          "valor": "— años",
+          "editable": false
+        },
+        {
+          "label": "Cliente / Solicitante:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Nomenclatura catastral:",
+          "valor": "",
+          "editable": true
+        },
+        {
+          "label": "Finalidad:",
+          "valor": "Tasación comercial",
+          "editable": false
+        }
+      ],
+      "colsAlturaOk": [
+        1,
+        1
+      ]
+    },
+    "tecnico": {
+      "grids": 2,
+      "vacios": 0,
+      "overflow": [],
+      "solapes": 0,
+      "estructura": [
+        "grid",
+        "grid"
+      ]
+    },
+    "superficies": {
+      "ausente": true
+    },
+    "tablas": {
+      "n": 2,
+      "gapAB": 614,
+      "paginaA": 4295.71875,
+      "paginaB": 4991.03125,
+      "headersA": [
+        "Dirección",
+        "Valor del lote",
+        "Valor por m²",
+        "Frente",
+        "Fondo",
+        "Superficie"
+      ],
+      "headersB": [
+        "Dirección",
+        "F&C",
+        "Ubicacion",
+        "Actualización",
+        "Valor por m² homogeneizado"
+      ],
+      "thBg": "rgb(40, 92, 77)",
+      "thColor": "rgb(255, 255, 255)",
+      "td1Bg": "rgb(234, 242, 239)",
+      "borderColor": "rgb(40, 92, 77)",
+      "resumenOk": true
+    },
+    "paridad": {
+      "refHeaders": [
+        "Dirección",
+        "Frente",
+        "Fondo",
+        "Superficie",
+        "Valor promedio de comp.",
+        "F&C",
+        "Ubicacion",
+        "Actualización",
+        "Valor del lote",
+        "Valor por m²"
+      ],
+      "pdfHeaders": [
+        "Dirección",
+        "Valor del lote",
+        "Valor por m²",
+        "Frente",
+        "Fondo",
+        "Superficie",
+        "Dirección",
+        "F&C",
+        "Ubicacion",
+        "Actualización",
+        "Valor por m² homogeneizado"
+      ],
+      "faltan": [
+        "Valor promedio de comp."
+      ]
+    },
+    "cards": {
+      "n": 1,
+      "apiladas": true,
+      "anchos": [
+        641
+      ],
+      "seccionFotosComparables": false,
+      "tituloFotosComp": false,
+      "seccionInmueble": false
+    },
+    "decimales": {
+      "total": 6,
+      "malos": []
+    },
+    "overflow": [],
+    "paginas": 7,
+    "pdfBytes": 224178,
+    "errores": []
+  }
+}

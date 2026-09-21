@@ -118,7 +118,7 @@ function mostrarFormularioDepartamento() {
         inicializarBanos('departamento');
         inicializarSwitchCochera();
         inicializarSwitchBaulera();
-        inicializarAmbientes();
+        inicializarAmbientesInforme();
     });
 
     setTimeout(() => {

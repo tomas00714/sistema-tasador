@@ -1,0 +1,18 @@
+[casa] render inicial OK
+[casa] cards OK
+[casa] layouts OK
+[casa] limite OK: {'r1_rechazoTotal': True, 'r2_rechazoParcial': True}
+[casa] tablas OK
+[casa] FIN
+[departamento] render inicial OK
+[departamento] cards OK
+[departamento] layouts OK
+[departamento] limite OK: {'r1_rechazoTotal': True, 'r2_rechazoParcial': True}
+[departamento] tablas OK
+[departamento] FIN
+[lote] render inicial OK
+[lote] cards OK
+[lote] layouts OK
+[lote] limite OK: {'r1_rechazoTotal': True, 'r2_rechazoParcial': True}
+[lote] tablas OK
+[lote] FIN

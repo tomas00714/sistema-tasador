@@ -93,11 +93,19 @@
                             <img id="perfilAvatarImg" src="" alt="Foto de perfil">
                             <i class="fa-solid fa-user" id="perfilAvatarIcon"></i>
                             <div class="perfil-avatar-overlay" id="avatarOverlay">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>Cambiar foto</span>
+                                <i class="fa-solid fa-pen"></i>
+                                <span>Editar foto</span>
                             </div>
                         </div>
                         <input type="file" id="inputFotoPerfil" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                        <div class="perfil-media-popover" id="avatarPopover">
+                            <button type="button" class="perfil-media-opcion" id="btnCambiarFoto">
+                                <i class="fa-solid fa-image"></i> Cambiar foto
+                            </button>
+                            <button type="button" class="perfil-media-opcion perfil-media-opcion-eliminar" id="btnEliminarFoto">
+                                <i class="fa-solid fa-trash"></i> Eliminar foto
+                            </button>
+                        </div>
                     </div>
                     <div class="perfil-info">
                         <h1 class="perfil-nombre" id="perfilNombre">Usuario</h1>
@@ -189,10 +197,18 @@
                             <img id="logoInmobiliariaImg" src="" alt="Logo" style="display: none;">
                             <i class="fa-solid fa-building" id="logoInmobiliariaIcon"></i>
                             <div class="perfil-logo-overlay" id="logoOverlay">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>Cambiar logo</span>
+                                <i class="fa-solid fa-pen"></i>
+                                <span>Editar logo</span>
                             </div>
                             <input type="file" id="inputLogoInmobiliaria" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                        </div>
+                        <div class="perfil-media-popover perfil-media-popover-logo" id="logoPopover">
+                            <button type="button" class="perfil-media-opcion" id="btnCambiarLogo">
+                                <i class="fa-solid fa-image"></i> Cambiar logo
+                            </button>
+                            <button type="button" class="perfil-media-opcion perfil-media-opcion-eliminar" id="btnEliminarLogo">
+                                <i class="fa-solid fa-trash"></i> Eliminar logo
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -262,6 +278,7 @@
     <script src="../js/theme.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/modal-generico.js"></script>
+    <script src="../js/image-cropper.js"></script>
     <script src="../js/perfil.js"></script>
 </body>
 </html>

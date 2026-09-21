@@ -1,0 +1,511 @@
+[
+ {
+  "tipo": "casa",
+  "cards": {
+   "n": 1,
+   "gridCols": "640.531px",
+   "boxes": [
+    {
+     "x": 635,
+     "y": 3825,
+     "w": 641
+    }
+   ],
+   "gridW": 641,
+   "seccionFotosComparables": false,
+   "tituloDuplicado": false,
+   "seccionFotosInmueble": false
+  },
+  "layouts": {
+   "0": {
+    "n": 0,
+    "fotos": 0,
+    "cardH": 265
+   },
+   "1": {
+    "n": 1,
+    "fotos": 1,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 210,
+      "h": 263
+     }
+    ]
+   },
+   "2": {
+    "n": 2,
+    "fotos": 2,
+    "fit": "cover",
+    "areaW": 396,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 1.5,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     },
+     {
+      "x": 202,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     }
+    ]
+   },
+   "3": {
+    "n": 3,
+    "fotos": 3,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   },
+   "4": {
+    "n": 4,
+    "fotos": 4,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   }
+  },
+  "limite": {
+   "r1_rechazoTotal": true,
+   "r2_rechazoParcial": true
+  },
+  "tablas": {
+   "nTablas": 2,
+   "headersA": "Dirección|Valor|Valor m²|Superficie|Superficie homogeneizada",
+   "headersB": "Dirección|Ross-Heidecke|Sup. Cubierta|Sup. Total|Características constructivas|Ubicacion|Actualización|Valor m² homogeneizado",
+   "nFilasA": 1,
+   "nFilasB": 1,
+   "nFilasRef": 1,
+   "diffs": [],
+   "thBg": "rgb(40, 92, 77)",
+   "thColor": "rgb(255, 255, 255)",
+   "td1Bg": "rgb(234, 242, 239)",
+   "borderColor": "rgb(40, 92, 77)",
+   "tfootTxt": "Valor promedio: 1.264",
+   "gapAB": 0,
+   "gapBRes": 48,
+   "resumenTxt": "Comparables utilizados: 1 Valor/m2 adoptado: $1.175,533 Valor final de tasación:"
+  },
+  "overflow": [],
+  "regresion": {
+   "chartCols": 0,
+   "techDisplay": "flex",
+   "refCol": true,
+   "solFilas": 10
+  },
+  "pdf_bytes": 249310,
+  "paginas": 7,
+  "dialogs": [
+   "Este comparable ya tiene el máximo de 4 fotografías. Quitá alguna para agregar otra.",
+   "Máximo 4 fotografías por comparable. Ya tiene 3: podés agregar 1 más (seleccionaste 2)."
+  ],
+  "errores": []
+ },
+ {
+  "tipo": "departamento",
+  "cards": {
+   "n": 2,
+   "gridCols": "640.531px",
+   "boxes": [
+    {
+     "x": 635,
+     "y": 5012,
+     "w": 641
+    },
+    {
+     "x": 635,
+     "y": 5301,
+     "w": 641
+    }
+   ],
+   "gridW": 641,
+   "seccionFotosComparables": false,
+   "tituloDuplicado": false,
+   "seccionFotosInmueble": false
+  },
+  "layouts": {
+   "0": {
+    "n": 0,
+    "fotos": 0,
+    "cardH": 265
+   },
+   "1": {
+    "n": 1,
+    "fotos": 1,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 210,
+      "h": 263
+     }
+    ]
+   },
+   "2": {
+    "n": 2,
+    "fotos": 2,
+    "fit": "cover",
+    "areaW": 396,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 1.5,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     },
+     {
+      "x": 202,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     }
+    ]
+   },
+   "3": {
+    "n": 3,
+    "fotos": 3,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   },
+   "4": {
+    "n": 4,
+    "fotos": 4,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   }
+  },
+  "limite": {
+   "r1_rechazoTotal": true,
+   "r2_rechazoParcial": true
+  },
+  "tablas": {
+   "nTablas": 2,
+   "headersA": "Dirección|Valor|Valor m²|Superficie|Superficie homogeneizada",
+   "headersB": "Dirección|Ross-Heidecke|Ubic. Planta|Ubic. Piso|Características constructivas|Sup. Cubierta|Ubicacion|Actividad|Valor m² homogeneizado",
+   "nFilasA": 2,
+   "nFilasB": 2,
+   "nFilasRef": 2,
+   "diffs": [],
+   "thBg": "rgb(40, 92, 77)",
+   "thColor": "rgb(255, 255, 255)",
+   "td1Bg": "rgb(234, 242, 239)",
+   "borderColor": "rgb(40, 92, 77)",
+   "tfootTxt": "Valor promedio: 1.891",
+   "gapAB": 500,
+   "gapBRes": 48,
+   "resumenTxt": "Comparables utilizados: 2 Valor/m2 adoptado: $1.522,937 Valor final de tasación:"
+  },
+  "overflow": [],
+  "regresion": {
+   "chartCols": 0,
+   "techDisplay": "flex",
+   "refCol": true,
+   "solFilas": 10
+  },
+  "pdf_bytes": 475467,
+  "paginas": 9,
+  "dialogs": [
+   "Este comparable ya tiene el máximo de 4 fotografías. Quitá alguna para agregar otra.",
+   "Máximo 4 fotografías por comparable. Ya tiene 3: podés agregar 1 más (seleccionaste 2)."
+  ],
+  "errores": []
+ },
+ {
+  "tipo": "lote",
+  "cards": {
+   "n": 1,
+   "gridCols": "640.531px",
+   "boxes": [
+    {
+     "x": 635,
+     "y": 2982,
+     "w": 641
+    }
+   ],
+   "gridW": 641,
+   "seccionFotosComparables": false,
+   "tituloDuplicado": false,
+   "seccionFotosInmueble": false
+  },
+  "layouts": {
+   "0": {
+    "n": 0,
+    "fotos": 0,
+    "cardH": 265
+   },
+   "1": {
+    "n": 1,
+    "fotos": 1,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 210,
+      "h": 263
+     }
+    ]
+   },
+   "2": {
+    "n": 2,
+    "fotos": 2,
+    "fit": "cover",
+    "areaW": 396,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 1.5,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     },
+     {
+      "x": 202,
+      "y": 70,
+      "w": 193,
+      "h": 263
+     }
+    ]
+   },
+   "3": {
+    "n": 3,
+    "fotos": 3,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   },
+   "4": {
+    "n": 4,
+    "fotos": 4,
+    "fit": "cover",
+    "areaW": 211,
+    "areaH": 263,
+    "cardH": 265,
+    "ratio": 0.8,
+    "igualAltura": true,
+    "rects": [
+     {
+      "x": 1,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 70,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 1,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     },
+     {
+      "x": 110,
+      "y": 206,
+      "w": 101,
+      "h": 128
+     }
+    ]
+   }
+  },
+  "limite": {
+   "r1_rechazoTotal": true,
+   "r2_rechazoParcial": true
+  },
+  "tablas": {
+   "nTablas": 2,
+   "headersA": "Dirección|Valor del lote|Valor por m²|Frente|Fondo|Superficie",
+   "headersB": "Dirección|F&C|Ubicacion|Actualización|Valor por m² homogeneizado",
+   "nFilasA": 1,
+   "nFilasB": 1,
+   "nFilasRef": 1,
+   "diffs": [],
+   "thBg": "rgb(40, 92, 77)",
+   "thColor": "rgb(255, 255, 255)",
+   "td1Bg": "rgb(234, 242, 239)",
+   "borderColor": "rgb(40, 92, 77)",
+   "tfootTxt": "Valor promedio: 64",
+   "gapAB": 549,
+   "gapBRes": 48,
+   "resumenTxt": "Comparables utilizados: 1 Promedio valor/m2 original: $63,52 Promedio valor/m2 h"
+  },
+  "overflow": [],
+  "regresion": {
+   "chartCols": 0,
+   "techDisplay": "flex",
+   "refCol": true,
+   "solFilas": 10
+  },
+  "pdf_bytes": 224178,
+  "paginas": 7,
+  "dialogs": [
+   "Este comparable ya tiene el máximo de 4 fotografías. Quitá alguna para agregar otra.",
+   "Máximo 4 fotografías por comparable. Ya tiene 3: podés agregar 1 más (seleccionaste 2)."
+  ],
+  "errores": []
+ }
+]

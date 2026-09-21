@@ -7,6 +7,8 @@ let datosProfesionales = null;
 let datosOriginales = {};
 let archivoFotoPendiente = null;
 let archivoLogoPendiente = null;
+let eliminarFotoPendiente = false;
+let eliminarLogoPendiente = false;
 
 const card = () => document.getElementById('perfilCard');
 
@@ -186,9 +188,62 @@ function restaurarValoresOriginales() {
 
     archivoFotoPendiente = null;
     archivoLogoPendiente = null;
+    eliminarFotoPendiente = false;
+    eliminarLogoPendiente = false;
 
     actualizarAvatar(datosOriginales.foto_perfil);
     actualizarLogo(datosOriginales.logo_inmobiliaria);
+}
+
+function cerrarPopoversMedia() {
+    const avatarPopover = document.getElementById('avatarPopover');
+    const logoPopover = document.getElementById('logoPopover');
+    if (avatarPopover) avatarPopover.classList.remove('abierto');
+    if (logoPopover) logoPopover.classList.remove('abierto');
+}
+
+function togglePopoverFoto() {
+    const popover = document.getElementById('avatarPopover');
+    if (!popover) return;
+
+    const logoPopover = document.getElementById('logoPopover');
+    if (logoPopover) logoPopover.classList.remove('abierto');
+
+    // "Eliminar" solo tiene sentido si hay una foto visible (guardada o preview)
+    const tieneFoto = document.getElementById('perfilAvatar').classList.contains('con-foto');
+    document.getElementById('btnEliminarFoto').style.display = tieneFoto ? 'flex' : 'none';
+
+    popover.classList.toggle('abierto');
+}
+
+function togglePopoverLogo() {
+    const popover = document.getElementById('logoPopover');
+    if (!popover) return;
+
+    const avatarPopover = document.getElementById('avatarPopover');
+    if (avatarPopover) avatarPopover.classList.remove('abierto');
+
+    const img = document.getElementById('logoInmobiliariaImg');
+    const tieneLogo = img && img.style.display !== 'none' && img.getAttribute('src');
+    document.getElementById('btnEliminarLogo').style.display = tieneLogo ? 'flex' : 'none';
+
+    popover.classList.toggle('abierto');
+}
+
+function marcarEliminarFoto() {
+    eliminarFotoPendiente = true;
+    archivoFotoPendiente = null;
+    document.getElementById('inputFotoPerfil').value = '';
+    actualizarAvatar(null);
+    cerrarPopoversMedia();
+}
+
+function marcarEliminarLogo() {
+    eliminarLogoPendiente = true;
+    archivoLogoPendiente = null;
+    document.getElementById('inputLogoInmobiliaria').value = '';
+    actualizarLogo(null);
+    cerrarPopoversMedia();
 }
 
 function entrarModoEdicion() {
@@ -202,6 +257,8 @@ function entrarModoEdicion() {
 
     archivoFotoPendiente = null;
     archivoLogoPendiente = null;
+    eliminarFotoPendiente = false;
+    eliminarLogoPendiente = false;
 
     card().classList.add('modo-edicion');
 
@@ -214,6 +271,7 @@ function entrarModoEdicion() {
 }
 
 function salirModoEdicion() {
+    cerrarPopoversMedia();
     card().classList.remove('modo-edicion');
 }
 
@@ -236,11 +294,17 @@ async function guardarCambios() {
         if (archivoFotoPendiente) {
             await subirFotoPerfilAPI(archivoFotoPendiente);
             archivoFotoPendiente = null;
+        } else if (eliminarFotoPendiente) {
+            await eliminarFotoPerfilAPI();
+            eliminarFotoPendiente = false;
         }
 
         if (archivoLogoPendiente) {
             await subirLogoInmobiliariaAPI(archivoLogoPendiente);
             archivoLogoPendiente = null;
+        } else if (eliminarLogoPendiente) {
+            await eliminarLogoInmobiliariaAPI();
+            eliminarLogoPendiente = false;
         }
 
         const payload = {
@@ -275,9 +339,7 @@ function inicializarEventos() {
     const btnCancelar = document.getElementById('btnCancelarEdicion');
     const btnGuardar = document.getElementById('btnGuardarCambios');
     const perfilAvatar = document.getElementById('perfilAvatar');
-    const avatarOverlay = document.getElementById('avatarOverlay');
     const logoInmobiliaria = document.getElementById('logoInmobiliaria');
-    const logoOverlay = document.getElementById('logoOverlay');
     const inputFoto = document.getElementById('inputFotoPerfil');
     const inputLogo = document.getElementById('inputLogoInmobiliaria');
 
@@ -285,35 +347,78 @@ function inicializarEventos() {
     if (btnCancelar) btnCancelar.addEventListener('click', cancelarEdicion);
     if (btnGuardar) btnGuardar.addEventListener('click', guardarCambios);
 
-    const abrirSelectorFoto = () => inputFoto && inputFoto.click();
+    // El click en el avatar/logo (o su overlay) despliega el popover de
+    // opciones en modo edición; los overlays son hijos, así que el click
+    // burbujea una sola vez al contenedor.
     if (perfilAvatar) perfilAvatar.addEventListener('click', () => {
-        if (card().classList.contains('modo-edicion')) abrirSelectorFoto();
+        if (card().classList.contains('modo-edicion')) togglePopoverFoto();
     });
-    if (avatarOverlay) avatarOverlay.addEventListener('click', abrirSelectorFoto);
-
-    const abrirSelectorLogo = () => inputLogo && inputLogo.click();
     if (logoInmobiliaria) logoInmobiliaria.addEventListener('click', () => {
-        if (card().classList.contains('modo-edicion')) abrirSelectorLogo();
+        if (card().classList.contains('modo-edicion')) togglePopoverLogo();
     });
-    if (logoOverlay) logoOverlay.addEventListener('click', abrirSelectorLogo);
+
+    const btnCambiarFoto = document.getElementById('btnCambiarFoto');
+    const btnEliminarFoto = document.getElementById('btnEliminarFoto');
+    const btnCambiarLogo = document.getElementById('btnCambiarLogo');
+    const btnEliminarLogo = document.getElementById('btnEliminarLogo');
+
+    if (btnCambiarFoto) btnCambiarFoto.addEventListener('click', () => {
+        cerrarPopoversMedia();
+        if (inputFoto) inputFoto.click();
+    });
+    if (btnEliminarFoto) btnEliminarFoto.addEventListener('click', marcarEliminarFoto);
+    if (btnCambiarLogo) btnCambiarLogo.addEventListener('click', () => {
+        cerrarPopoversMedia();
+        if (inputLogo) inputLogo.click();
+    });
+    if (btnEliminarLogo) btnEliminarLogo.addEventListener('click', marcarEliminarLogo);
+
+    // Cerrar popovers al clickear fuera de los contenedores o con Escape
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.perfil-avatar-container') &&
+            !e.target.closest('.perfil-inmobiliaria-card')) {
+            cerrarPopoversMedia();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarPopoversMedia();
+    });
 
     if (inputFoto) {
-        inputFoto.addEventListener('change', (e) => {
+        inputFoto.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file) {
-                archivoFotoPendiente = file;
-                mostrarVistaPrevia(file, 'perfilAvatarImg', 'perfilAvatarIcon');
-            }
+            e.target.value = '';
+            if (!file) return;
+            const blob = await recortarImagen(file, {
+                aspectRatio: 1,
+                maxWidth: 800,
+                outputFormat: 'preserve',
+                quality: 0.9,
+                titulo: 'Recortar foto de perfil'
+            });
+            if (!blob) return;
+            archivoFotoPendiente = new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type });
+            eliminarFotoPendiente = false;
+            mostrarVistaPrevia(blob, 'perfilAvatarImg', 'perfilAvatarIcon');
         });
     }
 
     if (inputLogo) {
-        inputLogo.addEventListener('change', (e) => {
+        inputLogo.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file) {
-                archivoLogoPendiente = file;
-                mostrarVistaPrevia(file, 'logoInmobiliariaImg', 'logoInmobiliariaIcon');
-            }
+            e.target.value = '';
+            if (!file) return;
+            const blob = await recortarImagen(file, {
+                aspectRatio: 1,
+                maxWidth: 800,
+                outputFormat: 'preserve',
+                quality: 0.9,
+                titulo: 'Recortar logo'
+            });
+            if (!blob) return;
+            archivoLogoPendiente = new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type });
+            eliminarLogoPendiente = false;
+            mostrarVistaPrevia(blob, 'logoInmobiliariaImg', 'logoInmobiliariaIcon');
         });
     }
 

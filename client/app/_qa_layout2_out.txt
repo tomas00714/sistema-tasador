@@ -1,0 +1,268 @@
+C:\Users\tomas\Desktop\proyecto-tasador\client\app\_qa_layout2.py:12: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return jwt.encode({"sub": str(uid), "exp": datetime.utcnow() + timedelta(hours=2)}, SECRET, algorithm="HS256")
+==================== casa ====================
+{
+ "indice": {
+  "alignItems": "start",
+  "cols": [
+   {
+    "boxH": 341,
+    "contentBottom": 340
+   },
+   {
+    "boxH": 218,
+    "contentBottom": 217
+   }
+  ],
+  "solicitanteLabels": [
+   "Cliente / Solicitante:",
+   "Nomenclatura catastral:",
+   "Finalidad:"
+  ],
+  "solicitanteEditables": [
+   "clienteNombre",
+   "nomenclaturaCatastral"
+  ]
+ },
+ "caracts": {
+  "total": 5,
+  "conGuionVacio": 0,
+  "solapamientos": 0,
+  "valueOverflow": 0,
+  "gridDisplay": "flex"
+ },
+ "superficies": {
+  "filas": [
+   [
+    "Cubierto",
+    "120 m2",
+    "1",
+    "120.00 m2"
+   ]
+  ]
+ },
+ "chart": null,
+ "overflow": {},
+ "paginas": 7
+}
+EXTRA: {
+ "antes": null,
+ "despues": {
+  "itemLargo": {
+   "w": 641,
+   "pageW": 794,
+   "ocupaFilaCompleta": true
+  },
+  "fotFosPresentes": false,
+  "solap": 0,
+  "vOver": 0
+ },
+ "sups": [
+  [
+   "Cubierto",
+   "120 m2",
+   "0.95",
+   "114.00 m2"
+  ],
+  [
+   "Baulera",
+   "5 m2",
+   "0.7",
+   "3.50 m2"
+  ],
+  [
+   "Balcón descubierto",
+   "10 m2",
+   "0.4",
+   "4.00 m2"
+  ]
+ ],
+ "chartCols": 3,
+ "overflow": {}
+}
+pdf_bytes: 260151 | errores: []
+==================== departamento ====================
+{
+ "indice": {
+  "alignItems": "start",
+  "cols": [
+   {
+    "boxH": 320,
+    "contentBottom": 319
+   },
+   {
+    "boxH": 218,
+    "contentBottom": 217
+   }
+  ],
+  "solicitanteLabels": [
+   "Cliente / Solicitante:",
+   "Nomenclatura catastral:",
+   "Finalidad:"
+  ],
+  "solicitanteEditables": [
+   "clienteNombre",
+   "nomenclaturaCatastral"
+  ]
+ },
+ "caracts": {
+  "total": 13,
+  "conGuionVacio": 0,
+  "solapamientos": 0,
+  "valueOverflow": 0,
+  "gridDisplay": "flex"
+ },
+ "superficies": {
+  "filas": [
+   [
+    "Cubierto",
+    "60 m2",
+    "1.03",
+    "61.80 m2"
+   ],
+   [
+    "Balcón descubierto",
+    "8 m2",
+    "0.3",
+    "2.40 m2"
+   ],
+   [
+    "Semicubierto",
+    "7 m2",
+    "0.5",
+    "3.50 m2"
+   ],
+   [
+    "Balcón terraza",
+    "20 m2",
+    "0.5",
+    "10.00 m2"
+   ]
+  ]
+ },
+ "chart": {
+  "display": "flex",
+  "alignItems": "flex-end",
+  "columnas": [
+   {
+    "label": "Cubierto",
+    "h": "100%"
+   },
+   {
+    "label": "Balcón descubierto",
+    "h": "3.9%"
+   },
+   {
+    "label": "Semicubierto",
+    "h": "5.7%"
+   },
+   {
+    "label": "Balcón terraza",
+    "h": "16.2%"
+   }
+  ]
+ },
+ "overflow": {},
+ "paginas": 11
+}
+EXTRA: {
+ "antes": null,
+ "despues": {
+  "itemLargo": {
+   "w": 641,
+   "pageW": 794,
+   "ocupaFilaCompleta": true
+  },
+  "fotFosPresentes": false,
+  "solap": 0,
+  "vOver": 0
+ },
+ "sups": [
+  [
+   "Cubierto",
+   "60 m2",
+   "0.95",
+   "57.00 m2"
+  ],
+  [
+   "Balcón descubierto",
+   "10 m2",
+   "0.4",
+   "4.00 m2"
+  ],
+  [
+   "Semicubierto",
+   "7 m2",
+   "0.5",
+   "3.50 m2"
+  ],
+  [
+   "Baulera",
+   "5 m2",
+   "0.7",
+   "3.50 m2"
+  ],
+  [
+   "Balcón terraza",
+   "20 m2",
+   "0.5",
+   "10.00 m2"
+  ]
+ ],
+ "chartCols": 5,
+ "overflow": {}
+}
+pdf_bytes: 461132 | errores: []
+==================== lote ====================
+{
+ "indice": {
+  "alignItems": "start",
+  "cols": [
+   {
+    "boxH": 328,
+    "contentBottom": 327
+   },
+   {
+    "boxH": 218,
+    "contentBottom": 217
+   }
+  ],
+  "solicitanteLabels": [
+   "Cliente / Solicitante:",
+   "Nomenclatura catastral:",
+   "Finalidad:"
+  ],
+  "solicitanteEditables": [
+   "clienteNombre",
+   "nomenclaturaCatastral"
+  ]
+ },
+ "caracts": {
+  "total": 3,
+  "conGuionVacio": 0,
+  "solapamientos": 0,
+  "valueOverflow": 0,
+  "gridDisplay": "flex"
+ },
+ "superficies": null,
+ "chart": null,
+ "overflow": {},
+ "paginas": 7
+}
+EXTRA: {
+ "antes": null,
+ "despues": {
+  "itemLargo": {
+   "w": 641,
+   "pageW": 794,
+   "ocupaFilaCompleta": true
+  },
+  "fotFosPresentes": false,
+  "solap": 0,
+  "vOver": 0
+ },
+ "sups": null,
+ "chartCols": 0,
+ "overflow": {}
+}
+pdf_bytes: 226897 | errores: []

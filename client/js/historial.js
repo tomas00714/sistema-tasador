@@ -861,7 +861,9 @@ window.abrirPerfilTasacion = async function(id) {
         `;
     }
 
-    const compartirBtnHtml = tasacion.estado === 'completada'
+    const esCompletada = tasacion.estado === 'completada';
+
+    const compartirBtnHtml = esCompletada
         ? `<button type="button" class="perfil-btn-accion" id="btnCompartirPerfil">
                 <i class="fa-solid fa-share-nodes"></i> Compartir
            </button>`
@@ -1037,9 +1039,10 @@ window.abrirPerfilTasacion = async function(id) {
             <!-- Barra inferior fija -->
             <div class="perfil-barra-inferior">
                 <div class="perfil-barra-inferior-derecha">
+                    ${esCompletada ? `
                     <button type="button" class="perfil-btn-accion" id="btnCrearInformePerfil">
                         <i class="fa-solid fa-file-pdf"></i> Crear informe
-                    </button>
+                    </button>` : ''}
                     <button type="button" class="perfil-btn-accion" id="btnEditarPerfil">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>

@@ -1,0 +1,628 @@
+[
+ {
+  "tipo": "casa",
+  "fotos": {
+   "seccInm": true,
+   "inmSrcs": [
+    "INM1",
+    "INM2"
+   ],
+   "seccComp": true,
+   "grupos": [
+    {
+     "titulo": "COMPARABLE 01",
+     "srcs": [
+      "C1A",
+      "C1B",
+      "C1C"
+     ]
+    }
+   ],
+   "imgRatio": "4 / 3",
+   "imgFit": "cover",
+   "overflow": [],
+   "mezclaInm": false,
+   "mezclaComp": false
+  },
+  "fotos_vacio": {
+   "seccInm": false,
+   "seccComp": false,
+   "placeholders": 0
+  },
+  "indice": {
+   "borderColor": "rgb(40, 92, 77)",
+   "labelBg": "rgb(234, 242, 239)",
+   "labelBorder": "rgb(40, 92, 77)",
+   "valueBg": "rgb(255, 255, 255)",
+   "subtitleBg": "rgb(40, 92, 77)",
+   "itemRadius": "0px",
+   "colRadius": "0px"
+  },
+  "foda": {
+   "antes": {
+    "seccionPreviewOnly": true,
+    "bloques": [
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     }
+    ]
+   },
+   "conContenido": [
+    {
+     "titulo": "Fortalezas",
+     "previewOnly": false,
+     "texto": "Ubicación céntrica y buen estado general"
+    },
+    {
+     "titulo": "Oportunidades",
+     "previewOnly": true,
+     "texto": ""
+    },
+    {
+     "titulo": "Debilidades",
+     "previewOnly": true,
+     "texto": ""
+    },
+    {
+     "titulo": "Amenazas",
+     "previewOnly": true,
+     "texto": ""
+    }
+   ]
+  },
+  "mod": {
+   "tasacion": {
+    "label": "Valor de Tasación",
+    "value": "$141.063,948 USD\n        −",
+    "details": [
+     "Valor por m2:=>$1.176 USD/m2",
+     "Rango estimado:=>$134.011 - $148.117 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "rango": {
+    "label": "Rango de Valor",
+    "value": "Mínimo: $126.958 USD\n                Máximo: $155.170 USD",
+    "details": [
+     "Valor por m2:=>$1.058 — $1.293 USD/m2",
+     "Valor de tasación (base):=>$141.063,948 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorRangoMin",
+     "valorRangoMax"
+    ]
+   },
+   "publicacion": {
+    "label": "Valor de Tasación",
+    "value": "$141.063,948 USD\n        −",
+    "details": [
+     "Valor por m2:=>$1.176 USD/m2",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>$134.011 - $148.117 USD",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   },
+   "cierre": {
+    "label": "Valor de Cierre Esperado",
+    "value": "—",
+    "details": [
+     "Valor por m2:=>$1.176 USD/m2",
+     "Rango estimado:=>$134.011 - $148.117 USD",
+     "Valor de tasación (base):=>$141.063,948 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorCierre",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Rango estimado:=>$134.011 - $148.117 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_reintroducido": {
+    "config": "200000",
+    "value": "$200.000 USD\n        −",
+    "m2": "$1.667 USD/m2"
+   },
+   "rango_estimado_edit": {
+    "config": "USD 180.000 — 220.000",
+    "dom": "USD 180.000 — 220.000"
+   },
+   "rango_edit_real": {
+    "value": "Mínimo: $40.000 USD\n                Máximo: $60.000 USD",
+    "details": [
+     "Valor por m2:\n            $333 — $500 USD/m2",
+     "Valor de tasación (base):\n            $141.063,948 USD"
+    ],
+    "hayRangoEstimado": false
+   },
+   "publicacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>USD 180.000 — 220.000",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   }
+  },
+  "dropdown": {
+   "abierto": true,
+   "fontFamily": "Inter, sans-serif",
+   "border": "1px solid rgb(40, 92, 77)",
+   "radius": "8px",
+   "minHeight": "44px",
+   "padding": "12px 14px",
+   "opciones": 4,
+   "optHoverTieneBg": true,
+   "selectedText": "Valor de tasación + publicación",
+   "menuOverflowX": false
+  },
+  "persistencia_cierre": {
+   "config": "47000",
+   "dom": "$47.000 USD"
+  },
+  "print": {
+   "minusDisplay": "none",
+   "placeholdersVisibles": "none",
+   "previewOnlyOcultos": true,
+   "seccFotosVacias": {
+    "s1": false,
+    "s2": false
+   }
+  },
+  "pdf_bytes": 261572,
+  "overflow_final": [],
+  "paginas": 8,
+  "errores": []
+ },
+ {
+  "tipo": "departamento",
+  "fotos": {
+   "seccInm": true,
+   "inmSrcs": [
+    "INM1",
+    "INM2"
+   ],
+   "seccComp": true,
+   "grupos": [
+    {
+     "titulo": "COMPARABLE 01",
+     "srcs": [
+      "C1A",
+      "C1B",
+      "C1C"
+     ]
+    }
+   ],
+   "imgRatio": "4 / 3",
+   "imgFit": "cover",
+   "overflow": [],
+   "mezclaInm": false,
+   "mezclaComp": false
+  },
+  "fotos_vacio": {
+   "seccInm": false,
+   "seccComp": false,
+   "placeholders": 0
+  },
+  "indice": {
+   "borderColor": "rgb(40, 92, 77)",
+   "labelBg": "rgb(234, 242, 239)",
+   "labelBorder": "rgb(40, 92, 77)",
+   "valueBg": "rgb(255, 255, 255)",
+   "subtitleBg": "rgb(40, 92, 77)",
+   "itemRadius": "0px",
+   "colRadius": "0px"
+  },
+  "foda": {
+   "antes": {
+    "seccionPreviewOnly": true,
+    "bloques": [
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     },
+     {
+      "previewOnly": true,
+      "ph": "Completar para mostrar este cuadro.",
+      "emptyAttr": true
+     }
+    ]
+   },
+   "conContenido": [
+    {
+     "titulo": "Fortalezas",
+     "previewOnly": false,
+     "texto": "Ubicación céntrica y buen estado general"
+    },
+    {
+     "titulo": "Oportunidades",
+     "previewOnly": true,
+     "texto": ""
+    },
+    {
+     "titulo": "Debilidades",
+     "previewOnly": true,
+     "texto": ""
+    },
+    {
+     "titulo": "Amenazas",
+     "previewOnly": true,
+     "texto": ""
+    }
+   ]
+  },
+  "mod": {
+   "tasacion": {
+    "label": "Valor de Tasación",
+    "value": "$48.667,023 USD\n        −",
+    "details": [
+     "Valor por m2:=>$780 USD/m2",
+     "Rango estimado:=>$46.234 - $51.100 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "rango": {
+    "label": "Rango de Valor",
+    "value": "Mínimo: $43.800 USD\n                Máximo: $53.534 USD",
+    "details": [
+     "Valor por m2:=>$702 — $858 USD/m2",
+     "Valor de tasación (base):=>$48.667,023 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorRangoMin",
+     "valorRangoMax"
+    ]
+   },
+   "publicacion": {
+    "label": "Valor de Tasación",
+    "value": "$48.667,023 USD\n        −",
+    "details": [
+     "Valor por m2:=>$780 USD/m2",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>$46.234 - $51.100 USD",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   },
+   "cierre": {
+    "label": "Valor de Cierre Esperado",
+    "value": "—",
+    "details": [
+     "Valor por m2:=>$780 USD/m2",
+     "Rango estimado:=>$46.234 - $51.100 USD",
+     "Valor de tasación (base):=>$48.667,023 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorCierre",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Rango estimado:=>$46.234 - $51.100 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_reintroducido": {
+    "config": "200000",
+    "value": "$200.000 USD\n        −",
+    "m2": "$3.205 USD/m2"
+   },
+   "rango_estimado_edit": {
+    "config": "USD 180.000 — 220.000",
+    "dom": "USD 180.000 — 220.000"
+   },
+   "rango_edit_real": {
+    "value": "Mínimo: $40.000 USD\n                Máximo: $60.000 USD",
+    "details": [
+     "Valor por m2:\n            $641 — $962 USD/m2",
+     "Valor de tasación (base):\n            $48.667,023 USD"
+    ],
+    "hayRangoEstimado": false
+   },
+   "publicacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>USD 180.000 — 220.000",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   }
+  },
+  "dropdown": {
+   "abierto": true,
+   "fontFamily": "Inter, sans-serif",
+   "border": "1px solid rgb(40, 92, 77)",
+   "radius": "8px",
+   "minHeight": "44px",
+   "padding": "12px 14px",
+   "opciones": 4,
+   "optHoverTieneBg": true,
+   "selectedText": "Valor de tasación + publicación",
+   "menuOverflowX": false
+  },
+  "persistencia_cierre": {
+   "config": "47000",
+   "dom": "$47.000 USD"
+  },
+  "print": {
+   "minusDisplay": "none",
+   "placeholdersVisibles": "none",
+   "previewOnlyOcultos": true,
+   "seccFotosVacias": {
+    "s1": false,
+    "s2": false
+   }
+  },
+  "pdf_bytes": 250261,
+  "overflow_final": [],
+  "paginas": 9,
+  "errores": []
+ },
+ {
+  "tipo": "lote",
+  "fotos": {
+   "seccInm": true,
+   "inmSrcs": [
+    "INM1",
+    "INM2"
+   ],
+   "seccComp": true,
+   "grupos": [
+    {
+     "titulo": "COMPARABLE 01",
+     "srcs": [
+      "C1A",
+      "C1B",
+      "C1C"
+     ]
+    }
+   ],
+   "imgRatio": "4 / 3",
+   "imgFit": "cover",
+   "overflow": [],
+   "mezclaInm": false,
+   "mezclaComp": false
+  },
+  "fotos_vacio": {
+   "seccInm": false,
+   "seccComp": false,
+   "placeholders": 0
+  },
+  "indice": {
+   "borderColor": "rgb(40, 92, 77)",
+   "labelBg": "rgb(234, 242, 239)",
+   "labelBorder": "rgb(40, 92, 77)",
+   "valueBg": "rgb(255, 255, 255)",
+   "subtitleBg": "rgb(40, 92, 77)",
+   "itemRadius": "0px",
+   "colRadius": "0px"
+  },
+  "foda": {
+   "deshabilitado": true
+  },
+  "mod": {
+   "tasacion": {
+    "label": "Valor de Tasación",
+    "value": "$13.327 USD\n        −",
+    "details": [
+     "Valor por m2:=>$64 USD/m2",
+     "Rango estimado:=>$12.661 - $13.993 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "rango": {
+    "label": "Rango de Valor",
+    "value": "Mínimo: $11.994 USD\n                Máximo: $14.660 USD",
+    "details": [
+     "Valor por m2:=>$57 — $70 USD/m2",
+     "Valor de tasación (base):=>$13.327 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorRangoMin",
+     "valorRangoMax"
+    ]
+   },
+   "publicacion": {
+    "label": "Valor de Tasación",
+    "value": "$13.327 USD\n        −",
+    "details": [
+     "Valor por m2:=>$64 USD/m2",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>$12.661 - $13.993 USD",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   },
+   "cierre": {
+    "label": "Valor de Cierre Esperado",
+    "value": "—",
+    "details": [
+     "Valor por m2:=>$64 USD/m2",
+     "Rango estimado:=>$12.661 - $13.993 USD",
+     "Valor de tasación (base):=>$13.327 USD"
+    ],
+    "minus": false,
+    "editables": [
+     "valorCierre",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Rango estimado:=>$12.661 - $13.993 USD"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "rangoEstimado"
+    ]
+   },
+   "tasacion_reintroducido": {
+    "config": "200000",
+    "value": "$200.000 USD\n        −",
+    "m2": "$953 USD/m2"
+   },
+   "rango_estimado_edit": {
+    "config": "USD 180.000 — 220.000",
+    "dom": "USD 180.000 — 220.000"
+   },
+   "rango_edit_real": {
+    "value": "Mínimo: $40.000 USD\n                Máximo: $60.000 USD",
+    "details": [
+     "Valor por m2:\n            $191 — $286 USD/m2",
+     "Valor de tasación (base):\n            $13.327 USD"
+    ],
+    "hayRangoEstimado": false
+   },
+   "publicacion_sin_valor": {
+    "label": "Valor de Tasación",
+    "value": "—\n        −",
+    "details": [
+     "Valor por m2:=>—",
+     "Valor de publicación:=>—",
+     "Rango estimado:=>USD 180.000 — 220.000",
+     "Valor de cierre esperado:=>—"
+    ],
+    "minus": true,
+    "editables": [
+     "valorTasacion",
+     "valorPublicacion",
+     "rangoEstimado",
+     "valorCierre"
+    ]
+   }
+  },
+  "dropdown": {
+   "abierto": true,
+   "fontFamily": "Inter, sans-serif",
+   "border": "1px solid rgb(40, 92, 77)",
+   "radius": "8px",
+   "minHeight": "44px",
+   "padding": "12px 14px",
+   "opciones": 4,
+   "optHoverTieneBg": true,
+   "selectedText": "Valor de tasación + publicación",
+   "menuOverflowX": false
+  },
+  "persistencia_cierre": {
+   "config": "47000",
+   "dom": "$47.000 USD"
+  },
+  "print": {
+   "minusDisplay": "none",
+   "placeholdersVisibles": "none",
+   "previewOnlyOcultos": true,
+   "seccFotosVacias": {
+    "s1": false,
+    "s2": false
+   }
+  },
+  "pdf_bytes": 258922,
+  "overflow_final": [],
+  "paginas": 7,
+  "errores": []
+ }
+]

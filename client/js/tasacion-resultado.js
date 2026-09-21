@@ -435,17 +435,8 @@ async function recalcularConCoeficientes() {
 //   en resultados históricos donde solo existe K (coeficiente_k o rossHeidecke viejo)
 //   se conserva la conversión original 1 - K/2.
 
-// Determina si un comparable de departamento tiene datos propios suficientes
-// para que su Ross-Heidecke sea real. El backend calcula rossHeidecke siempre,
-// cayendo al default estado=7 ("muy malo") cuando falta estado_conservacion,
-// lo que inflaría artificialmente el valor homogeneizado. La misma condición
-// gobierna el cálculo del divisor y el display de la columna Ross-Heidecke.
-// antiguedad = 0 es un dato válido (a estrenar); solo se exige su presencia.
-function comparableTieneDatosRossHeidecke(c) {
-    const estado = c.estadoConservacion ?? c.departamento?.estadoConservacion ?? c.inmueble?.estadoConservacion;
-    const antiguedad = c.antiguedad ?? c.departamento?.antiguedad ?? c.inmueble?.antiguedad;
-    return estado != null && String(estado).trim() !== '' && antiguedad != null;
-}
+// comparableTieneDatosRossHeidecke vive en resultados-renderer.js (fuente
+// única compartida por la pantalla de resultado y el informe PDF).
 
 function recalcularConCoeficientesDepartamento() {
     const r = resultadoTasacion;

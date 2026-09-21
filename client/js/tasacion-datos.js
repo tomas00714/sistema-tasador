@@ -459,7 +459,7 @@ function guardarDatosInforme() {
     console.log('[guardarDatosInforme] datosInforme:', JSON.stringify(datosInforme, null, 2));
 }
 
-function inicializarAmbientes() {
+function inicializarAmbientesInforme() {
     const btnAgregarAmbiente = document.getElementById('btnAgregarAmbiente');
     if (!btnAgregarAmbiente) return;
     

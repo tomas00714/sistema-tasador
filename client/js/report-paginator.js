@@ -49,12 +49,23 @@ class ReportPaginator {
             sectionDiv.innerHTML = section.html;
             sectionDiv.dataset.sectionType = section.type;
             sectionDiv.dataset.sectionTitle = section.title || '';
+            sectionDiv.dataset.keepWithNext = section.keepWithNext ? '1' : '';
+            sectionDiv.dataset.minContentHeight = section.minContentHeight || '';
             container.appendChild(sectionDiv);
         }
         
         // Esperar renderizado completo
         await document.fonts.ready;
         await this.waitForImages(container);
+
+        // Autofit de tablas (data-autofit): reduce la fuente hasta que la
+        // tabla entra en el ancho útil y congela el ancho de cada columna
+        // en su <th>, para que la división por filas conserve el layout.
+        // Debe correr antes de medir: la fuente elegida cambia alturas.
+        if (typeof window.ajustarTablasAutofit === 'function') {
+            window.ajustarTablasAutofit(container);
+        }
+
         container.offsetHeight; // Forzar reflow
         
         return container;
@@ -69,6 +80,12 @@ class ReportPaginator {
 
         for (const element of sectionElements) {
             const height = await this.measureRealHeight(element);
+            // Espacio trailing invisible: padding-bottom de la sección raíz
+            // + margin-bottom del wrapper. Si el bloque es el último de la
+            // página, ese espacio no se ve — no debe impedir que entre.
+            const root = element.firstElementChild;
+            const trailingPx = (root ? parseFloat(getComputedStyle(root).paddingBottom) || 0 : 0)
+                + (parseFloat(getComputedStyle(element).marginBottom) || 0);
             const exceeds = height > CONTENT_HEIGHT_MM;
 
             console.log(`${element.dataset.sectionTitle || element.dataset.sectionType}: ${height.toFixed(1)}mm${exceeds ? ' ❌ EXCEDE ÁREA ÚTIL' : ''}`);
@@ -82,7 +99,10 @@ class ReportPaginator {
                 height,
                 type: element.dataset.sectionType,
                 title: element.dataset.sectionTitle,
-                html: element.innerHTML
+                html: element.innerHTML,
+                keepWithNext: element.dataset.keepWithNext === '1',
+                minContentHeight: parseFloat(element.dataset.minContentHeight) || 0,
+                trailingSpace: trailingPx * PX_TO_MM
             });
         }
 
@@ -130,46 +150,80 @@ class ReportPaginator {
         console.log(`Área útil: ${CONTENT_HEIGHT_MM}mm`);
         console.log(`Total secciones: ${measurements.length}`);
 
-        for (const measurement of measurements) {
+        for (let i = 0; i < measurements.length; i++) {
+            const measurement = measurements[i];
             const { height, title, type, html } = measurement;
-            const remainingSpace = CONTENT_HEIGHT_MM - currentHeight;
+            let remainingSpace = CONTENT_HEIGHT_MM - currentHeight;
 
             console.log(`Sección "${title}": ${height.toFixed(1)}mm (disponible: ${remainingSpace.toFixed(1)}mm)`);
 
-            // Si la sección cabe completa
+            // keepWithNext: un encabezado nunca debe quedar como último
+            // elemento de una página sin contenido a continuación.
+            if (measurement.keepWithNext && height <= remainingSpace && currentPage.length > 0) {
+                const nextMeasurement = measurements[i + 1];
+                const roomAfter = remainingSpace - height;
+                const minContent = measurement.minContentHeight || 20;
+                // El contenido acompaña al encabezado en esta página si la
+                // siguiente sección cabe aquí (total o parcialmente) o si es
+                // grande y se dividirá dejando al menos minContent de la
+                // primera parte junto al encabezado. Su espacio trailing
+                // puede recortarse contra el borde sin efecto visual.
+                const nextStartsHere = nextMeasurement && (
+                    nextMeasurement.height - (nextMeasurement.trailingSpace || 0) <= roomAfter ||
+                    (nextMeasurement.height > CONTENT_HEIGHT_MM && roomAfter >= minContent)
+                );
+                if (!nextStartsHere) {
+                    pages.push([...currentPage]);
+                    console.log(`  📄 Página ${pageNum} completada (${currentHeight.toFixed(1)}mm)`);
+                    pageNum++;
+                    currentPage = [];
+                    currentHeight = 0;
+                    remainingSpace = CONTENT_HEIGHT_MM;
+                    console.log(`  ⤵️ "${title}" movido a página ${pageNum} (keepWithNext)`);
+                }
+            }
+
+            // Si la sección cabe completa. Si solo entra su contenido (sin el
+            // espacio trailing), también cabe: ese padding/margin final se
+            // recorta contra el borde de la página sin efecto visual, pero la
+            // página se considera llena para que nada más se apile después.
             if (height <= remainingSpace) {
                 currentPage.push(measurement);
                 currentHeight += height;
                 console.log(`  ✅ Agregada a página ${pageNum} (total: ${currentHeight.toFixed(1)}mm)`);
                 continue;
             }
+            if (height <= CONTENT_HEIGHT_MM && height - (measurement.trailingSpace || 0) <= remainingSpace) {
+                currentPage.push(measurement);
+                currentHeight = CONTENT_HEIGHT_MM;
+                console.log(`  ✅ Agregada a página ${pageNum} (contenido entra; trailing absorbido por el borde)`);
+                continue;
+            }
 
             // Si la sección es muy grande para una página sola
             if (height > CONTENT_HEIGHT_MM) {
                 console.log(`  ⚠️  Sección "${title}" (${height.toFixed(1)}mm) excede área útil, debe dividirse`);
-                
-                // Guardar página actual si tiene contenido
-                if (currentPage.length > 0) {
-                    pages.push([...currentPage]);
-                    console.log(`  📄 Página ${pageNum} completada (${currentHeight.toFixed(1)}mm)`);
-                    pageNum++;
-                    currentPage = [];
-                    currentHeight = 0;
-                }
-                
-                // Dividir la sección grande en partes que quepan
-                const dividedParts = this.divideSectionToFit(measurement, CONTENT_HEIGHT_MM);
-                
+
+                // La primera parte se dimensiona para el espacio restante de
+                // la página actual (puede compartirla con un encabezado
+                // keepWithNext); las siguientes usan la página completa.
+                const dividedParts = this.divideSectionToFit(measurement, CONTENT_HEIGHT_MM, remainingSpace);
+
                 for (const part of dividedParts) {
-                    if (part.height <= CONTENT_HEIGHT_MM) {
-                        pages.push([part]);
-                        console.log(`  📄 Página ${pageNum} con parte de "${title}" (${part.height.toFixed(1)}mm)`);
-                        pageNum++;
-                    } else {
+                    if (part.height > CONTENT_HEIGHT_MM) {
                         console.error(`  ❌ Parte de "${title}" sigue excediendo: ${part.height.toFixed(1)}mm`);
-                        // Agregar como página individual aunque exceda (para debugging)
-                        pages.push([part]);
+                    }
+                    const rem = CONTENT_HEIGHT_MM - currentHeight;
+                    if (part.height <= rem || currentPage.length === 0) {
+                        currentPage.push(part);
+                        currentHeight += part.height;
+                        console.log(`  ✅ Parte de "${title}" en página ${pageNum} (total: ${currentHeight.toFixed(1)}mm)`);
+                    } else {
+                        pages.push(currentPage);
+                        console.log(`  📄 Página ${pageNum} completada (${currentHeight.toFixed(1)}mm)`);
                         pageNum++;
+                        currentPage = [part];
+                        currentHeight = part.height;
                     }
                 }
                 continue;
@@ -197,47 +251,142 @@ class ReportPaginator {
         return pages;
     }
 
-    // Dividir sección para que quepa en el espacio disponible
-    divideSectionToFit(measurement, availableHeight) {
+    // Dividir sección para que quepa en el espacio disponible.
+    // firstAvailableHeight permite que la primera parte sea más chica
+    // (cuando comparte página con contenido previo, ej. un encabezado).
+    divideSectionToFit(measurement, availableHeight, firstAvailableHeight = availableHeight) {
         const { html, title, type } = measurement;
-        
+
         console.log(`Intentando dividir "${title}" (${measurement.height.toFixed(1)}mm) en partes de ${availableHeight}mm`);
-        
+
         // Para tablas, dividir por filas
         if (type === 'table') {
-            return this.divideTableToFit(measurement, availableHeight);
+            return this.divideTableToFit(measurement, availableHeight, firstAvailableHeight);
         }
-        
-        // Para textos y secciones, intentar dividir por contenido interno
-        if (type === 'text' || type === 'section') {
-            // Primero intentar dividir por elementos de bloque
-            const blockElements = this.extractBlockElements(html);
-            if (blockElements.length > 1) {
-                return this.divideByBlocks(measurement, blockElements, availableHeight);
-            }
-            
-            // Si no se pudo dividir por bloques, intentar por párrafos
-            const paragraphParts = this.divideByParagraphs(measurement, availableHeight);
-            if (paragraphParts.length > 1) {
-                return paragraphParts;
-            }
-            
-            // Si no se puede dividir, dividir por líneas de texto aproximadas
-            return this.divideByApproximateLines(measurement, availableHeight);
-        }
-        
-        // Para otros tipos, intentar dividir por hijos directos
+
+        // Para el resto de tipos (section/text/item/etc.), dividir
+        // respetando la estructura DOM: agrupa el encabezado con su
+        // primer contenido y desciende recursivamente a contenedores
+        // internos (grids de cards, fotos, bloques de texto).
+        return this.divideByDom(measurement, availableHeight, firstAvailableHeight);
+    }
+
+    // Detecta si un fragmento HTML es un encabezado de sección/subsección.
+    // Inspecciona únicamente el elemento raíz del fragmento: no depende
+    // del orden ni de la posición de las clases dentro del atributo.
+    isHeaderElement(html) {
+        if (!html || typeof html !== 'string') return false;
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        if (temp.children.length !== 1) return false;
+        const el = temp.firstElementChild;
+        const cls = typeof el.className === 'string' ? el.className : '';
+        return /(^|\s)report-(section-title|section-header|subtitle|technical-subtitle|closing-subtitle|foda-title|reference-subtitle|ambiente-title|section-subtitle)(\s|$)/.test(cls);
+    }
+
+    // Tags de apertura/cierre del elemento para envolver partes divididas
+    // conservando tag y clases originales (ej: <section class="report-section">).
+    elementWrapperTags(element) {
+        const tag = element.tagName.toLowerCase();
+        const cls = element.getAttribute('class');
+        return {
+            open: `<${tag}${cls ? ` class="${cls}"` : ''}>`,
+            close: `</${tag}>`
+        };
+    }
+
+    // Divide una sección respetando su estructura DOM.
+    // Devuelve partes envueltas en el tag/clase del elemento raíz.
+    divideByDom(measurement, availableHeight, firstAvailableHeight = availableHeight) {
+        const { html, title } = measurement;
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-        const children = Array.from(tempDiv.children);
-        
-        if (children.length > 1) {
-            return this.divideByChildren(measurement, children, availableHeight);
+        const root = tempDiv.firstElementChild;
+        if (!root) {
+            console.warn(`No se pudo dividir "${title}" - devolviendo como está`);
+            return [measurement];
         }
-        
-        // Si no se puede dividir de ninguna manera, devolver como está
-        console.warn(`No se pudo dividir "${title}" - devolviendo como está`);
-        return [measurement];
+
+        const wrap = this.elementWrapperTags(root);
+        const innerParts = this.splitChildren(root, availableHeight, firstAvailableHeight);
+        if (innerParts.length <= 1) {
+            console.warn(`No se pudo dividir "${title}" - devolviendo como está`);
+            return [measurement];
+        }
+
+        return innerParts.map(part => {
+            const partHtml = `${wrap.open}${part.html}${wrap.close}`;
+            return {
+                ...measurement,
+                html: partHtml,
+                // Altura re-medida del HTML final: incluye padding/bordes
+                // del wrapper de sección para coincidir con el render.
+                height: this.measureElementSync(partHtml),
+                title: `${title} (continuación)`
+            };
+        });
+    }
+
+    // Divide los hijos de element en partes que entren en availableHeight.
+    // La primera parte usa firstAvailableHeight como presupuesto.
+    // Devuelve [{ html, height }] donde html son los hijos concatenados.
+    splitChildren(element, availableHeight, firstAvailableHeight = availableHeight) {
+        const children = Array.from(element.children);
+        if (children.length === 0) {
+            return [{
+                html: element.innerHTML,
+                height: this.measureElementSync(element.outerHTML)
+            }];
+        }
+
+        // Convertir cada hijo en una unidad; si un hijo solo excede la
+        // página, dividirlo recursivamente conservando su tag/clase.
+        // Los hijos se miden DENTRO del contexto del padre (misma tag/clase)
+        // para que grills/flex asignen el ancho de columna real.
+        const parentWrap = this.elementWrapperTags(element);
+        let units = [];
+        children.forEach((child, index) => {
+            const childHeight = this.measureElementSync(`${parentWrap.open}${child.outerHTML}${parentWrap.close}`);
+            if (childHeight > availableHeight && child.children.length > 0) {
+                const wrap = this.elementWrapperTags(child);
+                const subParts = this.splitChildren(child, availableHeight,
+                    index === 0 ? firstAvailableHeight : availableHeight);
+                for (const sp of subParts) {
+                    units.push({ html: `${wrap.open}${sp.html}${wrap.close}`, height: sp.height });
+                }
+            } else {
+                units.push({ html: child.outerHTML, height: childHeight });
+            }
+        });
+
+        // Agrupar encabezado + primer contenido como unidad lógica para
+        // evitar que un título quede solo al final de una página.
+        if (units.length > 1 && this.isHeaderElement(units[0].html)) {
+            const combinedHtml = units[0].html + units[1].html;
+            const combinedHeight = this.measureElementSync(`${parentWrap.open}${combinedHtml}${parentWrap.close}`);
+            units = [{ html: combinedHtml, height: combinedHeight }, ...units.slice(2)];
+        }
+
+        // Empaquetado greedy: la primera parte respeta firstAvailableHeight
+        const parts = [];
+        let currentPart = [];
+        let currentHeight = 0;
+        let budget = firstAvailableHeight;
+        for (const unit of units) {
+            if (currentHeight + unit.height <= budget || currentPart.length === 0) {
+                currentPart.push(unit.html);
+                currentHeight += unit.height;
+            } else {
+                parts.push({ html: currentPart.join(''), height: currentHeight });
+                currentPart = [unit.html];
+                currentHeight = unit.height;
+                budget = availableHeight;
+            }
+        }
+        if (currentPart.length > 0) {
+            parts.push({ html: currentPart.join(''), height: currentHeight });
+        }
+        return parts;
     }
 
     // Dividir por elementos hijos directos
@@ -501,80 +650,102 @@ class ReportPaginator {
         return parts.length > 0 ? parts : [measurement];
     }
 
-    // Medición síncrona para uso en división
+    // Medición síncrona para uso en división.
+    // El contenedor usa el ancho útil real de la página para que las
+    // alturas medidas coincidan con el renderizado final.
     measureElementSync(html) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-        tempDiv.style.cssText = 'position: absolute; visibility: hidden;';
+        tempDiv.style.cssText = `position: absolute; visibility: hidden; width: ${A4_WIDTH_MM - (PAGE_PADDING_MM * 2)}mm; box-sizing: border-box;`;
         document.body.appendChild(tempDiv);
         const height = tempDiv.offsetHeight * PX_TO_MM;
         document.body.removeChild(tempDiv);
         return height;
     }
 
-    // Dividir tabla por filas para que quepa
-    divideTableToFit(measurement, availableHeight) {
+    // Dividir tabla por filas para que quepa.
+    // El contenido previo a la tabla (título, intro) solo va en la
+    // primera parte; el contenido posterior y el tfoot solo en la última.
+    divideTableToFit(measurement, availableHeight, firstAvailableHeight = availableHeight) {
         const { html, title } = measurement;
-        const tbodyMatch = html.match(/<tbody[^>]*>(.*?)<\/tbody>/s);
-        if (!tbodyMatch) return [measurement];
-        
-        const rows = tbodyMatch[1].match(/<tr[^>]*>.*?<\/tr>/gs) || [];
-        if (rows.length <= 1) return [measurement];
-        
-        // Calcular altura del encabezado
-        const headerMatch = html.match(/<thead[^>]*>.*?<\/thead>/s);
-        const header = headerMatch ? headerMatch[0] : '';
-        const tempHeader = document.createElement('div');
-        tempHeader.innerHTML = header;
-        tempHeader.style.cssText = 'position: absolute; visibility: hidden;';
-        document.body.appendChild(tempHeader);
-        const headerHeight = tempHeader.offsetHeight * PX_TO_MM;
-        document.body.removeChild(tempHeader);
-        
-        // Dividir filas en grupos que quepan
-        const parts = [];
+        const tableMatch = html.match(/<table[\s\S]*?<\/table>/);
+        if (!tableMatch) return this.divideByDom(measurement, availableHeight);
+
+        const tableHtml = tableMatch[0];
+        const tbodyMatch = tableHtml.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+        if (!tbodyMatch) return this.divideByDom(measurement, availableHeight);
+
+        const rows = tbodyMatch[1].match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
+        if (rows.length <= 1) return this.divideByDom(measurement, availableHeight);
+
+        const tableIndex = html.indexOf(tableHtml);
+        const prefix = html.slice(0, tableIndex);
+        const suffix = html.slice(tableIndex + tableHtml.length);
+        const theadMatch = tableHtml.match(/<thead[\s\S]*?<\/thead>/);
+        const thead = theadMatch ? theadMatch[0] : '';
+        const tfootMatch = tableHtml.match(/<tfoot[\s\S]*?<\/tfoot>/);
+        const tfoot = tfootMatch ? tfootMatch[0] : '';
+        const tableOpen = tableHtml.slice(0, tableHtml.indexOf('>') + 1);
+
+        const prefixHeight = this.measureElementSync(`<div>${prefix}</div>`);
+        const theadHeight = this.measureElementSync(`${tableOpen}${thead}<tbody></tbody></table>`);
+
+        const rowGroups = [];
         let currentRows = [];
-        let currentHeight = headerHeight;
-        
+        let currentHeight = prefixHeight + theadHeight;
+        let budget = firstAvailableHeight;
+
         for (const row of rows) {
-            const tempRow = document.createElement('div');
-            tempRow.innerHTML = row;
-            tempRow.style.cssText = 'position: absolute; visibility: hidden;';
-            document.body.appendChild(tempRow);
-            const rowHeight = tempRow.offsetHeight * PX_TO_MM;
-            document.body.removeChild(tempRow);
-            
-            if (currentHeight + rowHeight <= availableHeight) {
+            // La fila se mide con el thead presente para que el layout de
+            // columnas (y por tanto la altura real de la fila) coincida
+            // con la tabla completa.
+            const rowHeight = this.measureElementSync(`${tableOpen}${thead}<tbody>${row}</tbody></table>`) - theadHeight;
+            if (currentHeight + rowHeight <= budget || currentRows.length === 0) {
                 currentRows.push(row);
                 currentHeight += rowHeight;
             } else {
-                // Guardar parte actual y empezar nueva
-                if (currentRows.length > 0) {
-                    const partHtml = html.replace(/<tbody[^>]*>.*?<\/tbody>/s, `<tbody>${currentRows.join('')}</tbody>`);
-                    parts.push({
-                        ...measurement,
-                        html: partHtml,
-                        height: currentHeight,
-                        title: `${title} (continuación)`
-                    });
-                }
+                rowGroups.push(currentRows);
                 currentRows = [row];
-                currentHeight = headerHeight + rowHeight;
+                currentHeight = theadHeight + rowHeight;
+                budget = availableHeight;
             }
         }
-        
-        // Agregar última parte
         if (currentRows.length > 0) {
-            const partHtml = html.replace(/<tbody[^>]*>.*?<\/tbody>/s, `<tbody>${currentRows.join('')}</tbody>`);
-            parts.push({
+            rowGroups.push(currentRows);
+        }
+        if (rowGroups.length <= 1) return [measurement];
+
+        const buildPartHtml = (groupRows, isFirst, isLast) => {
+            const partTable = `${tableOpen}${thead}<tbody>${groupRows.join('')}</tbody>${isLast ? tfoot : ''}</table>`;
+            return `${isFirst ? prefix : ''}${partTable}${isLast ? suffix : ''}`;
+        };
+
+        // Verificación de seguridad: re-medir cada parte con su HTML final;
+        // si excede su presupuesto, mover la última fila al grupo siguiente.
+        let guard = 0;
+        for (let i = 0; i < rowGroups.length && guard < 60; i++) {
+            const partBudget = i === 0 ? firstAvailableHeight : availableHeight;
+            while (rowGroups[i].length > 1 && guard < 60) {
+                const isLast = i === rowGroups.length - 1;
+                const h = this.measureElementSync(buildPartHtml(rowGroups[i], i === 0, isLast));
+                if (h <= partBudget) break;
+                const moved = rowGroups[i].pop();
+                if (isLast) rowGroups.push([moved]);
+                else rowGroups[i + 1].unshift(moved);
+                guard++;
+            }
+        }
+
+        return rowGroups.map((groupRows, index) => {
+            const isLast = index === rowGroups.length - 1;
+            const partHtml = buildPartHtml(groupRows, index === 0, isLast);
+            return {
                 ...measurement,
                 html: partHtml,
-                height: currentHeight,
+                height: this.measureElementSync(partHtml),
                 title: `${title} (continuación)`
-            });
-        }
-        
-        return parts.length > 0 ? parts : [measurement];
+            };
+        });
     }
 
     // Generar páginas físicas HTML

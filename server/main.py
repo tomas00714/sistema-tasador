@@ -2523,6 +2523,36 @@ def subir_logo_inmobiliaria(
         raise HTTPException(status_code=500, detail="Error al subir logo de inmobiliaria")
 
 
+@app.delete("/api/profesionales/me/foto-perfil", response_model=ProfesionalResponse)
+def eliminar_foto_perfil(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Elimina la foto de perfil del usuario autenticado."""
+    try:
+        profesional_repo = ProfesionalRepository()
+        profesional = profesional_repo.upsert(usuario_id, {"foto_perfil": None})
+
+        return ProfesionalResponse(**profesional)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al eliminar foto de perfil: {e}")
+        raise HTTPException(status_code=500, detail="Error al eliminar foto de perfil")
+
+
+@app.delete("/api/profesionales/me/logo-inmobiliaria", response_model=ProfesionalResponse)
+def eliminar_logo_inmobiliaria(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Elimina el logo de la inmobiliaria del usuario autenticado."""
+    try:
+        profesional_repo = ProfesionalRepository()
+        profesional = profesional_repo.upsert(usuario_id, {"logo_inmobiliaria": None})
+
+        return ProfesionalResponse(**profesional)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al eliminar logo de inmobiliaria: {e}")
+        raise HTTPException(status_code=500, detail="Error al eliminar logo de inmobiliaria")
+
+
 @app.get("/api/tablas/valvano")
 def get_valvano_data():
     """Sirve el archivo JSON de coeficientes Valvano."""

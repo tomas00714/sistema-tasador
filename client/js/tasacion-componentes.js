@@ -22,10 +22,6 @@ function generarHTMLDatosInforme(tipoInmueble) {
                     <input type="text" id="clienteNombreInput" placeholder="Nombre del cliente" value="${datosInforme.clienteNombre || ""}">
                 </div>
                 
-                <div class="input-group">
-                    <label>Finalidad de la tasación</label>
-                    <input type="text" id="finalidadInput" placeholder="Ej: Tasación comercial" value="${datosInforme.finalidad || "Tasación comercial"}">
-                </div>
             </div>
         </div>
         
@@ -235,64 +231,10 @@ function generarHTMLInfraestructura(infraestructuraActuales = []) {
     }, infraestructuraActuales);
 }
 
-function inicializarOrientacion() {
-    const input = document.getElementById("orientacionInput");
-    const list = document.getElementById("orientacionList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
-function inicializarOrientacionLote() {
-    const input = document.getElementById("orientacionLoteInput");
-    const list = document.getElementById("orientacionLoteList");
-
-    if (!input || !list) return;
-
-    input.addEventListener("focus", () => {
-        list.style.display = "block";
-    });
-
-    list.querySelectorAll(".autocomplete-item").forEach(item => {
-        item.addEventListener("click", () => {
-            input.value = item.textContent;
-            datosTasacion.ubicacion.orientacion = item.textContent;
-            list.style.display = "none";
-        });
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
-        }
-    });
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+// inicializarOrientacion / inicializarOrientacionLote / escapeHtml
+// ya están definidas en autocomplete-manager.js y global.js con la
+// implementación correcta (sincronizan datosTasacion). Las copias
+// locales se eliminaron porque, al cargarse después, las pisaban.
 
 function formatearMoneda(valor) {
     if (valor == null || valor === "") return "—";

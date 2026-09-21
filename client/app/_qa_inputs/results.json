@@ -1,0 +1,176 @@
+{
+  "casos": [
+    {
+      "tipo": "departamento",
+      "errores": [],
+      "dialogs": [],
+      "inputs": {
+        "ambientes": {
+          "abierto": true,
+          "items": 6,
+          "valor": "3",
+          "estado": "3"
+        },
+        "dormitorios": {
+          "abierto": true,
+          "items": 5,
+          "valor": "2",
+          "estado": "2"
+        },
+        "banos": {
+          "abierto": true,
+          "items": 5,
+          "valor": "2",
+          "estado": "2"
+        },
+        "monoDormDisabled": true,
+        "monoEstado": "Monoambiente",
+        "cochera": {
+          "estado": true,
+          "otraRama": false,
+          "otraRamaAntes": false
+        },
+        "baulera": {
+          "estado": true
+        },
+        "orientacion": {
+          "abierto": true,
+          "nItems": 8,
+          "estado": "Norte"
+        },
+        "agregarAmbiente": {
+          "antes": 0,
+          "despues": 1
+        },
+        "estadoPostGuardar": {
+          "ambientes": "3",
+          "dormitorios": "",
+          "banos": "2",
+          "cochera": true,
+          "baulera": true
+        }
+      },
+      "persistencia": {
+        "original": "3",
+        "nuevo": "4",
+        "idReal": "T7ePR8EkfQH",
+        "persistido": "4",
+        "ok": true,
+        "restaurado": "3"
+      },
+      "numerico": {
+        "displayHomogeneizada": "11.67",
+        "internoHomogeneizada": 11.666655,
+        "displayTotal": "11.67",
+        "internoTotal": 11.666655,
+        "internoCoef": 0.333333,
+        "coefInputCrudo": "0.333333",
+        "reRenderHomogeneizada": "11.67",
+        "reRenderTotal": "11.67",
+        "lectura": "\n        \n            \n                \n                    Tipo de Superficie\n                    Superficie (m²)\n                    Coeficiente\n                    Superficie Homogeneizada (m²)\n                \n            \n            \n                \n            \n            \n                Cubierto\n                35.00 m²\n                0.33\n                11.67 m²\n            \n        \n            \n            \n                Balcón descubierto\n                —\n                0.30\n                —\n            \n        \n            \n            \n                Galería y balcón semi cubierto (m² semi cubiertos)\n                —\n                0.50\n                —\n            \n        \n            Otras superficies\n            \n                Bauleras o depósito (según superficie)\n                —\n                0.25\n                —\n            \n        \n            \n            \n                Balcón terraza\n                —\n                0.50\n                —\n            \n        \n            \n            \n                Descubierta\n                —\n                0.20\n                —\n            \n        \n                \n                    Total\n                    35.00 m²\n                    \n                    11.67 m²\n                \n            \n        \n    "
+      }
+    },
+    {
+      "tipo": "casa",
+      "errores": [],
+      "dialogs": [],
+      "inputs": {
+        "ambientes": {
+          "abierto": true,
+          "items": 6,
+          "valor": "3",
+          "estado": "3"
+        },
+        "dormitorios": {
+          "abierto": true,
+          "items": 5,
+          "valor": "2",
+          "estado": "2"
+        },
+        "banos": {
+          "abierto": true,
+          "items": 5,
+          "valor": "2",
+          "estado": "2"
+        },
+        "monoDormDisabled": true,
+        "monoEstado": "Monoambiente",
+        "cochera": {
+          "estado": true,
+          "otraRama": false,
+          "otraRamaAntes": false
+        },
+        "baulera": {
+          "estado": true
+        },
+        "orientacion": {
+          "abierto": true,
+          "nItems": 8,
+          "estado": "Norte"
+        },
+        "agregarAmbiente": {
+          "antes": 0,
+          "despues": 1
+        },
+        "estadoPostGuardar": {
+          "ambientes": "3",
+          "dormitorios": "",
+          "banos": "2",
+          "cochera": true,
+          "baulera": true
+        }
+      },
+      "persistencia": {
+        "original": "3",
+        "nuevo": "4",
+        "idReal": "T8tl6cXAuHU",
+        "persistido": "4",
+        "ok": true,
+        "restaurado": "3"
+      },
+      "numerico": {
+        "displayHomogeneizada": "11.67",
+        "internoHomogeneizada": 11.666655,
+        "displayTotal": "11.67",
+        "internoTotal": 11.666655,
+        "internoCoef": 0.333333,
+        "coefInputCrudo": "0.333333",
+        "reRenderHomogeneizada": "11.67",
+        "reRenderTotal": "11.67",
+        "lectura": "\n        \n            \n                \n                    Tipo de Superficie\n                    Superficie (m²)\n                    Coeficiente\n                    Superficie Homogeneizada (m²)\n                \n            \n            \n                \n            \n            \n                Cubierto\n                35.00 m²\n                0.33\n                11.67 m²\n            \n        \n            \n            \n                Galerías y balcón semi cubierto (m² semi cubiertos)\n                —\n                0.50\n                —\n            \n        \n            \n            \n                Patio y terrazas\n                —\n                0.10\n                —\n            \n        \n            Otras superficies\n            \n                Dependencias (separadas del cuerpo principal)\n                —\n                0.40\n                —\n            \n        \n            \n            \n                Balcón\n                —\n                0.30\n                —\n            \n        \n            \n            \n                Descubierta\n                —\n                0.20\n                —\n            \n        \n                \n                    Total\n                    35.00 m²\n                    \n                    11.67 m²\n                \n            \n        \n    "
+      }
+    },
+    {
+      "tipo": "lote",
+      "errores": [],
+      "dialogs": [],
+      "inputs": {
+        "tipoLote": {
+          "abierto": true,
+          "items": 5,
+          "estado": "Esquina"
+        },
+        "zonaPresente": true,
+        "zonaEstado": "2",
+        "superficieCalc": "333.33"
+      },
+      "numerico": {
+        "skip": "lote sin homogeneizacion"
+      }
+    }
+  ],
+  "reporte_decimales": {
+    "departamento": {
+      "sospechosos": [],
+      "total": 17
+    },
+    "casa": {
+      "sospechosos": [],
+      "total": 12
+    },
+    "lote": {
+      "sospechosos": [],
+      "total": 6
+    }
+  }
+}

@@ -625,7 +625,9 @@ async function tasacionToReportData(tasacion, opciones = {}) {
         valuation: mapearValuacion(tasacion),
         photos: fotosRaw.map((foto, i) => ({
             url: foto.url || foto.src || null,
-            description: foto.description || foto.descripcion || `Fotografía ${i + 1}`
+            // ?? (no ||): un caption vaciado por el usuario ('') debe
+            // conservarse vacío para que el PDF no muestre texto alguno.
+            description: foto.description ?? foto.descripcion ?? ''
         })),
         methodology,
         client,

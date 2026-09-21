@@ -31,6 +31,57 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    position: relative;
+}
+
+/* Popover de opciones para foto/logo (modo edición) */
+.perfil-media-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    flex-direction: column;
+    min-width: 170px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    z-index: 60;
+}
+
+.perfil-media-popover.abierto {
+    display: flex;
+}
+
+.perfil-media-popover-logo {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.perfil-media-opcion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-small);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.perfil-media-opcion:hover {
+    background: var(--color-bg-light);
+}
+
+.perfil-media-opcion-eliminar {
+    color: #dc2626;
 }
 
 .perfil-avatar {
@@ -379,6 +430,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
     background: var(--color-bg-light);
+    position: relative;
 }
 
 .perfil-inmobiliaria-info {

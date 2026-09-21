@@ -1,0 +1,18 @@
+JWT_SECRET_KEY no está configurada: se usa un valor inseguro solo apta para desarrollo local. Definí JWT_SECRET_KEY en el entorno.
+C:\Users\tomas\Desktop\proyecto-tasador\server\main.py:2210: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  def iniciar_google_oauth(mode: str = Query(..., regex="^(continue)$")):
+INFO:     Started server process [16784]
+INFO:     Waiting for application startup.
+2026-09-20 15:57:51,734 - main - INFO - Iniciando pool de conexiones a PostgreSQL...
+2026-09-20 15:57:51,734 - database - INFO - Inicializando pool desde variables DB_*: host=localhost, database=tasador, user=postgres
+2026-09-20 15:57:51,867 - database - INFO - Pool de conexiones a PostgreSQL inicializado correctamente
+2026-09-20 15:57:51,867 - main - INFO - Pool de conexiones inicializado correctamente
+2026-09-20 15:57:51,873 - database - INFO - Conexión exitosa a PostgreSQL. Base=tasador, usuario=postgres, host=localhost, versión=PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-09-20 15:57:51,873 - main - INFO - Conexión a PostgreSQL verificada
+2026-09-20 15:57:51,874 - main - INFO - Directorio de uploads verificado: C:\Users\tomas\Desktop\proyecto-tasador\server\uploads
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('127.0.0.1', 8080): [winerror 10048] solo se permite un uso de cada dirección de socket (protocolo/dirección de red/puerto)
+INFO:     Waiting for application shutdown.
+2026-09-20 15:57:51,877 - main - INFO - Cerrando pool de conexiones...
+2026-09-20 15:57:51,877 - database - INFO - Pool de conexiones cerrado
+INFO:     Application shutdown complete.

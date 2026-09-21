@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/shell.css">
     <link rel="stylesheet" href="../css/vista-previa-informe.css">
+    <link rel="stylesheet" href="../css/report-pdf.css">
 </head>
 <body>
 
@@ -44,7 +45,7 @@
                         <div class="config-toggle-row">
                             <label class="config-toggle config-toggle-in-row">
                                 <input type="checkbox" id="showPhotos" checked>
-                                <span>Mostrar fotografías</span>
+                                <span>Mostrar documentación adjunta</span>
                             </label>
                             <button type="button" class="config-toggle-expand-btn" id="btnExpandPhotos" aria-expanded="false" aria-controls="photosExpandPanel">
                                 <i class="fa-solid fa-chevron-down"></i>
@@ -54,6 +55,10 @@
                             <div class="config-photos-carousel" id="photosCarousel">
                                 <!-- Fotos renderizadas por JS -->
                             </div>
+                            <input type="file" id="photosUpload" accept="image/*" multiple hidden>
+                            <button type="button" class="config-photos-add-btn" id="btnAddPhotos">
+                                <i class="fa-solid fa-plus"></i> Adjuntar fotografías
+                            </button>
                         </div>
                     </div>
 
@@ -71,6 +76,7 @@
                             <div class="config-comparables-list" id="comparablesList">
                                 <!-- Comparables renderizados por JS -->
                             </div>
+                            <input type="file" id="comparablePhotoUpload" accept="image/*" multiple hidden>
                         </div>
                     </div>
 
@@ -116,12 +122,19 @@
                     
                     <div class="config-field">
                         <label for="valorModalidad">Modalidad de presentación</label>
-                        <select id="valorModalidad" class="config-select">
+                        <select id="valorModalidad" class="config-select" hidden>
                             <option value="tasacion">Solo valor de tasación</option>
                             <option value="rango">Rango de valor</option>
                             <option value="publicacion">Valor de tasación + publicación</option>
                             <option value="cierre">Valor de tasación + publicación + cierre esperado</option>
                         </select>
+                        <div class="config-dropdown" id="valorModalidadDropdown">
+                            <button type="button" class="config-dropdown-btn" id="valorModalidadBtn" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="config-dropdown-label" id="valorModalidadLabel">Solo valor de tasación</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <ul class="config-dropdown-menu" id="valorModalidadMenu" role="listbox" hidden></ul>
+                        </div>
                     </div>
 
 
@@ -169,9 +182,14 @@
     <script src="../js/storage-cache.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/entidades.js"></script>
+    <script src="../js/format-utils.js"></script>
+    <script src="../js/homogeneizacion-superficie.js"></script>
+    <script src="../js/config/resultados-config.js"></script>
+    <script src="../js/resultados-renderer.js"></script>
     <script src="../js/report-data-adapter.js"></script>
     <script src="../js/report-paginator.js"></script>
     <script src="../js/report-components.js"></script>
+    <script src="../js/image-cropper.js"></script>
     <script src="../js/vista-previa-informe.js"></script>
 
 </body>

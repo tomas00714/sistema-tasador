@@ -816,6 +816,54 @@ async function subirLogoInmobiliariaAPI(archivo) {
     }
 }
 
+async function eliminarFotoPerfilAPI() {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me/foto-perfil`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al eliminar foto de perfil: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en eliminarFotoPerfilAPI:', error);
+        throw error;
+    }
+}
+
+async function eliminarLogoInmobiliariaAPI() {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/profesionales/me/logo-inmobiliaria`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        if (handleAuthError(response)) {
+            throw new Error('Sesión expirada');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al eliminar logo de inmobiliaria: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en eliminarLogoInmobiliariaAPI:', error);
+        throw error;
+    }
+}
+
 async function guardarTasacionCompartidaAPI(token) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/tasaciones/compartir/${encodeURIComponent(token)}/guardar`, {

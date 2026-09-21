@@ -98,10 +98,10 @@ function mostrarFormularioCasa() {
         inicializarAmbientes('casa');
         inicializarDormitorios('casa');
         inicializarBanos('casa');
-        inicializarSwitchCochera();
-        inicializarSwitchBaulera();
+        inicializarSwitchCocheraCasa();
+        inicializarSwitchBauleraCasa();
         inicializarServicios();
-        inicializarAmbientes();
+        inicializarAmbientesInforme();
     });
 }
 
@@ -227,7 +227,7 @@ function calcularYMostrarResultadoCasa() {
    FUNCIONES DE INICIALIZACIÓN
 ========================= */
 
-function inicializarSwitchCochera() {
+function inicializarSwitchCocheraCasa() {
     const switchInput = document.getElementById("cocheraSwitch");
     if (!switchInput) return;
 
@@ -236,7 +236,7 @@ function inicializarSwitchCochera() {
     });
 }
 
-function inicializarSwitchBaulera() {
+function inicializarSwitchBauleraCasa() {
     const switchInput = document.getElementById("bauleraSwitch");
     if (!switchInput) return;
 

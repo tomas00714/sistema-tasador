@@ -19,7 +19,10 @@ const reportConfig = {
     conclusion: "Se concluye que el valor de mercado del inmueble es el resultado de la homogeneización de los comparables seleccionados.",
     // Nuevos campos
     consideracionesPrevias: "No se consignan consideraciones previas.",
-    finalidadTasacion: "Determinar el valor venal de mercado del inmueble para su venta.",
+    finalidadTasacion: "La finalidad de la tasación es determinar el valor de mercado del inmueble con fines de venta.",
+    // Datos del solicitante (fallback editable cuando la tasación no los trae)
+    clienteNombre: "",
+    nomenclaturaCatastral: "",
     descripcionEntorno: "",
     puntosInteres: "",
     textoMetodologia: "Para la determinación del valor se aplica el método comparativo de mercado, tomando como referencia inmuebles de características similares y realizando los ajustes correspondientes mediante los coeficientes de homogeneización.",
@@ -33,10 +36,13 @@ const reportConfig = {
     condicionesAdicionales: "",
     // Presentación del valor
     valorModalidad: "tasacion",
+    valorTasacion: "",
+    valorTasacionOculto: false,
     valorPublicacion: "",
     valorCierre: "",
     valorRangoMin: "",
     valorRangoMax: "",
+    rangoEstimado: "",
     // Propiedades en competencia
     showCompetition: false,
     // Análisis FODA
@@ -68,6 +74,23 @@ async function initVistaPreviaInforme() {
     tasacionCargada = await obtenerTasacionParaInforme();
 
     if (tasacionCargada) {
+        // Restaurar la configuración del informe persistida en la tasación
+        // (datos.reportConfig). Es la misma fuente de verdad: reportConfig.
+        const configGuardada = tasacionCargada.datosCompletos?.reportConfig;
+        if (configGuardada && typeof configGuardada === 'object') {
+            Object.assign(reportConfig, configGuardada);
+        }
+
+        // "Mostrar logo": sin logo en el perfil el checkbox arranca
+        // desmarcado siempre (un true persistido puede ser un default
+        // viejo; sin logo no hay nada que mostrar). Con logo, se respeta
+        // la preferencia persistida y el default es mostrarlo.
+        if (!profesionalActual?.logo_inmobiliaria) {
+            reportConfig.showLogo = false;
+        } else if (!configGuardada || configGuardada.showLogo === undefined) {
+            reportConfig.showLogo = true;
+        }
+
         comparablesResueltos = resolverComparablesDeTasacion(tasacionCargada);
         fotosTasacion = obtenerFotosDeTasacion(tasacionCargada);
         selectedComparableIds = new Set(comparablesResueltos.map(c => c.id));
@@ -75,14 +98,19 @@ async function initVistaPreviaInforme() {
         setupComparablesState();
         
         // Inicializar valores de rango según el valor de tasación
+        // (solo como default: no pisar valores ya persistidos)
         const valorTasacion = tasacionCargada.resultado?.valor_final || tasacionCargada.datosCompletos?.resultado?.valor_final || 0;
         if (valorTasacion > 0) {
-            reportConfig.valorRangoMin = Math.round(valorTasacion * 0.9);
-            reportConfig.valorRangoMax = Math.round(valorTasacion * 1.1);
+            if (reportConfig.valorRangoMin === '' || reportConfig.valorRangoMin == null) {
+                reportConfig.valorRangoMin = Math.round(valorTasacion * 0.9);
+            }
+            if (reportConfig.valorRangoMax === '' || reportConfig.valorRangoMax == null) {
+                reportConfig.valorRangoMax = Math.round(valorTasacion * 1.1);
+            }
         }
         
         // Sincronizar inputs con los valores iniciales
-        sincronizarInputsConConfig();
+        syncConfigInputs();
         
         mostrarEstadoVacio(false);
     } else {
@@ -91,6 +119,8 @@ async function initVistaPreviaInforme() {
 
     setupConfigListeners();
     setupExpandablePanels();
+    setupPhotosUpload();
+    setupValorModalidadDropdown();
     renderPhotosPanel();
     renderComparablesPanel();
     actualizarOpcionesSegunTipo();
@@ -211,10 +241,23 @@ function commitDirectEdit(el, nextKey = null) {
     }
 
     // Persistir en la única fuente de verdad ("" si quedó vacío: el
-    // placeholder nunca se guarda, solo existe en el DOM de pantalla)
+    // placeholder nunca se guarda, solo existe en el DOM de pantalla).
+    // Excepción: los captions de fotos del inmueble (fotoCaptionN) no son
+    // claves de reportConfig — escriben description del objeto de foto y
+    // persisten por persistirFotosInmueble (mismo mecanismo que las fotos).
     const original = isNumber ? editingOriginalRaw.trim() : editingOriginalText.trim();
     if (value !== original) {
-        reportConfig[key] = value;
+        const matchCaption = /^fotoCaption(\d+)$/.exec(key);
+        if (matchCaption) {
+            const idx = parseInt(matchCaption[1], 10);
+            if (fotosTasacion[idx] && typeof fotosTasacion[idx] === 'object') {
+                fotosTasacion[idx].description = value;
+                persistirFotosInmueble();
+            }
+        } else {
+            reportConfig[key] = value;
+            persistirConfigInforme();
+        }
     }
 
     // El pipeline normal siempre se ejecuta al salir de la edición:
@@ -270,7 +313,8 @@ function setupPhotosState() {
     const showPhotosCheckbox = document.getElementById('showPhotos');
     if (!showPhotosCheckbox) return;
 
-    const tieneFotos = fotosTasacion.length > 0;
+    const tieneFotos = fotosTasacion.length > 0 ||
+        comparablesResueltos.some(c => (c.fotos || c.photos || []).length > 0);
     showPhotosCheckbox.disabled = !tieneFotos;
 
     const toggleLabel = showPhotosCheckbox.closest('.config-toggle');
@@ -324,17 +368,24 @@ function renderPhotosPanel() {
     if (!carousel) return;
 
     if (!fotosTasacion.length) {
-        carousel.innerHTML = '<p class="config-photos-empty">No hay fotos cargadas</p>';
+        carousel.innerHTML = '<p class="config-photos-empty">No hay fotos cargadas. Adjuntá fotografías del inmueble tasado.</p>';
         return;
     }
 
     carousel.innerHTML = fotosTasacion.map((foto, i) => {
         const url = foto.url || foto.src;
-        if (url) {
-            return `<div class="config-photo-thumb"><img src="${url}" alt="${foto.description || foto.descripcion || 'Foto ' + (i + 1)}"></div>`;
-        }
-        return `<div class="config-photo-thumb"><span class="config-photo-thumb-placeholder">${foto.description || foto.descripcion || 'Foto ' + (i + 1)}</span></div>`;
+        const desc = foto.description || foto.descripcion || 'Foto ' + (i + 1);
+        const inner = url
+            ? `<img src="${url}" alt="${desc}">`
+            : `<span class="config-photo-thumb-placeholder">${desc}</span>`;
+        return `<div class="config-photo-thumb">${inner}
+            <button type="button" class="config-photo-remove" data-index="${i}" title="Quitar fotografía">&times;</button>
+        </div>`;
     }).join('');
+
+    carousel.querySelectorAll('.config-photo-remove').forEach(btn => {
+        btn.addEventListener('click', () => quitarFotoInmueble(parseInt(btn.dataset.index, 10)));
+    });
 }
 
 function renderComparablesPanel() {
@@ -349,11 +400,30 @@ function renderComparablesPanel() {
     list.innerHTML = comparablesResueltos.map(comp => {
         const dir = comp.ubicacion?.direccion || comp.direccion || 'Sin dirección';
         const selected = selectedComparableIds.has(comp.id);
+        const fotos = comp.fotos || comp.photos || [];
+        const thumbsHtml = fotos.length ? `
+            <div class="config-comparable-photos">
+                ${fotos.map((f, i) => {
+                    const url = f.url || f.src;
+                    return `<div class="config-photo-thumb config-photo-thumb-sm">
+                        ${url ? `<img src="${url}" alt="">` : `<span class="config-photo-thumb-placeholder">Foto ${i + 1}</span>`}
+                        <button type="button" class="config-photo-remove" data-comp="${comp.id}" data-index="${i}" title="Quitar fotografía">&times;</button>
+                    </div>`;
+                }).join('')}
+            </div>` : '';
         return `
-            <button type="button" class="config-comparable-item${selected ? ' selected' : ''}" data-id="${comp.id}">
-                <span class="config-comparable-dot"></span>
-                <span class="config-comparable-address">${dir}</span>
-            </button>
+            <div class="config-comparable-row">
+                <div class="config-comparable-main">
+                    <button type="button" class="config-comparable-item${selected ? ' selected' : ''}" data-id="${comp.id}">
+                        <span class="config-comparable-dot"></span>
+                        <span class="config-comparable-address">${dir}</span>
+                    </button>
+                    <button type="button" class="config-comparable-photo-btn" data-id="${comp.id}" title="Adjuntar fotografías del comparable (máx. ${FOTOS_COMPARABLE_MAX})">
+                        <i class="fa-solid fa-camera"></i>${fotos.length ? ` ${fotos.length}/${FOTOS_COMPARABLE_MAX}` : ''}
+                    </button>
+                </div>
+                ${thumbsHtml}
+            </div>
         `;
     }).join('');
 
@@ -370,6 +440,307 @@ function renderComparablesPanel() {
             renderReportPreview();
         });
     });
+
+    list.querySelectorAll('.config-comparable-photo-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const comp = comparablesResueltos.find(c => c.id === btn.dataset.id);
+            const actuales = comp ? (comp.fotos || comp.photos || []).length : 0;
+            if (actuales >= FOTOS_COMPARABLE_MAX) {
+                alert(`Este comparable ya tiene el máximo de ${FOTOS_COMPARABLE_MAX} fotografías. Quitá alguna para agregar otra.`);
+                return;
+            }
+            const input = document.getElementById('comparablePhotoUpload');
+            if (!input) return;
+            input.dataset.compId = btn.dataset.id;
+            input.click();
+        });
+    });
+
+    list.querySelectorAll('.config-comparable-photos .config-photo-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+            quitarFotoComparable(btn.dataset.comp, parseInt(btn.dataset.index, 10));
+        });
+    });
+}
+
+// =========================
+// FOTOGRAFÍAS: carga y asociación
+// =========================
+// Pipeline: input file → dataURL redimensionado → estado (fotosTasacion /
+// comp.fotos) → persistencia (PUT tasación / PUT snapshot) → re-render.
+// Las fotos del inmueble viven en tasacion.datos.fotos; las de cada
+// comparable viven dentro de su snapshot (comp.fotos).
+
+const FOTO_MAX_DIM = 1400;
+const FOTO_JPEG_QUALITY = 0.78;
+const FOTOS_COMPARABLE_MAX = 4;
+
+function procesarArchivoFoto(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('El archivo no es una imagen válida'));
+            img.onload = () => {
+                const escala = Math.min(1, FOTO_MAX_DIM / Math.max(img.width, img.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * escala);
+                canvas.height = Math.round(img.height * escala);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                // JPEG no soporta alpha: si el recorte dejó zonas fuera de la
+                // imagen (transparencia), exportar PNG para no volverlas negras.
+                const datos = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                let tieneAlpha = false;
+                for (let i = 3; i < datos.length; i += 4) {
+                    if (datos[i] < 255) { tieneAlpha = true; break; }
+                }
+                resolve({
+                    url: canvas.toDataURL(tieneAlpha ? 'image/png' : 'image/jpeg', FOTO_JPEG_QUALITY),
+                    description: file.name
+                });
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Persistir la configuración del informe dentro de la tasación
+// (datos.reportConfig se mergea en el JSONB existente, sin pisar
+// el resto). Cliente/nomenclatura además actualizan sus columnas
+// cuando el valor fue completado desde el informe (la tasación no
+// lo traía), para que sea el mismo dato que usa el formulario.
+async function persistirConfigInforme() {
+    if (!tasacionCargada?.id) return;
+    const payload = { datos: { reportConfig: { ...reportConfig } } };
+    if (!tasacionCargada.clienteNombre && reportConfig.clienteNombre !== undefined) {
+        payload.cliente_nombre = reportConfig.clienteNombre || '';
+    }
+    if (!tasacionCargada.nomenclaturaCatastral && reportConfig.nomenclaturaCatastral !== undefined) {
+        payload.nomenclatura_catastral = reportConfig.nomenclaturaCatastral || '';
+    }
+    try {
+        await actualizarTasacionAPI(tasacionCargada.id, payload);
+    } catch (e) {
+        console.error('No se pudo guardar la configuración del informe:', e);
+    }
+}
+
+async function persistirFotosInmueble() {
+    tasacionCargada.fotos = fotosTasacion;
+    if (tasacionCargada.datosCompletos) {
+        tasacionCargada.datosCompletos.fotos = fotosTasacion;
+    }
+    try {
+        await actualizarTasacionAPI(tasacionCargada.id, { datos: { fotos: fotosTasacion } });
+    } catch (e) {
+        console.error('No se pudieron guardar las fotografías del inmueble:', e);
+    }
+}
+
+async function agregarFotosInmueble(fileList) {
+    if (!tasacionCargada) return;
+    const archivos = [...fileList].filter(f => f.type.startsWith('image/'));
+    if (!archivos.length) return;
+    // Recorte previo obligatorio: el informe muestra estas fotos en 4:3
+    // (.report-photo-image). Solo lo confirmado por el usuario se guarda.
+    const recortes = await recortarImagenes(archivos, {
+        aspectRatio: 4 / 3,
+        maxWidth: FOTO_MAX_DIM,
+        outputFormat: 'image/jpeg',
+        quality: FOTO_JPEG_QUALITY,
+        titulo: 'Recortar fotografía'
+    });
+    if (!recortes.length) return;
+    try {
+        const nuevas = await Promise.all(recortes.map(({ file, blob }) =>
+            procesarArchivoFoto(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }))
+        ));
+        fotosTasacion = fotosTasacion.concat(nuevas);
+        await persistirFotosInmueble();
+    } catch (e) {
+        console.error('No se pudieron procesar las fotografías:', e);
+        return;
+    }
+    reportConfig.showPhotos = true;
+    setupPhotosState();
+    renderPhotosPanel();
+    await renderReportPreview();
+}
+
+async function quitarFotoInmueble(index) {
+    if (!tasacionCargada || index < 0 || index >= fotosTasacion.length) return;
+    fotosTasacion.splice(index, 1);
+    await persistirFotosInmueble();
+    setupPhotosState();
+    renderPhotosPanel();
+    await renderReportPreview();
+}
+
+// Persistir un comparable: primero el PUT de snapshot por relación
+// tasacion_comparable. Si la relación usa comparable_id NULL (comparable
+// eliminado de la biblioteca → el endpoint devuelve 404), se usa el canal
+// canónico comparables_ids + comparables_snapshots del PUT de tasación,
+// preservando el prefijo "deleted_" para mantener la relación NULL.
+async function persistirComparable(comp) {
+    try {
+        await actualizarSnapshotComparableTasacion(tasacionCargada.id, comp.id, comp);
+    } catch (e) {
+        try {
+            const compId = String(comp.id || '');
+            await actualizarTasacionAPI(tasacionCargada.id, {
+                comparables_ids: tasacionCargada.comparables.map(c =>
+                    c === comp && !compId.startsWith('deleted_')
+                        ? `deleted_${compId}` : c.id
+                ),
+                comparables_snapshots: tasacionCargada.comparables
+            });
+        } catch (e2) {
+            console.error('No se pudo persistir el comparable:', e2);
+        }
+    }
+}
+
+async function agregarFotosComparable(comparableId, fileList) {
+    const comp = comparablesResueltos.find(c => c.id === comparableId);
+    if (!comp || !tasacionCargada) return;
+    const archivos = [...fileList].filter(f => f.type.startsWith('image/'));
+    if (!archivos.length) return;
+    // Máximo de fotos por comparable: se valida antes de mutar el estado,
+    // así una quinta foto nunca se acepta y las existentes quedan intactas.
+    const actuales = (comp.fotos || comp.photos || []).length;
+    const disponibles = FOTOS_COMPARABLE_MAX - actuales;
+    if (disponibles <= 0) {
+        alert(`Este comparable ya tiene el máximo de ${FOTOS_COMPARABLE_MAX} fotografías. Quitá alguna para agregar otra.`);
+        return;
+    }
+    if (archivos.length > disponibles) {
+        alert(`Máximo ${FOTOS_COMPARABLE_MAX} fotografías por comparable. Ya tiene ${actuales}: podés agregar ${disponibles} más (seleccionaste ${archivos.length}).`);
+        return;
+    }
+    // Recorte 4:5: la celda dominante de la composición de la tarjeta
+    // (1, 3 y 4 fotos). La celda aplica object-fit:cover, sin deformación.
+    const recortes = await recortarImagenes(archivos, {
+        aspectRatio: 4 / 5,
+        maxWidth: FOTO_MAX_DIM,
+        outputFormat: 'image/jpeg',
+        quality: FOTO_JPEG_QUALITY,
+        titulo: 'Recortar fotografía del comparable'
+    });
+    if (!recortes.length) return;
+    try {
+        const nuevas = await Promise.all(recortes.map(({ file, blob }) =>
+            procesarArchivoFoto(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }))
+        ));
+        const existentes = Array.isArray(comp.fotos) ? comp.fotos
+            : (Array.isArray(comp.photos) ? comp.photos : []);
+        comp.fotos = existentes.concat(nuevas);
+    } catch (e) {
+        console.error('No se pudieron procesar las fotografías:', e);
+        return;
+    }
+    await persistirComparable(comp);
+    reportConfig.showPhotos = true;
+    setupPhotosState();
+    renderComparablesPanel();
+    await renderReportPreview();
+}
+
+async function quitarFotoComparable(comparableId, index) {
+    const comp = comparablesResueltos.find(c => c.id === comparableId);
+    if (!comp || !tasacionCargada || !Array.isArray(comp.fotos)) return;
+    if (index < 0 || index >= comp.fotos.length) return;
+    comp.fotos.splice(index, 1);
+    await persistirComparable(comp);
+    setupPhotosState();
+    renderComparablesPanel();
+    await renderReportPreview();
+}
+
+function setupPhotosUpload() {
+    const input = document.getElementById('photosUpload');
+    const btn = document.getElementById('btnAddPhotos');
+    if (btn && input) {
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+            if (input.files.length) agregarFotosInmueble(input.files);
+            input.value = '';
+        });
+    }
+
+    const compInput = document.getElementById('comparablePhotoUpload');
+    if (compInput) {
+        compInput.addEventListener('change', () => {
+            const compId = compInput.dataset.compId;
+            if (compId && compInput.files.length) {
+                agregarFotosComparable(compId, compInput.files);
+            }
+            compInput.value = '';
+            delete compInput.dataset.compId;
+        });
+    }
+}
+
+// =========================
+// SELECTOR DE MODALIDAD DE VALOR
+// =========================
+// Dropdown con el lenguaje visual de la app. El <select> nativo queda
+// oculto como fuente de verdad: las opciones se generan desde él y el
+// flujo existente (change → reportConfig → re-render) no cambia.
+function setupValorModalidadDropdown() {
+    const select = document.getElementById('valorModalidad');
+    const btn = document.getElementById('valorModalidadBtn');
+    const menu = document.getElementById('valorModalidadMenu');
+    const label = document.getElementById('valorModalidadLabel');
+    if (!select || !btn || !menu || !label) return;
+
+    // La modalidad "cierre" queda oculta como opción seleccionable, pero el
+    // <option> y toda su lógica interna (ReportValuation, valorCierre) se mantienen.
+    menu.innerHTML = [...select.options]
+        .filter(o => o.value !== 'cierre')
+        .map(o => `<li class="config-dropdown-option" role="option" data-value="${o.value}">${o.textContent}</li>`)
+        .join('');
+
+    const syncLabel = () => {
+        const opt = select.options[select.selectedIndex];
+        label.textContent = opt ? opt.textContent : '';
+        menu.querySelectorAll('.config-dropdown-option').forEach(li => {
+            li.classList.toggle('selected', li.dataset.value === select.value);
+            li.setAttribute('aria-selected', li.dataset.value === select.value ? 'true' : 'false');
+        });
+    };
+
+    const cerrarMenu = () => {
+        menu.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+    };
+
+    btn.addEventListener('click', () => {
+        const abrir = menu.hidden;
+        menu.hidden = !abrir;
+        btn.setAttribute('aria-expanded', String(abrir));
+    });
+
+    menu.addEventListener('click', (e) => {
+        const li = e.target.closest('.config-dropdown-option');
+        if (!li) return;
+        select.value = li.dataset.value;
+        select.dispatchEvent(new Event('change'));
+        cerrarMenu();
+    });
+
+    select.addEventListener('change', syncLabel);
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#valorModalidadDropdown')) cerrarMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarMenu();
+    });
+
+    syncLabel();
 }
 
 async function obtenerReportData() {
@@ -384,12 +755,73 @@ async function obtenerReportData() {
     });
 }
 
-function sincronizarInputsConConfig() {
-    // Solo quedan controles no textuales en el panel: el selector de modalidad
-    const valorModalidadSelect = document.getElementById('valorModalidad');
-    if (valorModalidadSelect) {
-        valorModalidadSelect.value = reportConfig.valorModalidad;
-    }
+// =========================
+// AVISO "SIN LOGO" EN EL PREVIEW
+// =========================
+// Si el usuario activa "Mostrar logo" sin tener logo en su perfil, se
+// muestra un aviso flotante al pie del panel de preview. "Agregar"
+// abre el selector de archivo → recorte 1:1 → se persiste por el
+// endpoint existente del perfil. "Cancelar" revierte el checkbox.
+function ocultarAvisoSinLogo() {
+    document.getElementById('reportLogoNotice')?.remove();
+}
+
+function mostrarAvisoSinLogo() {
+    ocultarAvisoSinLogo();
+    const host = document.querySelector('.preview-panel-content');
+    if (!host) return;
+
+    const aviso = document.createElement('div');
+    aviso.id = 'reportLogoNotice';
+    // report-preview-only: nunca aparece en impresión/PDF.
+    aviso.className = 'report-logo-notice report-preview-only';
+    aviso.innerHTML = `
+        <p>No tenés un logo cargado en tu perfil.</p>
+        <div class="report-logo-notice-actions">
+            <button type="button" class="report-logo-notice-btn report-logo-notice-agregar">Agregar</button>
+            <button type="button" class="report-logo-notice-btn report-logo-notice-cancelar">Cancelar</button>
+        </div>
+    `;
+    host.appendChild(aviso);
+
+    aviso.querySelector('.report-logo-notice-cancelar').addEventListener('click', () => {
+        ocultarAvisoSinLogo();
+        reportConfig.showLogo = false;
+        const cb = document.getElementById('showLogo');
+        if (cb) cb.checked = false;
+        persistirConfigInforme();
+        renderReportPreview();
+    });
+
+    aviso.querySelector('.report-logo-notice-agregar').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.addEventListener('change', async () => {
+            const file = input.files[0];
+            if (!file) return;
+            const blob = await recortarImagen(file, {
+                aspectRatio: 1,
+                maxWidth: 800,
+                outputFormat: 'preserve',
+                quality: 0.9,
+                titulo: 'Recortar logo'
+            });
+            if (!blob) return;
+            try {
+                await subirLogoInmobiliariaAPI(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }));
+                const perfil = await obtenerProfesionalAPI().catch(() => null);
+                if (perfil?.profesional) profesionalActual = perfil.profesional;
+                ocultarAvisoSinLogo();
+                reportConfig.showLogo = true;
+                persistirConfigInforme();
+                await renderReportPreview();
+            } catch (err) {
+                alert('No se pudo guardar el logo: ' + (err.message || err));
+            }
+        });
+        input.click();
+    });
 }
 
 function setupConfigListeners() {
@@ -397,7 +829,15 @@ function setupConfigListeners() {
     if (showLogoCheckbox) {
         showLogoCheckbox.addEventListener('change', (e) => {
             reportConfig.showLogo = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
+            // Activado sin logo en el perfil → aviso dentro del preview
+            // con opción de cargarlo o revertir el checkbox.
+            if (e.target.checked && !profesionalActual?.logo_inmobiliaria) {
+                mostrarAvisoSinLogo();
+            } else {
+                ocultarAvisoSinLogo();
+            }
         });
     }
 
@@ -406,6 +846,7 @@ function setupConfigListeners() {
         showPhotosCheckbox.addEventListener('change', (e) => {
             if (e.target.disabled) return;
             reportConfig.showPhotos = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -415,6 +856,7 @@ function setupConfigListeners() {
         showComparablesCheckbox.addEventListener('change', (e) => {
             if (e.target.disabled) return;
             reportConfig.showComparables = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -423,6 +865,7 @@ function setupConfigListeners() {
     if (showMethodologyCheckbox) {
         showMethodologyCheckbox.addEventListener('change', (e) => {
             reportConfig.showMethodology = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -433,6 +876,7 @@ function setupConfigListeners() {
         showCompetitionCheckbox.addEventListener('change', (e) => {
             if (e.target.disabled) return;
             reportConfig.showCompetition = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -443,6 +887,7 @@ function setupConfigListeners() {
         showFODACheckbox.addEventListener('change', (e) => {
             if (e.target.disabled) return;
             reportConfig.showFODA = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -452,6 +897,7 @@ function setupConfigListeners() {
     if (showProfessionalDataCheckbox) {
         showProfessionalDataCheckbox.addEventListener('change', (e) => {
             reportConfig.showProfessionalData = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -461,6 +907,7 @@ function setupConfigListeners() {
     if (showWorkConditionsCheckbox) {
         showWorkConditionsCheckbox.addEventListener('change', (e) => {
             reportConfig.showWorkConditions = e.target.checked;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -470,6 +917,7 @@ function setupConfigListeners() {
     if (valorModalidadSelect) {
         valorModalidadSelect.addEventListener('change', (e) => {
             reportConfig.valorModalidad = e.target.value;
+            persistirConfigInforme();
             renderReportPreview();
         });
     }
@@ -519,6 +967,16 @@ async function renderReportPreview() {
                 ...reportConfig,
                 showComparables
             }
+        });
+
+        // Numeración "x de y" en el pie de cada hoja. Se agrega después
+        // del paginado (no forma parte del contenido medido).
+        const hojas = reportViewer.querySelectorAll('.report-page');
+        hojas.forEach((page, i) => {
+            const num = document.createElement('div');
+            num.className = 'report-page-number';
+            num.textContent = `${i + 1} de ${hojas.length}`;
+            page.appendChild(num);
         });
 
         // Verificar overflow después de renderizar
@@ -606,6 +1064,7 @@ function printReport() {
 function updateReportConfig(newConfig) {
     Object.assign(reportConfig, newConfig);
     syncConfigInputs();
+    persistirConfigInforme();
     renderReportPreview();
 }
 

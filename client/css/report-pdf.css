@@ -1,0 +1,1255 @@
+/* =========================
+   SISTEMA VISUAL DEL INFORME (PDF)
+   Capa visual específica del informe de tasación.
+   Todos los tokens viven bajo el namespace --report-*.
+   Este archivo reemplaza las reglas visuales del informe que
+   antes vivían en vista-previa-informe.css.
+========================= */
+
+:root {
+    --report-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    --report-primary: #285C4D;
+    --report-primary-dark: #1E493D;
+    --report-primary-light: #EAF2EF;
+
+    --report-text: #202422;
+    --report-secondary: #68706C;
+    --report-muted: #8A938F;
+
+    --report-border: #DFE4E1;
+    --report-border-light: #E8EDEA;
+
+    --report-surface: #F7F8F7;
+    --report-bg: #FFFFFF;
+
+    --report-radius-sm: 2px;
+    --report-radius-md: 10px;
+
+    --report-space-1: 4px;
+    --report-space-2: 8px;
+    --report-space-3: 16px;
+    --report-space-4: 24px;
+    --report-space-5: 32px;
+    --report-space-6: 48px;
+    --report-space-7: 64px;
+}
+
+/* =========================
+   BASE
+========================= */
+
+.report-page {
+    font-family: var(--report-font-family);
+    color: var(--report-text);
+}
+
+/* Numeración de página: se estampa post-paginado dentro del padding
+   inferior de la hoja (20mm), sin ocupar espacio del contenido. */
+.report-page-number {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10mm;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--report-muted);
+}
+
+.report-page p,
+.report-page h1,
+.report-page h2,
+.report-page h3,
+.report-page h4,
+.report-page ul,
+.report-page ol {
+    margin-top: 0;
+}
+
+/* =========================
+   SISTEMA DE SECCIONES
+   La separación entre secciones se implementa con padding-bottom
+   (y no margin-bottom) para que la altura medida por el paginador
+   coincida exactamente con el espacio renderizado.
+========================= */
+
+/* NOTA: no usar :last-child para quitar el padding — en el contenedor de
+   medición del paginador cada sección es :last-child de su wrapper, pero en
+   la página final son hermanas; la diferencia rompería las alturas medidas.
+   El padding inferior de la última sección de cada página es invisible. */
+.report-section {
+    padding-bottom: var(--report-space-6); /* 48px entre secciones */
+    page-break-inside: auto;
+}
+
+.report-section-title {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-text);
+    margin: 0 0 var(--report-space-4) 0;
+    padding-bottom: var(--report-space-2);
+    border-bottom: 1px solid var(--report-border);
+    page-break-inside: avoid;
+    page-break-after: avoid;
+}
+
+/* Subtítulos de segundo nivel (subsecciones del Informe Técnico,
+   bloques internos, cierre, FODA, referencia, ambientes) */
+.report-subtitle,
+.report-technical-subtitle,
+.report-closing-subtitle,
+.report-foda-title,
+.report-reference-subtitle,
+.report-ambiente-title,
+.report-section-subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    color: var(--report-text);
+    margin: 0 0 var(--report-space-3) 0;
+    padding-bottom: var(--report-space-2);
+    border-bottom: 1px solid var(--report-border-light);
+    page-break-inside: avoid;
+    page-break-after: avoid;
+}
+
+/* Bloques de subsección del Informe Técnico:
+   cada uno es una medición independiente para el paginador */
+.report-technical-block {
+    padding-bottom: var(--report-space-5); /* 32px entre subsecciones */
+}
+
+/* =========================
+   TEXTO
+========================= */
+
+.report-methodology-text,
+.report-introduction-text,
+.report-consideraciones-text,
+.report-foda-content,
+.report-conclusion-text {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--report-text);
+    margin: 0 0 var(--report-space-3) 0;
+}
+
+.report-list,
+.report-methodology-text + h3 + ul,
+.report-section ul {
+    margin: 0 0 var(--report-space-3) 0;
+    padding-left: var(--report-space-4);
+}
+
+.report-section li {
+    margin-bottom: var(--report-space-1);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--report-secondary);
+}
+
+/* Encabezados terciarios dentro de secciones (Factores, Conclusión, etc.) */
+.report-section h3:not(.report-technical-subtitle):not(.report-closing-subtitle):not(.report-foda-title):not(.report-reference-subtitle):not(.report-ambiente-title):not(.report-section-subtitle) {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--report-text);
+    margin: var(--report-space-4) 0 var(--report-space-2) 0;
+}
+
+.report-introduction-block {
+    margin-bottom: 0;
+}
+
+.report-consideraciones-previas {
+    margin-top: var(--report-space-4);
+}
+
+/* =========================
+   FILAS DE DATOS (label / value)
+   Reemplazan el look "card por dato" por filas editoriales
+========================= */
+
+.report-technical-item,
+.report-technical-item-full,
+.report-reference-item,
+.report-summary-item,
+.report-closing-item,
+.report-comparable-card-item,
+.report-cover-detail,
+.report-valuation-detail,
+.report-ambiente-medidas,
+.report-ambiente-descripcion {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    /* En grillas de 2 columnas el item es hijo de un track de ancho fijo:
+       sin min-width:0 el contenido se desbordaba dentro de la celda vecina
+       (label largo + valor quedaban pegados al label de al lado). */
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: var(--report-space-3);
+    padding: var(--report-space-2) 0;
+    border-bottom: 1px solid var(--report-border-light);
+}
+
+.report-technical-item:last-child,
+.report-technical-item-full:last-child,
+.report-reference-item:last-child,
+.report-summary-item:last-child,
+.report-closing-item:last-child,
+.report-comparable-card-item:last-child,
+.report-cover-detail:last-child,
+.report-valuation-detail:last-child,
+.report-ambiente-medidas:last-child,
+.report-ambiente-descripcion:last-child {
+    border-bottom: none;
+}
+
+/* Item que ocupa todo el ancho dentro de una grilla de 2 columnas */
+.report-technical-item-full {
+    grid-column: 1 / -1;
+}
+
+/* Labels: 13px, peso 500, uppercase, letter-spacing, color secundario */
+.report-technical-label,
+.report-reference-label,
+.report-summary-label,
+.report-closing-label,
+.report-cover-label,
+.report-valuation-detail-label,
+.report-comparable-card-label {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-secondary);
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+/* Valores: 15px, peso 500, color principal */
+.report-technical-value,
+.report-reference-value,
+.report-summary-value,
+.report-closing-value,
+.report-cover-value,
+.report-valuation-detail-value,
+.report-comparable-card-value {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--report-text);
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+/* Si el label ocupa casi todo el ancho, el valor cae a la línea
+   siguiente manteniendo la alineación derecha (margin-left:auto). */
+.report-technical-value,
+.report-reference-value,
+.report-summary-value,
+.report-closing-value,
+.report-valuation-detail-value,
+.report-comparable-card-value {
+    margin-left: auto;
+}
+
+/* =========================
+   CARDS (solo donde el contenido necesita contención visual)
+========================= */
+
+.report-comparable-card,
+.report-ambiente-item,
+.report-closing-block,
+.report-foda-block {
+    background: var(--report-bg);
+    border: 1px solid var(--report-border);
+    border-radius: 0;
+    padding: var(--report-space-4);
+    page-break-inside: avoid;
+}
+
+.report-comparables-summary,
+.report-valuation-card,
+.report-conclusion {
+    background: var(--report-surface);
+    border: 1px solid var(--report-border);
+    border-left: 4px solid var(--report-primary);
+    border-radius: 0;
+    padding: var(--report-space-4);
+    page-break-inside: avoid;
+}
+
+/* =========================
+   GRIDS
+========================= */
+
+.report-reference-grid,
+.report-comparables-visual-grid,
+.report-photos-grid,
+.report-foda-grid,
+.report-closing-grid {
+    display: grid;
+    gap: var(--report-space-4);
+}
+
+.report-reference-grid,
+.report-photos-grid,
+.report-foda-grid,
+.report-closing-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Comparables de mercado: una tarjeta por fila, apiladas verticalmente */
+.report-comparables-visual-grid {
+    grid-template-columns: 1fr;
+}
+
+/* Los cuadros del índice abarcan exactamente su contenido: sin stretch,
+   cada columna crece solo con sus filas reales. */
+.report-reference-grid {
+    align-items: start;
+}
+
+/* Distribución adaptable de cuadros técnicos: los items fluyen en filas;
+   comparten fila cuando entran dos y un contenido largo empuja al
+   siguiente a la fila de abajo. La decisión surge del ancho real del
+   contenido (flex-basis auto), no de una lista fija de campos. */
+.report-technical-grid {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--report-space-5);
+}
+
+.report-technical-grid > .report-technical-item {
+    flex: 1 1 auto;
+    min-width: 42%;
+    max-width: 100%;
+}
+
+.report-technical-grid > .report-technical-item-full {
+    flex: 1 1 100%;
+}
+
+/* Zonas internas del cuadro: label y valor son columnas grid
+   independientes; el valor hace wrap dentro de su propia columna y
+   nunca puede invadir el espacio del label. */
+.report-technical-item {
+    display: grid;
+    grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+    align-items: baseline;
+}
+
+.report-ambientes-detalle {
+    margin-top: var(--report-space-4);
+}
+
+.report-ambientes-detalle .report-ambiente-item {
+    margin-bottom: var(--report-space-3);
+}
+
+.report-ambientes-detalle .report-ambiente-item:last-child {
+    margin-bottom: 0;
+}
+
+.report-ambiente-item .report-ambiente-title {
+    margin-bottom: var(--report-space-2);
+    padding-bottom: 0;
+    border-bottom: none;
+    font-size: 15px;
+}
+
+.report-ambiente-medidas,
+.report-ambiente-descripcion {
+    align-items: flex-start;
+}
+
+.report-ambiente-medidas .report-technical-value,
+.report-ambiente-descripcion .report-technical-value {
+    text-align: right;
+}
+
+/* =========================
+   TABLAS — estética editorial, sin zebra, bordes sutiles
+========================= */
+
+.report-surfaces-table,
+.report-comparables-table,
+.report-comparables-technical,
+.report-competition-table,
+.report-ambientes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    page-break-inside: auto;
+    border: 1px solid var(--report-border);
+}
+
+.report-surfaces-table thead,
+.report-comparables-table thead,
+.report-comparables-technical thead,
+.report-competition-table thead,
+.report-ambientes-table thead {
+    display: table-header-group;
+}
+
+/* Headers de columna: verde acento institucional + texto blanco,
+   siguiendo el lenguaje editorial de la referencia */
+.report-surfaces-table th,
+.report-comparables-table th,
+.report-comparables-technical th,
+.report-competition-table th,
+.report-ambientes-table th {
+    padding: var(--report-space-2) var(--report-space-3);
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-bg);
+    background: var(--report-primary);
+    border-bottom: 2px solid var(--report-primary-dark);
+}
+
+.report-surfaces-table td,
+.report-comparables-table td,
+.report-comparables-technical td,
+.report-competition-table td,
+.report-ambientes-table td {
+    padding: var(--report-space-2) var(--report-space-3);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--report-text);
+    border-bottom: 1px solid var(--report-border-light);
+    vertical-align: top;
+}
+
+/* Filas intercaladas: primera fila blanco, segunda verde claro, etc. */
+.report-surfaces-table tbody tr:nth-child(even) td,
+.report-comparables-table tbody tr:nth-child(even) td,
+.report-comparables-technical tbody tr:nth-child(even) td,
+.report-competition-table tbody tr:nth-child(even) td,
+.report-ambientes-table tbody tr:nth-child(even) td {
+    background: var(--report-primary-light);
+}
+
+.report-surfaces-table tr:last-child td,
+.report-comparables-table tr:last-child td,
+.report-comparables-technical tr:last-child td,
+.report-competition-table tr:last-child td,
+.report-ambientes-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Fila de total: verde acento + texto blanco */
+.report-surfaces-table tfoot td,
+.report-comparables-table tfoot td,
+.report-comparables-technical tfoot td,
+.report-competition-table tfoot td,
+.report-ambientes-table tfoot td {
+    background: var(--report-primary);
+    color: var(--report-bg);
+    border-top: 2px solid var(--report-primary-dark);
+    border-bottom: none;
+    font-weight: 600;
+}
+
+/* Columnas numéricas alineadas a la derecha */
+.report-surfaces-table th:nth-child(n+2),
+.report-surfaces-table td:nth-child(n+2),
+.report-surfaces-table tfoot td:nth-child(n+2) {
+    text-align: right;
+}
+
+.report-competition-table th:nth-child(5),
+.report-competition-table th:nth-child(6) {
+    text-align: right;
+}
+
+.report-ambientes-table-section {
+    margin-top: var(--report-space-4);
+}
+
+.report-ambientes-table-section .report-section-subtitle {
+    margin-bottom: var(--report-space-3);
+}
+
+/* Tablas anchas (competencia, comparables técnicos): layout fijo para
+   que siempre entren en el ancho útil de 170mm. Sin esto el contenido
+   se cortaba en el borde derecho de la página. */
+.report-competition-table,
+.report-table-tech {
+    table-layout: fixed;
+}
+
+/* Competencia (8 columnas) mantiene tipografía compacta */
+.report-competition-table th {
+    padding: var(--report-space-2) var(--report-space-1);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    overflow-wrap: break-word;
+}
+
+.report-competition-table td {
+    padding: var(--report-space-2) var(--report-space-1);
+    font-size: 12px;
+    overflow-wrap: break-word;
+}
+
+/* La columna de dirección necesita más aire que las numéricas */
+.report-competition-table th:first-child {
+    width: 22%;
+}
+
+/* Tabla técnica de comparables (A y B): el mismo lenguaje del Índice
+   de Referencia — bordes verdes, fila de títulos en verde acento con
+   texto blanco, columna de Dirección en verde claro, resto blanco. */
+.report-table-tech {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--report-primary);
+    font-size: 13px;
+    page-break-inside: auto;
+}
+
+.report-table-tech thead {
+    display: table-header-group;
+}
+
+.report-table-tech th {
+    padding: var(--report-space-2);
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-bg);
+    background: var(--report-primary);
+    /* Sin border-bottom: quedaba como una línea oscura "pegada" entre el
+       encabezado y la primera fila de datos. */
+    border-bottom: none;
+    /* División entre títulos de columna: verde claro sobre el bloque verde */
+    border-left: 1px solid var(--report-primary-light);
+    overflow-wrap: break-word;
+}
+
+.report-table-tech th:first-child {
+    border-left: none;
+}
+
+.report-table-tech td {
+    padding: var(--report-space-2);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--report-text);
+    background: var(--report-bg);
+    border-bottom: 1px solid var(--report-primary-light);
+    vertical-align: top;
+    overflow-wrap: break-word;
+}
+
+.report-table-tech tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Dirección: verde claro, como las etiquetas del Índice de Referencia */
+.report-table-tech td:first-child {
+    background: var(--report-primary-light);
+    font-weight: 500;
+}
+
+.report-table-tech th:first-child {
+    width: 24%;
+}
+
+/* Columna de resultado (última de la Tabla B): valor homogeneizado */
+.report-table-tech tfoot td,
+.report-table-tech tbody td:last-child {
+    font-weight: 600;
+}
+
+/* Tabla unificada de comparables: columnas por contenido (auto) en vez
+   de reparto fijo. La fuente se fija inline desde ajustarTablasAutofit
+   (mayor tamaño que entra en el ancho útil); th/td usan tamaños
+   relativos a ese valor. Tras el ajuste, cada th recibe su width en px
+   para que las partes divididas por filas conserven el mismo layout. */
+.report-table-autofit {
+    table-layout: auto;
+}
+
+.report-table-autofit th {
+    font-size: 0.85em;
+    padding: var(--report-space-1) 2px;
+    width: auto;
+    letter-spacing: 0.02em;
+    overflow-wrap: break-word;
+}
+
+.report-table-autofit td {
+    font-size: 1em;
+    padding: var(--report-space-1) 2px;
+    overflow-wrap: break-word;
+}
+
+/* Alineación técnica: números, coeficientes y precios a la derecha;
+   Dirección y texto a la izquierda. */
+.report-table-autofit th.num,
+.report-table-autofit td.num {
+    text-align: right;
+}
+
+/* Los valores numéricos nunca se cortan a mitad ("70.0 00"): su ancho
+   mínimo entra en el cálculo de columnas y el autofit reduce la fuente
+   global si el conjunto no entra. */
+.report-table-autofit td.num {
+    white-space: nowrap;
+}
+
+/* Dirección necesita más aire que Amb./Antig./Dist./coeficientes:
+   piso preferente; el resto del reparto queda en manos del contenido. */
+.report-table-autofit th:first-child {
+    min-width: 90px;
+}
+
+.report-table-tech tfoot td {
+    background: var(--report-primary);
+    color: var(--report-bg);
+    border-top: 2px solid var(--report-primary-dark);
+    border-bottom: none;
+}
+
+.report-table-tech tfoot td:first-child {
+    background: var(--report-primary);
+}
+
+/* Tabla A → Tabla B: poca separación, forman un mismo bloque */
+.report-comparables-tabla-a {
+    padding-bottom: var(--report-space-3);
+}
+
+/* Tabla B → "Comparables utilizados": separación claramente mayor */
+.report-comparables-summary {
+    margin-top: var(--report-space-6);
+}
+
+/* =========================
+   COMPARABLES — tarjeta editorial, no dashboard
+========================= */
+
+.report-comparable-card {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--report-space-4);
+}
+
+/* Área de fotos a la izquierda: ocupa toda la altura de la tarjeta
+   (align-self: stretch) y su ancho se deriva de aspect-ratio según la
+   cantidad de fotos — la altura siempre es la de la tarjeta. */
+.report-comparable-card-photos {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: grid;
+    gap: var(--report-space-2);
+    margin: calc(var(--report-space-4) * -1) 0
+            calc(var(--report-space-4) * -1)
+            calc(var(--report-space-4) * -1);
+    border-right: 1px solid var(--report-border);
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Las celdas tienen position:relative y la img va absoluta: el tamaño
+   intrínseco de la imagen no infla la línea flex de la tarjeta, así el
+   stretch + aspect-ratio del contenedor resuelven contra la altura real
+   de la tarjeta (sin esto una foto grande hacía explotar el ancho). */
+.report-comparable-card-photo-cell {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+}
+
+.report-comparable-card-photos img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 1 foto: relación 4:5, misma altura que la tarjeta */
+.report-comparable-card-photos-1 {
+    aspect-ratio: 4 / 5;
+    grid-template-columns: 1fr;
+}
+
+/* 2 fotos: lado a lado, cada una 3:4 → conjunto ≈ 6:4 */
+.report-comparable-card-photos-2 {
+    aspect-ratio: 3 / 2;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* 3 fotos: dos arriba + una abajo a la izquierda; 4 fotos: 2×2.
+   Cada celda ≈ 4:5, el área completa ≈ 4:5. */
+.report-comparable-card-photos-3,
+.report-comparable-card-photos-4 {
+    aspect-ratio: 4 / 5;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.report-comparable-card-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--report-space-3);
+}
+
+.report-comparable-card-header {
+    padding-bottom: var(--report-space-2);
+    border-bottom: 1px solid var(--report-border-light);
+}
+
+/* Numeración tipo etiqueta: el verde actúa como pequeño
+   elemento de identidad de cada ficha */
+.report-comparable-card-number {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--report-primary);
+    margin-bottom: var(--report-space-1);
+}
+
+.report-comparable-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--report-text);
+    margin: 0;
+}
+
+.report-comparable-card-body,
+.report-comparable-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   FOTOGRAFÍAS — 4:3, integradas al informe
+========================= */
+
+.report-photo-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--report-space-2);
+    page-break-inside: avoid;
+}
+
+.report-photo-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--report-radius-sm);
+    border: 1px solid var(--report-border);
+}
+
+.report-photo-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--report-surface);
+    border: 1px dashed var(--report-border);
+    border-radius: var(--report-radius-sm);
+    color: var(--report-muted);
+    font-size: 13px;
+    padding: var(--report-space-3);
+    text-align: center;
+}
+
+.report-photo-caption {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--report-secondary);
+}
+
+/* =========================
+   FODA — bloques sutiles con acento lateral
+========================= */
+
+/* Matriz editorial: bloques blancos geométricos con borde
+   superior verde acento y título pequeño en verde */
+.report-foda-block {
+    background: var(--report-bg);
+    border: 1px solid var(--report-border);
+    border-top: 3px solid var(--report-primary);
+}
+
+.report-foda-block .report-foda-title {
+    margin-bottom: var(--report-space-2);
+    padding-bottom: var(--report-space-1);
+    border-bottom: 1px solid var(--report-border-light);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-primary);
+}
+
+.report-foda-block .report-foda-content {
+    margin-bottom: 0;
+    font-size: 14px;
+    color: var(--report-secondary);
+}
+
+/* =========================
+   GRÁFICO — barras verticales editoriales
+   (solo con datos reales; verde acento sobre verde claro)
+========================= */
+
+.report-surfaces-chart {
+    margin: 0 0 var(--report-space-4) 0;
+}
+
+.report-surfaces-chart .report-section-subtitle {
+    margin-bottom: var(--report-space-3);
+}
+
+.report-chart-columns {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--report-space-5);
+    padding-bottom: var(--report-space-2);
+    border-bottom: 1px solid var(--report-border);
+}
+
+.report-chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--report-space-1);
+    min-width: 0;
+}
+
+.report-chart-col-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--report-text);
+    white-space: nowrap;
+}
+
+.report-chart-col-track {
+    display: flex;
+    align-items: flex-end;
+    width: 34px;
+    height: 88px;
+    background: var(--report-primary-light);
+}
+
+.report-chart-col-bar {
+    display: block;
+    width: 100%;
+    background: var(--report-primary);
+}
+
+.report-chart-col-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-secondary);
+    text-align: center;
+    max-width: 110px;
+    overflow-wrap: break-word;
+}
+
+/* =========================
+   METODOLOGÍA / CONCLUSIÓN
+========================= */
+
+.report-conclusion .report-conclusion-text {
+    margin-bottom: 0;
+}
+
+.report-conclusion h3 {
+    margin-top: 0 !important;
+}
+
+/* =========================
+   VALORACIÓN — destacada pero sobria
+========================= */
+
+.report-valuation-card {
+    padding: var(--report-space-5);
+}
+
+.report-valuation-main {
+    margin-bottom: var(--report-space-4);
+    padding-bottom: var(--report-space-4);
+    border-bottom: 1px solid var(--report-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--report-space-2);
+}
+
+.report-valuation-label {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-secondary);
+}
+
+.report-valuation-value {
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    color: var(--report-primary);
+}
+
+.report-valuation-details {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modalidad "Rango de valor": mínimo/máximo como filas del valor principal */
+.report-valuation-value-range {
+    display: flex;
+    flex-direction: column;
+    gap: var(--report-space-1);
+}
+
+.report-valuation-range-row {
+    display: block;
+    font-size: 26px;
+    line-height: 1.25;
+}
+
+/* Controles de edición dentro del informe: solo UI, nunca se imprimen */
+.report-editor-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: var(--report-space-2);
+    vertical-align: middle;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--report-secondary);
+    background: transparent;
+    border: 1px solid var(--report-border);
+    border-radius: 0;
+    cursor: pointer;
+    padding: 0;
+}
+
+.report-editor-control:hover {
+    color: var(--report-primary);
+    border-color: var(--report-primary);
+}
+
+/* Renglón de valoración ocultado con (−): queda solo el (+) compacto
+   centrado; toda la fila es report-preview-only → nunca se imprime. */
+.report-valuation-hidden {
+    justify-content: center;
+    padding: 2px 0;
+    min-height: 0;
+}
+
+.report-valuation-hidden .report-valuation-add {
+    margin-left: 0;
+}
+
+/* =========================
+   ÍNDICE DE REFERENCIA
+   Cuadro técnico: borde y divisiones en verde acento,
+   columna de categorías en verde claro, datos en blanco
+========================= */
+
+.report-reference-column {
+    min-width: 0;
+    border: 1px solid var(--report-primary);
+    background: var(--report-bg);
+}
+
+.report-reference-column .report-reference-subtitle {
+    margin: 0;
+    padding: var(--report-space-2) var(--report-space-3);
+    background: var(--report-primary);
+    color: var(--report-bg);
+    /* La regla genérica de subtítulos agrega border-bottom gris claro;
+       dentro del cuadro queda como una línea pálida entre el título y
+       la primera fila. La primera fila ya trae su separador (border-top). */
+    border-bottom: none;
+}
+
+/* Separadores por border-top: no dependen de cuál es el último hijo del
+   DOM. Así, cuando una fila se oculta en impresión (report-preview-only),
+   nunca queda una línea duplicada pegada al borde del cuadro ni un
+   separador faltante entre filas visibles — el borde del cuadro siempre
+   cierra la parte inferior. */
+.report-reference-column .report-reference-item {
+    padding: 0;
+    gap: 0;
+    align-items: stretch;
+    border-top: 1px solid var(--report-primary);
+    border-bottom: none;
+}
+
+.report-reference-column .report-reference-label {
+    flex: 0 0 44%;
+    padding: var(--report-space-2) var(--report-space-3);
+    background: var(--report-primary-light);
+    border-right: 1px solid var(--report-primary);
+    color: var(--report-text);
+}
+
+.report-reference-column .report-reference-value {
+    flex: 1;
+    padding: var(--report-space-2) var(--report-space-3);
+    background: var(--report-bg);
+    text-align: left;
+    margin-left: 0;
+}
+
+/* =========================
+   CIERRE
+========================= */
+
+.report-closing-section {
+    padding-top: var(--report-space-5);
+    border-top: 1px solid var(--report-border);
+    /* La página final reserva el área útil completa: la sección es una
+       columna flex de ~altura de página y la firma baja al fondo con
+       margin-top:auto, sin posiciones absolutas ni alturas rígidas. */
+    min-height: 246mm;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-closing-block {
+    background: var(--report-surface);
+}
+
+.report-closing-block .report-closing-subtitle {
+    margin-bottom: var(--report-space-3);
+    padding-bottom: var(--report-space-2);
+    border-bottom: 1px solid var(--report-border-light);
+}
+
+/* Zona de firma: composición limpia — línea, "Firma", nombre
+   del tasador y matrícula debajo. Sin caja ni fondo. */
+.report-closing-signature {
+    text-align: center;
+    /* margin-top:auto absorbe el espacio libre de la sección flex:
+       la firma queda pegada al borde inferior del área útil, con todo
+       el aire arriba, como en la referencia. */
+    margin-top: auto;
+    padding: var(--report-space-5) 0 var(--report-space-4);
+    page-break-inside: avoid;
+}
+
+.report-closing-signature-line {
+    width: 280px;
+    height: 1px;
+    background: var(--report-text);
+    margin: 0 auto var(--report-space-2);
+}
+
+.report-closing-signature-role {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-secondary);
+    margin-bottom: var(--report-space-3);
+}
+
+.report-closing-signature-name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--report-text);
+}
+
+.report-closing-signature-detail {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--report-secondary);
+}
+
+.report-closing-signature-date {
+    font-size: 13px;
+    color: var(--report-secondary);
+    margin-top: var(--report-space-3);
+}
+
+/* =========================
+   PORTADA — composición editorial centrada
+========================= */
+
+.report-cover {
+    /* 256mm y no 257mm: el área útil real es ~256.2mm por los bordes
+       de 1px de .report-page; 257mm producía 2px de clipping. */
+    min-height: 256mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--report-space-7) var(--report-space-4);
+    box-sizing: border-box;
+}
+
+.report-cover-logo {
+    max-width: 150px;
+    max-height: 80px;
+    object-fit: contain;
+    margin-bottom: var(--report-space-5);
+}
+
+.report-cover-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.report-cover-inmobiliaria {
+    margin-bottom: var(--report-space-4);
+}
+
+.report-cover-inmobiliaria-label {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--report-text);
+}
+
+.report-cover-title {
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--report-text);
+    margin: 0 0 var(--report-space-3) 0;
+    max-width: 160mm;
+}
+
+.report-cover-subtitle {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--report-primary);
+    margin-bottom: var(--report-space-6);
+}
+
+.report-cover-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--report-space-1);
+    min-width: 90mm;
+    border-top: 1px solid var(--report-border);
+    padding-top: var(--report-space-4);
+}
+
+.report-cover-detail {
+    justify-content: center;
+    gap: var(--report-space-2);
+    border-bottom: none;
+    padding: var(--report-space-1) 0;
+}
+
+.report-cover-detail .report-cover-label {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.report-cover-detail .report-cover-label::after {
+    content: '';
+}
+
+.report-cover-detail .report-cover-value {
+    font-weight: 500;
+}
+
+/* =========================
+   IMPRESIÓN
+   Las reglas de página A4 y ocultamiento de UI viven en
+   vista-previa-informe.css. Aquí solo ajustes del informe.
+========================= */
+
+@media print {
+    .report-surfaces-table thead,
+    .report-comparables-table thead,
+    .report-table-tech thead,
+    .report-competition-table thead,
+    .report-ambientes-table thead {
+        display: table-header-group;
+    }
+
+    .report-editor-control {
+        display: none !important;
+    }
+
+    /* El diálogo de impresión rasteriza la página y, cuando el destino es
+       una impresora física, escala el contenido al área imprimible del
+       hardware: los bordes de 1px (0.75pt) caen por debajo del píxel y el
+       preview los descarta. En print el cuadro del índice usa 1.5px —
+       peso equivalente en el resultado, pero sobrevive el escalado. */
+    .report-reference-column {
+        border-width: 1.5px;
+    }
+
+    .report-reference-column .report-reference-item {
+        border-top-width: 1.5px;
+    }
+
+    .report-reference-column .report-reference-label {
+        border-right-width: 1.5px;
+    }
+
+    .report-table-tech {
+        border-width: 1.5px;
+    }
+
+    .report-table-tech th {
+        border-left-width: 1.5px;
+    }
+
+    .report-table-tech td {
+        border-bottom-width: 1.5px;
+    }
+}
