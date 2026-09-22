@@ -44,6 +44,51 @@
     color: var(--report-text);
 }
 
+/* Encabezado de página: se estampa post-paginado en todas las hojas
+   menos la portada, dentro del padding superior (20mm). */
+.report-page-header {
+    position: absolute;
+    top: 5mm;
+    left: 20mm;
+    right: 20mm;
+    height: 11mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6mm;
+    box-sizing: border-box;
+}
+
+.report-page-header-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.report-page-header-logo {
+    height: 10mm;
+    width: auto;
+    max-width: 40mm;
+    object-fit: contain;
+    display: block;
+}
+
+.report-page-header-logo.circular {
+    width: 10mm;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.report-page-header-right {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--report-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Numeración de página: se estampa post-paginado dentro del padding
    inferior de la hoja (20mm), sin ocupar espacio del contenido. */
 .report-page-number {
@@ -1133,6 +1178,15 @@
     max-height: 80px;
     object-fit: contain;
     margin-bottom: var(--report-space-5);
+}
+
+.report-cover-logo.circular {
+    width: 80px;
+    height: 80px;
+    max-width: 80px;
+    max-height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .report-cover-content {

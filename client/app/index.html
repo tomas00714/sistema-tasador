@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/shell.css">
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/historial.css">
+    <link rel="stylesheet" href="../css/compartir.css">
     <link rel="stylesheet" href="../css/tasacion.css">
 
     <script>
@@ -133,10 +135,6 @@
                     Tasá Inmuebles con Precisión
                 </h1>
 
-                <p class="home-inicio-subtitulo">
-                    Sistema de tasacion mediante homogeneizacion de comparables. Calcula el valor de mercado de forma rapida y confiable
-                </p>
-
                 <div class="home-acciones">
                     <a
                         href="tasacion.html"
@@ -144,9 +142,7 @@
                         role="button"
                         aria-label="Abrir nueva tasación">
 
-                        <span class="btn-nueva-tasacion-home-icon">
-                            <i class="fa-solid fa-plus"></i>
-                        </span>
+                        <i class="fa-solid fa-plus btn-nueva-tasacion-home-plus" aria-hidden="true"></i>
 
                         <span class="btn-nueva-tasacion-home-label">Nueva Tasación</span>
 
@@ -154,17 +150,50 @@
 
                     <a
                         href="historial.html"
-                        class="home-action-card btn-historial-home-card"
+                        class="home-action-card btn-stat-home-card"
                         role="button"
-                        aria-label="Abrir base de datos">
+                        aria-label="Ver tasaciones de este mes">
 
-                        <span class="btn-nueva-tasacion-home-icon">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span class="home-stat-info">
+                            <span class="home-stat-titulo">Tasaciones este mes:</span>
+                            <span class="home-stat-numero" id="homeTasacionesMes">–</span>
                         </span>
 
-                        <span class="btn-nueva-tasacion-home-label">Base de datos</span>
+                        <span class="home-mini-chart" aria-hidden="true">
+                            <span class="home-mini-chart-bar" style="height: 34%"></span>
+                            <span class="home-mini-chart-bar" style="height: 56%"></span>
+                            <span class="home-mini-chart-bar" style="height: 42%"></span>
+                            <span class="home-mini-chart-bar" style="height: 70%"></span>
+                            <span class="home-mini-chart-bar" style="height: 58%"></span>
+                            <span class="home-mini-chart-bar" style="height: 86%"></span>
+                        </span>
 
                     </a>
+
+                    <a
+                        href="historial.html?estado=borrador"
+                        class="home-action-card btn-stat-home-card"
+                        role="button"
+                        aria-label="Ver borradores guardados">
+
+                        <span class="home-stat-info">
+                            <span class="home-stat-titulo">Borradores guardados:</span>
+                            <span class="home-stat-numero" id="homeBorradores">–</span>
+                        </span>
+
+                        <i class="fa-solid fa-file-lines home-stat-icono" aria-hidden="true"></i>
+
+                    </a>
+                </div>
+
+                <div class="home-recientes-card">
+
+                    <h2 class="home-recientes-titulo">Recientes:</h2>
+
+                    <div class="home-recientes-cuadro" id="homeRecientesLista">
+                        <p class="home-recientes-vacio">Cargando…</p>
+                    </div>
+
                 </div>
 
             </div>
@@ -246,6 +275,37 @@
         </div>
     </div>
 
+    <!-- Modal para compartir tasación -->
+    <div class="modal-overlay" id="modalCompartir">
+        <div class="modal-confirmacion-salir modal-compartir">
+            <h2 class="modal-titulo">Compartir tasación</h2>
+            <p class="modal-mensaje" id="compartirMensaje">Compartí esta tasación mediante un enlace.</p>
+
+            <div class="compartir-contenido" id="compartirContenido" style="display: none;">
+                <input type="text" id="compartirLink" class="compartir-input" readonly>
+                <div class="compartir-acciones">
+                    <button type="button" class="compartir-btn compartir-btn-copiar" id="btnCopiarLink">
+                        <i class="fa-solid fa-copy"></i> Copiar enlace
+                    </button>
+                    <a class="compartir-btn compartir-btn-whatsapp" id="btnCompartirWhatsapp" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a class="compartir-btn compartir-btn-email" id="btnCompartirEmail">
+                        <i class="fa-solid fa-envelope"></i> Email
+                    </a>
+                </div>
+                <button type="button" class="compartir-btn-revocar" id="btnRevocarLink">
+                    Revocar enlace
+                </button>
+            </div>
+
+            <div class="modal-confirmacion-botones modal-botones" id="compartirBotonesInicio">
+                <button type="button" class="btn-cancelar" id="btnCerrarCompartir">Cerrar</button>
+                <button type="button" class="btn-confirmar" id="btnGenerarLink">Generar enlace</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -258,6 +318,10 @@
     <script src="../js/route-guard.js"></script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/api-client.js"></script>
+    <script src="../js/format-utils.js"></script>
+    <script src="../js/config/resultados-config.js"></script>
+    <script src="../js/resultados-renderer.js"></script>
+    <script src="../js/historial.js"></script>
     <script src="../js/entidades.js"></script>
     <script src="../js/global.js"></script>
     <script src="../js/event-manager.js"></script>
@@ -284,6 +348,8 @@
     <script src="../js/comparable-modal.js"></script>
     <script src="../js/tasacion-navegacion.js"></script>
     <script src="../js/tasacion-resultado.js"></script>
+    <script src="../js/compartir.js"></script>
+    <script src="../js/home.js"></script>
     <script src="../js/theme.js"></script>
 
     <!-- Modal de selección de tema -->

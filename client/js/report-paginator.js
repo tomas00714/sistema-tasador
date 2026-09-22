@@ -9,7 +9,10 @@
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 const PAGE_PADDING_MM = 20;
-const CONTENT_HEIGHT_MM = A4_HEIGHT_MM - (PAGE_PADDING_MM * 2); // 257mm útiles
+// Padding superior mayor: deja aire entre el encabezado de página y el
+// inicio del contenido (el header vive dentro de este margen).
+const PAGE_PADDING_TOP_MM = 25;
+const CONTENT_HEIGHT_MM = A4_HEIGHT_MM - PAGE_PADDING_TOP_MM - PAGE_PADDING_MM; // 252mm útiles
 const PX_TO_MM = 0.264583;
 
 // =========================
@@ -31,7 +34,7 @@ class ReportPaginator {
             top: 0;
             left: 0;
             width: ${A4_WIDTH_MM}mm;
-            padding: ${PAGE_PADDING_MM}mm;
+            padding: ${PAGE_PADDING_TOP_MM}mm ${PAGE_PADDING_MM}mm ${PAGE_PADDING_MM}mm;
             box-sizing: border-box;
             background: white;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

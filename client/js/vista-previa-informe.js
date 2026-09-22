@@ -10,6 +10,9 @@ function getTasacionIdFromURL() {
 
 const reportConfig = {
     showLogo: true,
+    // Forma del logo en el informe y en el encabezado de páginas
+    logoForma: "cuadrada",
+    logoHeader: true,
     showPhotos: true,
     showComparables: true,
     showMethodology: true,
@@ -345,6 +348,7 @@ function setupComparablesState() {
 }
 
 function setupExpandablePanels() {
+    setupExpandPanel('btnExpandLogo', 'logoExpandPanel');
     setupExpandPanel('btnExpandPhotos', 'photosExpandPanel');
     setupExpandPanel('btnExpandComparables', 'comparablesExpandPanel');
 }
@@ -841,6 +845,25 @@ function setupConfigListeners() {
         });
     }
 
+    // Opciones del logo: forma (circular/cuadrada) y logo en encabezado.
+    // Se persisten en reportConfig como el resto de la configuración.
+    document.querySelectorAll('[data-logo-forma]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            reportConfig.logoForma = btn.dataset.logoForma;
+            persistirConfigInforme();
+            syncLogoOptionButtons();
+            renderReportPreview();
+        });
+    });
+    document.querySelectorAll('[data-logo-header]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            reportConfig.logoHeader = btn.dataset.logoHeader === '1';
+            persistirConfigInforme();
+            syncLogoOptionButtons();
+            renderReportPreview();
+        });
+    });
+
     const showPhotosCheckbox = document.getElementById('showPhotos');
     if (showPhotosCheckbox) {
         showPhotosCheckbox.addEventListener('change', (e) => {
@@ -969,10 +992,25 @@ async function renderReportPreview() {
             }
         });
 
-        // Numeración "x de y" en el pie de cada hoja. Se agrega después
-        // del paginado (no forma parte del contenido medido).
+        // Numeración "x de y" en el pie de cada hoja + encabezado en
+        // todas menos la portada. Se agregan después del paginado (no
+        // forman parte del contenido medido).
         const hojas = reportViewer.querySelectorAll('.report-page');
+        const logoHeaderUrl = reportData?.reportInfo?.logo_inmobiliaria_url;
+        const refNumero = reportData?.reportInfo?.reportNumber || '';
+        const logoCircular = reportConfig.logoForma === 'circular';
         hojas.forEach((page, i) => {
+            if (!page.classList.contains('report-page-cover')) {
+                const header = document.createElement('div');
+                header.className = 'report-page-header';
+                const logoImg = (reportConfig.logoHeader && logoHeaderUrl)
+                    ? `<img class="report-page-header-logo${logoCircular ? ' circular' : ''}" src="${logoHeaderUrl}" alt="" onerror="this.style.display='none'">`
+                    : '';
+                header.innerHTML = `
+                    <div class="report-page-header-left">${logoImg}</div>
+                    <div class="report-page-header-right">Informe de Tasación Inmobiliaria | Ref: ${refNumero}</div>`;
+                page.appendChild(header);
+            }
             const num = document.createElement('div');
             num.className = 'report-page-number';
             num.textContent = `${i + 1} de ${hojas.length}`;
@@ -1090,6 +1128,15 @@ function syncConfigInputs() {
     
     // Presentación del valor
     if (document.getElementById('valorModalidad')) document.getElementById('valorModalidad').value = reportConfig.valorModalidad;
+
+    syncLogoOptionButtons();
+}
+
+function syncLogoOptionButtons() {
+    document.querySelectorAll('[data-logo-forma]').forEach(b =>
+        b.classList.toggle('is-selected', b.dataset.logoForma === reportConfig.logoForma));
+    document.querySelectorAll('[data-logo-header]').forEach(b =>
+        b.classList.toggle('is-selected', (b.dataset.logoHeader === '1') === !!reportConfig.logoHeader));
 }
 
 function getReportConfig() {

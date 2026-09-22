@@ -232,6 +232,106 @@ body {
     background: var(--color-bg-light);
 }
 
+/* Opciones del logo: forma (circular/cuadrada) y logo en encabezado.
+   El seleccionado se marca en verde, el resto en gris. */
+.config-logo-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.config-logo-row:last-child {
+    margin-bottom: 0;
+}
+
+.config-logo-opt {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
+    background: var(--color-white);
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.config-logo-opt.is-selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+/* Forma genérica: gris claro, borde más oscuro, casa al centro.
+   Seleccionada → tonos verdes. */
+.config-logo-shape {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eceeed;
+    border: 2px solid #9aa39e;
+    color: #9aa39e;
+    font-size: 18px;
+}
+
+.config-logo-shape-circle {
+    border-radius: 50%;
+}
+
+.config-logo-shape-square {
+    border-radius: 4px;
+}
+
+.config-logo-opt.is-selected .config-logo-shape {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+/* Miniatura de página para la opción "logo en encabezado":
+   rectángulo blanco con línea divisoria superior (el header). */
+.config-logo-page {
+    width: 44px;
+    height: 56px;
+    display: block;
+    background: var(--color-white);
+    border: 1px solid #b8bdb9;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.config-logo-page-head {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 8px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.config-logo-page-mini {
+    width: 6px;
+    height: 6px;
+    display: block;
+    background: #9aa39e;
+    border-radius: 1px;
+    margin-bottom: 1px;
+}
+
+.config-logo-opt.is-selected .config-logo-page {
+    border-color: var(--color-primary);
+}
+
+
+
+.config-logo-opt.is-selected .config-logo-page-mini {
+    background: var(--color-primary);
+}
+
 .config-toggle input[type="checkbox"]:disabled + span {
     opacity: 0.5;
 }
@@ -673,7 +773,7 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-input);
-    padding: 20mm;
+    padding: 25mm 20mm 20mm;
     box-sizing: border-box;
     margin-bottom: 32px;
     margin-top: 32px;
@@ -700,7 +800,7 @@ body {
     top: 0;
     left: 0;
     width: 210mm;
-    padding: 20mm;
+    padding: 25mm 20mm 20mm;
     box-sizing: border-box;
     background: white;
     font-family: var(--font-family-base);
@@ -830,7 +930,7 @@ body {
     .report-page {
         width: 210mm;
         height: 297mm;
-        padding: 20mm;
+        padding: 25mm 20mm 20mm;
         margin: 0;
         box-sizing: border-box;
         background: white;

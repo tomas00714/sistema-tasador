@@ -154,6 +154,16 @@ async function inicializarHistorial() {
         historialInicializado = true;
     }
 
+    const estadoParam = new URLSearchParams(window.location.search).get("estado");
+    if (estadoParam === "borrador" || estadoParam === "completada") {
+        estadoFiltroActual = estadoParam;
+        const inputEstado = document.getElementById("historialFiltroEstado");
+        if (inputEstado) {
+            inputEstado.dataset.value = estadoParam;
+            inputEstado.value = estadoParam === "borrador" ? "Borradores" : "Completadas";
+        }
+    }
+
     renderHistorial();
 
     inicializarFiltrosHistorial();

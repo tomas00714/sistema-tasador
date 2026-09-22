@@ -5,10 +5,10 @@
 
 let datosProfesionales = null;
 let datosOriginales = {};
-let archivoFotoPendiente = null;
-let archivoLogoPendiente = null;
-let eliminarFotoPendiente = false;
-let eliminarLogoPendiente = false;
+// Bytes de las imágenes al entrar en edición: si el usuario cancela,
+// se restauran re-subiéndolos (el DELETE puede borrar el archivo).
+let snapshotFotoBlob = null;
+let snapshotLogoBlob = null;
 
 const card = () => document.getElementById('perfilCard');
 
@@ -178,21 +178,33 @@ function mostrarVistaPrevia(file, imgId, iconId) {
     reader.readAsDataURL(file);
 }
 
-function restaurarValoresOriginales() {
-    document.getElementById('inputMatricula').value = datosOriginales.matricula || '';
-    document.getElementById('inputTelefono').value = datosOriginales.telefono || '';
-    document.getElementById('inputNombreInmobiliaria').value = datosOriginales.nombre_inmobiliaria || '';
+// Recarga los datos guardados sin tocar los inputs de edición (a
+// diferencia de cargarDatosProfesionales, no pisa lo que el usuario
+// esté escribiendo). Actualiza vista, avatar, logo y el estado local.
+async function refrescarDatosGuardados() {
+    try {
+        const data = await obtenerProfesionalAPI();
+        datosProfesionales = data && data.profesional ? data.profesional : null;
+        const usuario = data && data.usuario ? data.usuario : null;
 
-    document.getElementById('inputFotoPerfil').value = '';
-    document.getElementById('inputLogoInmobiliaria').value = '';
+        const matricula = datosProfesionales?.matricula || '';
+        const telefono = datosProfesionales?.telefono || '';
+        const inmobiliaria = datosProfesionales?.nombre_inmobiliaria || '';
 
-    archivoFotoPendiente = null;
-    archivoLogoPendiente = null;
-    eliminarFotoPendiente = false;
-    eliminarLogoPendiente = false;
+        document.getElementById('verMatricula').textContent = matricula || '—';
+        document.getElementById('verTelefono').textContent = telefono || '—';
+        document.getElementById('verNombreInmobiliaria').textContent = inmobiliaria || '—';
 
-    actualizarAvatar(datosOriginales.foto_perfil);
-    actualizarLogo(datosOriginales.logo_inmobiliaria);
+        if (usuario) {
+            document.getElementById('verEmailCuenta').textContent = usuario.email || '—';
+            actualizarEstadoGoogle(usuario.google_vinculado);
+        }
+
+        actualizarAvatar(datosProfesionales?.foto_perfil || null);
+        actualizarLogo(datosProfesionales?.logo_inmobiliaria || null);
+    } catch (e) {
+        console.warn('No se pudo refrescar el perfil:', e.message);
+    }
 }
 
 function cerrarPopoversMedia() {
@@ -230,20 +242,28 @@ function togglePopoverLogo() {
     popover.classList.toggle('abierto');
 }
 
-function marcarEliminarFoto() {
-    eliminarFotoPendiente = true;
-    archivoFotoPendiente = null;
-    document.getElementById('inputFotoPerfil').value = '';
-    actualizarAvatar(null);
+// Eliminación inmediata (auto-guardado): Cancelar restaura con el
+// snapshot tomado al entrar en edición.
+async function marcarEliminarFoto() {
     cerrarPopoversMedia();
+    actualizarAvatar(null);
+    try {
+        await eliminarFotoPerfilAPI();
+    } catch (e) {
+        mostrarError(e.message || 'No se pudo eliminar la foto');
+    }
+    await refrescarDatosGuardados();
 }
 
-function marcarEliminarLogo() {
-    eliminarLogoPendiente = true;
-    archivoLogoPendiente = null;
-    document.getElementById('inputLogoInmobiliaria').value = '';
-    actualizarLogo(null);
+async function marcarEliminarLogo() {
     cerrarPopoversMedia();
+    actualizarLogo(null);
+    try {
+        await eliminarLogoInmobiliariaAPI();
+    } catch (e) {
+        mostrarError(e.message || 'No se pudo eliminar el logo');
+    }
+    await refrescarDatosGuardados();
 }
 
 function entrarModoEdicion() {
@@ -255,10 +275,22 @@ function entrarModoEdicion() {
         logo_inmobiliaria: datosProfesionales?.logo_inmobiliaria || null
     };
 
-    archivoFotoPendiente = null;
-    archivoLogoPendiente = null;
-    eliminarFotoPendiente = false;
-    eliminarLogoPendiente = false;
+    // Snapshot de los bytes de las imágenes actuales para que Cancelar
+    // pueda restaurarlas aunque el servidor haya borrado el archivo.
+    snapshotFotoBlob = null;
+    snapshotLogoBlob = null;
+    if (datosOriginales.foto_perfil) {
+        fetch(urlArchivo(datosOriginales.foto_perfil))
+            .then(r => r.ok ? r.blob() : null)
+            .then(b => { snapshotFotoBlob = b; })
+            .catch(() => {});
+    }
+    if (datosOriginales.logo_inmobiliaria) {
+        fetch(urlArchivo(datosOriginales.logo_inmobiliaria))
+            .then(r => r.ok ? r.blob() : null)
+            .then(b => { snapshotLogoBlob = b; })
+            .catch(() => {});
+    }
 
     card().classList.add('modo-edicion');
 
@@ -275,62 +307,90 @@ function salirModoEdicion() {
     card().classList.remove('modo-edicion');
 }
 
-function cancelarEdicion() {
-    restaurarValoresOriginales();
+// Persiste los campos de texto actuales (auto-guardado en cada cambio
+// y flush final al presionar "Guardar cambios").
+async function autoguardarCampos() {
+    if (!card().classList.contains('modo-edicion')) return;
+    const payload = {
+        matricula: document.getElementById('inputMatricula').value.trim() || null,
+        telefono: document.getElementById('inputTelefono').value.trim() || null,
+        nombre_inmobiliaria: document.getElementById('inputNombreInmobiliaria').value.trim() || null
+    };
+    try {
+        const resp = await actualizarProfesionalAPI(payload);
+        datosProfesionales = resp?.profesional
+            ? resp.profesional
+            : { ...(datosProfesionales || {}), ...payload };
+        return true;
+    } catch (e) {
+        console.error('Error al autoguardar el perfil:', e);
+        mostrarError(e.message || 'Error al guardar los cambios');
+        return false;
+    }
+}
+
+// Revierte en el servidor todo lo auto-guardado durante la edición,
+// volviendo al estado capturado al entrar (datosOriginales + snapshots).
+async function cancelarEdicion() {
+    try {
+        const ops = [];
+
+        const textoDistinto = ['matricula', 'telefono', 'nombre_inmobiliaria']
+            .some(k => (datosProfesionales?.[k] || '') !== (datosOriginales[k] || ''));
+        if (textoDistinto) {
+            ops.push(actualizarProfesionalAPI({
+                matricula: datosOriginales.matricula || null,
+                telefono: datosOriginales.telefono || null,
+                nombre_inmobiliaria: datosOriginales.nombre_inmobiliaria || null
+            }));
+        }
+
+        if ((datosProfesionales?.foto_perfil || null) !== (datosOriginales.foto_perfil || null)) {
+            if (datosOriginales.foto_perfil && snapshotFotoBlob) {
+                ops.push(subirFotoPerfilAPI(new File([snapshotFotoBlob], datosOriginales.foto_perfil, { type: snapshotFotoBlob.type || 'image/*' })));
+            } else if (!datosOriginales.foto_perfil) {
+                ops.push(eliminarFotoPerfilAPI());
+            } else {
+                console.warn('No se pudo restaurar la foto original (snapshot no disponible).');
+            }
+        }
+
+        if ((datosProfesionales?.logo_inmobiliaria || null) !== (datosOriginales.logo_inmobiliaria || null)) {
+            if (datosOriginales.logo_inmobiliaria && snapshotLogoBlob) {
+                ops.push(subirLogoInmobiliariaAPI(new File([snapshotLogoBlob], datosOriginales.logo_inmobiliaria, { type: snapshotLogoBlob.type || 'image/*' })));
+            } else if (!datosOriginales.logo_inmobiliaria) {
+                ops.push(eliminarLogoInmobiliariaAPI());
+            } else {
+                console.warn('No se pudo restaurar el logo original (snapshot no disponible).');
+            }
+        }
+
+        await Promise.all(ops);
+    } catch (e) {
+        console.error('Error al revertir los cambios:', e);
+        mostrarError(e.message || 'No se pudieron revertir todos los cambios');
+    }
+    snapshotFotoBlob = null;
+    snapshotLogoBlob = null;
+    await cargarDatosProfesionales();
     salirModoEdicion();
 }
 
+// Los cambios ya están guardados por el auto-guardado; este botón hace
+// un flush final (por si hay texto tipeado sin blur) y sale de edición.
 async function guardarCambios() {
     const mensaje = document.getElementById('mensajeProfesional');
     const error = document.getElementById('errorProfesional');
     if (mensaje) mensaje.style.display = 'none';
     if (error) error.style.display = 'none';
 
-    const matricula = document.getElementById('inputMatricula').value.trim();
-    const telefono = document.getElementById('inputTelefono').value.trim();
-    const inmobiliaria = document.getElementById('inputNombreInmobiliaria').value.trim();
+    await autoguardarCampos();
+    await cargarDatosProfesionales();
+    salirModoEdicion();
 
-    try {
-        if (archivoFotoPendiente) {
-            await subirFotoPerfilAPI(archivoFotoPendiente);
-            archivoFotoPendiente = null;
-        } else if (eliminarFotoPendiente) {
-            await eliminarFotoPerfilAPI();
-            eliminarFotoPendiente = false;
-        }
-
-        if (archivoLogoPendiente) {
-            await subirLogoInmobiliariaAPI(archivoLogoPendiente);
-            archivoLogoPendiente = null;
-        } else if (eliminarLogoPendiente) {
-            await eliminarLogoInmobiliariaAPI();
-            eliminarLogoPendiente = false;
-        }
-
-        const payload = {
-            matricula: matricula || null,
-            telefono: telefono || null,
-            nombre_inmobiliaria: inmobiliaria || null
-        };
-
-        const hayCambiosTexto = Object.values(payload).some(v => v !== null);
-        if (hayCambiosTexto || datosProfesionales) {
-            await actualizarProfesionalAPI(payload);
-        }
-
-        await cargarDatosProfesionales();
-        salirModoEdicion();
-
-        if (mensaje) {
-            mensaje.textContent = 'Cambios guardados correctamente';
-            mensaje.style.display = 'block';
-        }
-    } catch (e) {
-        console.error('Error al guardar el perfil:', e);
-        if (error) {
-            error.textContent = e.message || 'Error al guardar los cambios';
-            error.style.display = 'block';
-        }
+    if (mensaje) {
+        mensaje.textContent = 'Cambios guardados correctamente';
+        mensaje.style.display = 'block';
     }
 }
 
@@ -397,9 +457,13 @@ function inicializarEventos() {
                 titulo: 'Recortar foto de perfil'
             });
             if (!blob) return;
-            archivoFotoPendiente = new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type });
-            eliminarFotoPendiente = false;
             mostrarVistaPrevia(blob, 'perfilAvatarImg', 'perfilAvatarIcon');
+            try {
+                await subirFotoPerfilAPI(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }));
+            } catch (err) {
+                mostrarError(err.message || 'No se pudo guardar la foto de perfil');
+            }
+            await refrescarDatosGuardados();
         });
     }
 
@@ -416,15 +480,21 @@ function inicializarEventos() {
                 titulo: 'Recortar logo'
             });
             if (!blob) return;
-            archivoLogoPendiente = new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type });
-            eliminarLogoPendiente = false;
             mostrarVistaPrevia(blob, 'logoInmobiliariaImg', 'logoInmobiliariaIcon');
+            try {
+                await subirLogoInmobiliariaAPI(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }));
+            } catch (err) {
+                mostrarError(err.message || 'No se pudo guardar el logo');
+            }
+            await refrescarDatosGuardados();
         });
     }
 
     ['inputMatricula', 'inputTelefono', 'inputNombreInmobiliaria'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
+            // Auto-guardado: cada cambio confirmado (blur/Enter) persiste.
+            input.addEventListener('change', autoguardarCampos);
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();

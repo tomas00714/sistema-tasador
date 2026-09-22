@@ -36,10 +36,41 @@
                 <div class="config-section">
                     <h3>Elementos visibles</h3>
                     
-                    <label class="config-toggle">
-                        <input type="checkbox" id="showLogo" checked>
-                        <span>Mostrar logo</span>
-                    </label>
+                    <div class="config-toggle-expandable" id="logoToggleExpandable">
+                        <div class="config-toggle-row">
+                            <label class="config-toggle config-toggle-in-row">
+                                <input type="checkbox" id="showLogo" checked>
+                                <span>Mostrar logo</span>
+                            </label>
+                            <button type="button" class="config-toggle-expand-btn" id="btnExpandLogo" aria-expanded="false" aria-controls="logoExpandPanel">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="config-toggle-panel" id="logoExpandPanel" hidden>
+                            <!-- Fila 1: forma del logo en el informe -->
+                            <div class="config-logo-row">
+                                <button type="button" class="config-logo-opt" data-logo-forma="circular" title="Logo circular">
+                                    <span class="config-logo-shape config-logo-shape-circle"><i class="fa-solid fa-house"></i></span>
+                                </button>
+                                <button type="button" class="config-logo-opt" data-logo-forma="cuadrada" title="Logo cuadrado">
+                                    <span class="config-logo-shape config-logo-shape-square"><i class="fa-solid fa-house"></i></span>
+                                </button>
+                            </div>
+                            <!-- Fila 2: logo en el encabezado de las páginas -->
+                            <div class="config-logo-row">
+                                <button type="button" class="config-logo-opt" data-logo-header="1" title="Logo en el encabezado">
+                                    <span class="config-logo-page">
+                                        <span class="config-logo-page-head"><span class="config-logo-page-mini"></span></span>
+                                    </span>
+                                </button>
+                                <button type="button" class="config-logo-opt" data-logo-header="0" title="Sin logo en el encabezado">
+                                    <span class="config-logo-page">
+                                        <span class="config-logo-page-head"></span>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="config-toggle-expandable" id="photosToggleExpandable">
                         <div class="config-toggle-row">

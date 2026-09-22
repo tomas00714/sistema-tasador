@@ -618,7 +618,7 @@ function ReportCover({ reportInfo, selector, showLogo = true, config }) {
     const tituloInforme = reportInfo.title || 'INFORME DE TASACIÓN';
 
     const logoHtml = (showLogo && reportInfo.logo_inmobiliaria_url)
-        ? `<img class="report-cover-logo" src="${reportInfo.logo_inmobiliaria_url}" alt="Logo" onerror="this.style.display='none'" />`
+        ? `<img class="report-cover-logo${config?.logoForma === 'circular' ? ' circular' : ''}" src="${reportInfo.logo_inmobiliaria_url}" alt="Logo" onerror="this.style.display='none'" />`
         : '';
 
     return `
@@ -2026,7 +2026,7 @@ async function ReportViewerProfessional({ reportData, config }) {
     
     // Combinar portada + páginas de contenido
     const allPages = [
-        ...standaloneSections.map(s => `<div class="report-page" style="height: ${A4_HEIGHT_MM}mm; overflow: hidden;"><div class="report-page-content">${s.html}</div></div>`),
+        ...standaloneSections.map(s => `<div class="report-page report-page-cover" style="height: ${A4_HEIGHT_MM}mm; overflow: hidden;"><div class="report-page-content">${s.html}</div></div>`),
         physicalPages
     ];
 
