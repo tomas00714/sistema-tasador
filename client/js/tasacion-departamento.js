@@ -94,8 +94,6 @@ function mostrarFormularioDepartamento() {
                 <textarea id="observacionesInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.departamento.observaciones || ""}</textarea>
             </div>
         </div>
-
-        ${generarHTMLDatosInforme('departamento')}
     `;
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {
@@ -118,7 +116,6 @@ function mostrarFormularioDepartamento() {
         inicializarBanos('departamento');
         inicializarSwitchCochera();
         inicializarSwitchBaulera();
-        inicializarAmbientesInforme();
     });
 
     setTimeout(() => {

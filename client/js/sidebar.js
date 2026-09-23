@@ -138,25 +138,20 @@ function inyectarSubmenuSolicitudes(paginaActual) {
     const sidebarNav = sidebar.querySelector('.sidebar-nav');
     if (!sidebarNav) return;
 
-    // Eliminar el link de Solicitudes del menú principal en cualquier página
-    const existingSolicitudes = sidebarNav.querySelector('[data-page="solicitudes"]');
-    if (existingSolicitudes) {
-        existingSolicitudes.remove();
-    }
+    // Solicitudes es un ítem permanente e independiente del menú principal:
+    // nunca se quita; solo se inyecta si la página no lo trae en el HTML.
+    if (sidebarNav.querySelector('[data-page="solicitudes"]')) return;
 
-    // En historial y solicitudes, mostrarlo como sub-item desplegado de "Base de datos"
-    if (paginaActual === 'historial' || paginaActual === 'solicitudes') {
-        const historialLink = sidebarNav.querySelector('[data-page="historial"]');
-        if (historialLink) {
-            historialLink.insertAdjacentHTML('afterend', `
-                <a href="solicitudes.html" class="sidebar-nav-item sidebar-sub-item" data-page="solicitudes">
-                    <span class="sidebar-nav-item-icon">
-                        <i class="fa-solid fa-file-lines"></i>
-                    </span>
-                    <span class="sidebar-nav-item-text">Solicitudes</span>
-                </a>
-            `);
-        }
+    const historialLink = sidebarNav.querySelector('[data-page="historial"]');
+    if (historialLink) {
+        historialLink.insertAdjacentHTML('afterend', `
+            <a href="solicitudes.html" class="sidebar-nav-item" data-page="solicitudes">
+                <span class="sidebar-nav-item-icon">
+                    <i class="fa-solid fa-file-lines"></i>
+                </span>
+                <span class="sidebar-nav-item-text">Solicitudes</span>
+            </a>
+        `);
     }
 }
 

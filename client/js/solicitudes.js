@@ -14,7 +14,7 @@ const ETIQUETAS_TIPO = {
 };
 
 const ICONOS_TIPO = {
-    lote: 'fa-square',
+    lote: 'fa-map-pin',
     casa: 'fa-house',
     departamento: 'fa-building'
 };

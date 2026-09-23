@@ -431,127 +431,50 @@ function formatearDireccion(direccion) {
 }
 
 function guardarDatosInforme() {
-    datosInforme.nomenclaturaCatastral = document.getElementById("nomenclaturaCatastralInput")?.value || "";
-    datosInforme.clienteNombre = document.getElementById("clienteNombreInput")?.value || "";
-    datosInforme.finalidad = document.getElementById("finalidadInput")?.value || "Tasación comercial";
-    
-    datosInforme.entorno.descripcion = document.getElementById("entornoDescripcionInput")?.value || "";
-    datosInforme.entorno.transporte = document.getElementById("entornoTransporteInput")?.value || "";
-    datosInforme.entorno.comercios = document.getElementById("entornoComerciosInput")?.value || "";
-    datosInforme.entorno.universidades = document.getElementById("entornoUniversidadesInput")?.value || "";
-    datosInforme.entorno.puntosInteres = document.getElementById("entornoPuntosInteresInput")?.value || "";
-    
-    // Guardar ambientes
-    datosInforme.ambientes = [];
-    document.querySelectorAll('.ambiente-item').forEach((item, index) => {
-        const nombre = item.querySelector('.ambiente-nombre')?.value || "";
-        const medidas = item.querySelector('.ambiente-medidas')?.value || "";
-        const descripcion = item.querySelector('.ambiente-descripcion')?.value || "";
-        
-        if (nombre || medidas || descripcion) {
-            datosInforme.ambientes.push({
-                nombre,
-                medidas,
-                descripcion
-            });
-        }
-    });
-    
-    console.log('[guardarDatosInforme] datosInforme:', JSON.stringify(datosInforme, null, 2));
-}
+    // Estos campos ya no se renderizan en la pantalla de datos (se editan
+    // en la vista previa del informe): solo se guardan si el input existe,
+    // para no pisar valores cargados desde el informe.
+    const leerInput = (id) => document.getElementById(id);
+    const nomEl = leerInput("nomenclaturaCatastralInput");
+    if (nomEl) datosInforme.nomenclaturaCatastral = nomEl.value || "";
+    const cliEl = leerInput("clienteNombreInput");
+    if (cliEl) datosInforme.clienteNombre = cliEl.value || "";
+    const finEl = leerInput("finalidadInput");
+    if (finEl) datosInforme.finalidad = finEl.value || "Tasación comercial";
 
-function inicializarAmbientesInforme() {
-    const btnAgregarAmbiente = document.getElementById('btnAgregarAmbiente');
-    if (!btnAgregarAmbiente) return;
+    const entDesc = leerInput("entornoDescripcionInput");
+    if (entDesc) datosInforme.entorno.descripcion = entDesc.value || "";
+    const entTrans = leerInput("entornoTransporteInput");
+    if (entTrans) datosInforme.entorno.transporte = entTrans.value || "";
+    const entCom = leerInput("entornoComerciosInput");
+    if (entCom) datosInforme.entorno.comercios = entCom.value || "";
+    const entUniv = leerInput("entornoUniversidadesInput");
+    if (entUniv) datosInforme.entorno.universidades = entUniv.value || "";
+    const entPuntos = leerInput("entornoPuntosInteresInput");
+    if (entPuntos) datosInforme.entorno.puntosInteres = entPuntos.value || "";
     
-    // Agregar evento para añadir nuevo ambiente
-    btnAgregarAmbiente.addEventListener('click', () => {
-        const container = document.getElementById('ambientesContainer');
-        if (!container) return;
-        
-        const index = datosInforme.ambientes.length;
-        const nuevoAmbienteHTML = generarHTMLAmbienteItem(index, {});
-        container.insertAdjacentHTML('beforeend', nuevoAmbienteHTML);
-        
-        datosInforme.ambientes.push({
-            nombre: "",
-            medidas: "",
-            descripcion: ""
+    // Guardar ambientes: el detalle por ambiente se edita en la vista
+    // previa del informe. Si la UI no existe (siempre), se conserva lo
+    // que ya estaba cargado en datosInforme.
+    const ambienteItems = document.querySelectorAll('.ambiente-item');
+    if (ambienteItems.length > 0) {
+        datosInforme.ambientes = [];
+        ambienteItems.forEach((item) => {
+            const nombre = item.querySelector('.ambiente-nombre')?.value || "";
+            const medidas = item.querySelector('.ambiente-medidas')?.value || "";
+            const descripcion = item.querySelector('.ambiente-descripcion')?.value || "";
+
+            if (nombre || medidas || descripcion) {
+                datosInforme.ambientes.push({
+                    nombre,
+                    medidas,
+                    descripcion
+                });
+            }
         });
-        
-        // Actualizar números de ambientes
-        actualizarNumerosAmbientes();
-        
-        // Inicializar eventos de eliminación para el nuevo ambiente
-        inicializarEventosEliminacionAmbientes();
-    });
-    
-    // Inicializar eventos de eliminación para ambientes existentes
-    inicializarEventosEliminacionAmbientes();
-}
-
-function inicializarEventosEliminacionAmbientes() {
-    document.querySelectorAll('.btn-eliminar-ambiente').forEach(btn => {
-        // Remover evento anterior si existe
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        newBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const index = parseInt(newBtn.dataset.index);
-            eliminarAmbiente(index);
-        });
-    });
-}
-
-function eliminarAmbiente(index) {
-    const container = document.getElementById('ambientesContainer');
-    if (!container) return;
-    
-    const ambienteItem = container.querySelector(`.ambiente-item[data-index="${index}"]`);
-    if (ambienteItem) {
-        ambienteItem.remove();
-        
-        // Actualizar array de ambientes
-        datosInforme.ambientes.splice(index, 1);
-        
-        // Actualizar índices en el DOM
-        actualizarIndicesAmbientes();
-        actualizarNumerosAmbientes();
-        
-        console.log('[eliminarAmbiente] Ambiente eliminado, ambientes restantes:', datosInforme.ambientes.length);
     }
-}
 
-function actualizarIndicesAmbientes() {
-    const container = document.getElementById('ambientesContainer');
-    if (!container) return;
-    
-    container.querySelectorAll('.ambiente-item').forEach((item, newIndex) => {
-        item.dataset.index = newIndex;
-        
-        const nombreInput = item.querySelector('.ambiente-nombre');
-        const medidasInput = item.querySelector('.ambiente-medidas');
-        const descripcionInput = item.querySelector('.ambiente-descripcion');
-        const eliminarBtn = item.querySelector('.btn-eliminar-ambiente');
-        
-        if (nombreInput) nombreInput.dataset.index = newIndex;
-        if (medidasInput) medidasInput.dataset.index = newIndex;
-        if (descripcionInput) descripcionInput.dataset.index = newIndex;
-        if (eliminarBtn) eliminarBtn.dataset.index = newIndex;
-    });
-    
-    // Re-inicializar eventos de eliminación con los nuevos índices
-    inicializarEventosEliminacionAmbientes();
-}
-
-function actualizarNumerosAmbientes() {
-    const container = document.getElementById('ambientesContainer');
-    if (!container) return;
-    
-    container.querySelectorAll('.ambiente-header h4').forEach((header, index) => {
-        header.textContent = `Ambiente ${index + 1}`;
-    });
+    console.log('[guardarDatosInforme] datosInforme:', JSON.stringify(datosInforme, null, 2));
 }
 
 // Funciones para guardar datos de pantallas específicas

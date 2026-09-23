@@ -684,14 +684,21 @@ function ReportReference({ selector, reportInfo, config }) {
     const clienteNombre = config?.clienteNombre ?? selector.tasacion.clienteNombre ?? '';
     const nomenclaturaCatastral = config?.nomenclaturaCatastral ?? selector.tasacion.nomenclaturaCatastral ?? '';
 
+    const clienteDni = config?.clienteDni ?? '';
+    const clienteTelefono = config?.clienteTelefono ?? '';
+
     let camposAdicionales = `
         <div class="report-reference-item${isEmptyEditable(clienteNombre) ? ' report-preview-only' : ''}">
-            <span class="report-reference-label">Cliente / Solicitante:</span>
+            <span class="report-reference-label">Nombre:</span>
             <span class="report-reference-value ${editableClass(clienteNombre)}" ${editableAttrs('clienteNombre', clienteNombre, { ph: 'Nombre del solicitante' })}>${clienteNombre}</span>
         </div>
-        <div class="report-reference-item${isEmptyEditable(nomenclaturaCatastral) ? ' report-preview-only' : ''}">
-            <span class="report-reference-label">Nomenclatura catastral:</span>
-            <span class="report-reference-value ${editableClass(nomenclaturaCatastral)}" ${editableAttrs('nomenclaturaCatastral', nomenclaturaCatastral, { ph: 'Nomenclatura catastral' })}>${nomenclaturaCatastral}</span>
+        <div class="report-reference-item${isEmptyEditable(clienteDni) ? ' report-preview-only' : ''}">
+            <span class="report-reference-label">DNI:</span>
+            <span class="report-reference-value ${editableClass(clienteDni)}" ${editableAttrs('clienteDni', clienteDni, { ph: 'DNI del solicitante' })}>${clienteDni}</span>
+        </div>
+        <div class="report-reference-item${isEmptyEditable(clienteTelefono) ? ' report-preview-only' : ''}">
+            <span class="report-reference-label">Teléfono de contacto:</span>
+            <span class="report-reference-value ${editableClass(clienteTelefono)}" ${editableAttrs('clienteTelefono', clienteTelefono, { ph: 'Teléfono del solicitante' })}>${clienteTelefono}</span>
         </div>
     `;
 
@@ -717,6 +724,10 @@ function ReportReference({ selector, reportInfo, config }) {
                         <span class="report-reference-label">Provincia:</span>
                         <span class="report-reference-value">${ubicacion.provincia || '-'}</span>
                     </div>
+                    <div class="report-reference-item${isEmptyEditable(nomenclaturaCatastral) ? ' report-preview-only' : ''}">
+                        <span class="report-reference-label">Nomenclatura catastral:</span>
+                        <span class="report-reference-value ${editableClass(nomenclaturaCatastral)}" ${editableAttrs('nomenclaturaCatastral', nomenclaturaCatastral, { ph: 'Nomenclatura catastral' })}>${nomenclaturaCatastral}</span>
+                    </div>
                     ${caracteristicasInmueble}
                 </div>
                 
@@ -737,69 +748,6 @@ function ReportReference({ selector, reportInfo, config }) {
             </div>
         </section>
     `;
-}
-
-// =========================
-// FUNCIÓN: generarHTMLAmbientesDetalle
-// Genera HTML para detalle de ambientes con medidas y descripciones
-// =========================
-function generarHTMLAmbientesDetalle(ambientes) {
-    if (!ambientes || !Array.isArray(ambientes) || ambientes.length === 0) {
-        return '';
-    }
-    
-    let ambientesHTML = '';
-    
-    ambientes.forEach((ambiente, index) => {
-        const nombre = ambiente.nombre || '';
-        const medidas = ambiente.medidas || '';
-        const descripcion = ambiente.descripcion || '';
-        
-        if (nombre || medidas || descripcion) {
-            ambientesHTML += `
-                <div class="report-ambiente-item">
-                    <h4 class="report-ambiente-title">${nombre || `Ambiente ${index + 1}`}</h4>
-                    ${medidas ? `
-                    <div class="report-ambiente-medidas">
-                        <span class="report-technical-label">Medidas:</span>
-                        <span class="report-technical-value">${medidas}</span>
-                    </div>
-                    ` : ''}
-                    ${descripcion ? `
-                    <div class="report-ambiente-descripcion">
-                        <span class="report-technical-label">Descripción:</span>
-                        <span class="report-technical-value">${descripcion}</span>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-    });
-    
-    if (ambientesHTML) {
-        return `
-            <div class="report-ambientes-detalle">
-                <h3 class="report-technical-subtitle">Detalle de Ambientes</h3>
-                ${ambientesHTML}
-            </div>
-        `;
-    }
-    
-    return '';
-}
-
-// =========================
-// FUNCIÓN: verificarTieneDatosAmbientes
-// Verifica si hay datos de ambientes para mostrar
-// =========================
-function verificarTieneDatosAmbientes(ambientes) {
-    if (!ambientes || !Array.isArray(ambientes) || ambientes.length === 0) {
-        return false;
-    }
-    
-    return ambientes.some(ambiente => 
-        ambiente.nombre || ambiente.medidas || ambiente.descripcion
-    );
 }
 
 // =========================
@@ -899,7 +847,6 @@ function ReportTechnical({ selector, config }) {
     const puntosInteres = config?.puntosInteres || '';
     // Nuevos datos de entorno persistidos
     const entorno = selector.tasacion.entorno || {};
-    const ambientesDetalle = selector.tasacion.ambientes || [];
 
     // Crear array de subsecciones estructuradas
     const subsecciones = [];
@@ -1029,8 +976,7 @@ function ReportTechnical({ selector, config }) {
         const hayAlgo = [ambientes, dormitorios, banos, observaciones].some(v => !isEmptyEditable(v)) ||
             cochera !== null || baulera !== null || servicios.length > 0 ||
             selector.tieneAmenities() || selector.tieneInfraestructura() ||
-            !isEmptyEditable(ubicacionPlanta) || !isEmptyEditable(ubicacionPiso) || !isEmptyEditable(tieneAscensor) ||
-            verificarTieneDatosAmbientes(ambientesDetalle);
+            !isEmptyEditable(ubicacionPlanta) || !isEmptyEditable(ubicacionPiso) || !isEmptyEditable(tieneAscensor);
         if (hayAlgo) {
             const itemsBase = [];
             if (!isEmptyEditable(ambientes)) itemsBase.push(itemTecnico('Ambientes:', ambientes));
@@ -1073,23 +1019,51 @@ function ReportTechnical({ selector, config }) {
         });
     }
     
-    // 5. Detalle de Ambientes (solo para casa y departamento)
-    if (selector.tipo !== 'lote' && verificarTieneDatosAmbientes(ambientesDetalle)) {
-        const ambientesHTML = generarHTMLAmbientesDetalle(ambientesDetalle);
-        if (ambientesHTML && ambientesHTML.trim()) {
-            subsecciones.push({
-                id: 'technical-environments',
-                title: 'Detalle de Ambientes',
-                html: `
-                    <div class="report-technical-block">
-                        <h3 class="report-technical-subtitle">Detalle de Ambientes</h3>
-                        ${ambientesHTML}
+    // 5. Detalle de Ambientes (solo casa y departamento). Se edita
+    //    directamente en el informe: un cuadro por ambiente declarado,
+    //    con campos vacíos + placeholder. Los cuadros sin datos llevan
+    //    report-preview-only → nunca salen en el PDF.
+    if (selector.tipo !== 'lote' && config?.showAmbientes !== false) {
+        const cantAmbientes = Math.max(1, parseInt(selector.getAmbientes(), 10) || 0);
+        const itemsAmbientes = [];
+        let algunAmbienteConDatos = false;
+
+        for (let i = 0; i < cantAmbientes; i++) {
+            const nom = config?.[`ambiente${i}Nombre`] || '';
+            const med = config?.[`ambiente${i}Medidas`] || '';
+            const desc = config?.[`ambiente${i}Descripcion`] || '';
+            const vacio = isEmptyEditable(nom) && isEmptyEditable(med) && isEmptyEditable(desc);
+            if (!vacio) algunAmbienteConDatos = true;
+
+            itemsAmbientes.push(`
+                <div class="report-ambiente-item${vacio ? ' report-preview-only' : ''}">
+                    <h4 class="report-ambiente-title ${editableClass(nom)}" ${editableAttrs(`ambiente${i}Nombre`, nom, { ph: `Ambiente ${i + 1}` })}>${nom}</h4>
+                    <div class="report-ambiente-medidas${isEmptyEditable(med) ? ' report-preview-only' : ''}">
+                        <span class="report-technical-label">Medidas:</span>
+                        <span class="report-technical-value ${editableClass(med)}" ${editableAttrs(`ambiente${i}Medidas`, med, { ph: 'Ej: 4m x 5m' })}>${med}</span>
                     </div>
-                `,
-                type: 'section',
-                divisible: false
-            });
+                    <div class="report-ambiente-descripcion${isEmptyEditable(desc) ? ' report-preview-only' : ''}">
+                        <span class="report-technical-label">Descripción:</span>
+                        <span class="report-technical-value ${editableClass(desc)}" ${editableAttrs(`ambiente${i}Descripcion`, desc, { multiline: true, ph: 'Descripción del ambiente' })}>${desc}</span>
+                    </div>
+                </div>
+            `);
         }
+
+        subsecciones.push({
+            id: 'technical-environments',
+            title: 'Detalle de Ambientes',
+            html: `
+                <div class="report-technical-block${algunAmbienteConDatos ? '' : ' report-preview-only'}">
+                    <h3 class="report-technical-subtitle">Detalle de Ambientes</h3>
+                    <div class="report-ambientes-detalle">
+                        ${itemsAmbientes.join('')}
+                    </div>
+                </div>
+            `,
+            type: 'section',
+            divisible: false
+        });
     }
     
     // Retornar array de subsecciones estructuradas
@@ -1166,37 +1140,6 @@ function ReportSurfaces({ selector }) {
         </tr>
     `).join('');
 
-    // Nueva tabla de medidas de ambientes
-    const ambientesDetalle = selector.tasacion.ambientes || [];
-    const ambientesConMedidas = ambientesDetalle.filter(a => a.medidas && a.medidas.trim() !== '');
-    
-    let ambientesTableHTML = '';
-    if (ambientesConMedidas.length > 0) {
-        const ambientesFilasHTML = ambientesConMedidas.map(ambiente => `
-            <tr>
-                <td>${ambiente.nombre || '-'}</td>
-                <td>${ambiente.medidas || '-'}</td>
-            </tr>
-        `).join('');
-        
-        ambientesTableHTML = `
-            <div class="report-ambientes-table-section">
-                <h3 class="report-section-subtitle">Detalle de Ambientes y Superficies</h3>
-                <table class="report-ambientes-table">
-                    <thead>
-                        <tr>
-                            <th>Ambiente</th>
-                            <th>Medidas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${ambientesFilasHTML}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
     return `
         <section class="report-section">
             <h2 class="report-section-title">Homogeneización de Superficies</h2>
@@ -1221,7 +1164,6 @@ function ReportSurfaces({ selector }) {
                     </tr>
                 </tfoot>
             </table>
-            ${ambientesTableHTML}
         </section>
     `;
 }

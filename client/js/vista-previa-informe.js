@@ -16,7 +16,11 @@ const reportConfig = {
     // Tema de acento del informe (verde|azul|celeste|rojo|naranja|violeta|negro)
     accentTheme: "verde",
     showPhotos: true,
+    // Detalle de ambientes (cuadros editables en el Informe Técnico)
+    showAmbientes: true,
     showComparables: true,
+    // IDs de comparables desmarcados en el panel (persisten con el config)
+    comparablesOcultos: [],
     showMethodology: true,
     title: "Informe de Tasación",
     introduction: "El presente informe tiene como objetivo determinar el valor de mercado del inmueble objeto de tasación, mediante el método de comparación de mercado.",
@@ -98,7 +102,13 @@ async function initVistaPreviaInforme() {
 
         comparablesResueltos = resolverComparablesDeTasacion(tasacionCargada);
         fotosTasacion = obtenerFotosDeTasacion(tasacionCargada);
-        selectedComparableIds = new Set(comparablesResueltos.map(c => c.id));
+        // Restaurar la selección persistida: todos salvo los que el
+        // usuario desmarcó (comparablesOcultos). Los comparables nuevos
+        // que no estaban al guardar quedan seleccionados por defecto.
+        const ocultos = new Set((reportConfig.comparablesOcultos || []).map(String));
+        selectedComparableIds = new Set(
+            comparablesResueltos.map(c => c.id).filter(id => !ocultos.has(String(id)))
+        );
         setupPhotosState();
         setupComparablesState();
         
@@ -430,13 +440,18 @@ function renderComparablesPanel() {
     list.querySelectorAll('.config-comparable-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const id = btn.dataset.id;
+            const ocultos = new Set((reportConfig.comparablesOcultos || []).map(String));
             if (selectedComparableIds.has(id)) {
                 selectedComparableIds.delete(id);
+                ocultos.add(id);
                 btn.classList.remove('selected');
             } else {
                 selectedComparableIds.add(id);
+                ocultos.delete(id);
                 btn.classList.add('selected');
             }
+            reportConfig.comparablesOcultos = [...ocultos];
+            persistirConfigInforme();
             renderReportPreview();
         });
     });
@@ -926,6 +941,17 @@ function setupConfigListeners() {
         });
     }
 
+    // Detalle de ambientes
+    const showAmbientesCheckbox = document.getElementById('showAmbientes');
+    if (showAmbientesCheckbox) {
+        showAmbientesCheckbox.addEventListener('change', (e) => {
+            if (e.target.disabled) return;
+            reportConfig.showAmbientes = e.target.checked;
+            persistirConfigInforme();
+            renderReportPreview();
+        });
+    }
+
     // Propiedades en competencia
     const showCompetitionCheckbox = document.getElementById('showCompetition');
     if (showCompetitionCheckbox) {
@@ -1036,7 +1062,7 @@ async function renderReportPreview() {
             if (!page.classList.contains('report-page-cover')) {
                 const header = document.createElement('div');
                 header.className = 'report-page-header';
-                const logoImg = (reportConfig.logoHeader && logoHeaderUrl)
+                const logoImg = (reportConfig.showLogo !== false && reportConfig.logoHeader && logoHeaderUrl)
                     ? `<img class="report-page-header-logo${logoCircular ? ' circular' : ''}" src="${logoHeaderUrl}" alt="" onerror="this.style.display='none'">`
                     : '';
                 header.innerHTML = `
@@ -1082,6 +1108,7 @@ function actualizarOpcionesSegunTipo() {
     };
     ocultarOpcion('showFODA', 'showFODA');
     ocultarOpcion('showCompetition', 'showCompetition');
+    ocultarOpcion('showAmbientes', 'showAmbientes');
     
     // Documentación: disponible para todos los tipos, pero principalmente para casas y departamentos
     // Se mantiene disponible para todos por ahora
@@ -1130,6 +1157,7 @@ function syncConfigInputs() {
     // Los textos se editan exclusivamente desde el Preview (edición directa).
     if (document.getElementById('showLogo')) document.getElementById('showLogo').checked = reportConfig.showLogo;
     if (document.getElementById('showPhotos')) document.getElementById('showPhotos').checked = reportConfig.showPhotos;
+    if (document.getElementById('showAmbientes')) document.getElementById('showAmbientes').checked = reportConfig.showAmbientes;
     if (document.getElementById('showComparables')) document.getElementById('showComparables').checked = reportConfig.showComparables;
     if (document.getElementById('showMethodology')) document.getElementById('showMethodology').checked = reportConfig.showMethodology;
     

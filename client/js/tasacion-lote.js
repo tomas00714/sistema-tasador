@@ -52,8 +52,6 @@ function mostrarFormularioLote() {
                 <textarea id="mejorasLoteInput" placeholder="Describe las mejoras del lote..." rows="4">${datosTasacion.lote.mejoras || ""}</textarea>
             </div>
         </div>
-
-        ${generarHTMLDatosInforme('lote')}
     `;
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {

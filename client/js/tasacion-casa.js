@@ -76,8 +76,6 @@ function mostrarFormularioCasa() {
                 <textarea id="observacionesInput" placeholder="Escribe cualquier observación adicional..." rows="4">${datosTasacion.casa.observaciones || ""}</textarea>
             </div>
         </div>
-
-        ${generarHTMLDatosInforme('casa')}
     `;
 
     if (typeof actualizarEstadoBotonSiguiente === 'function') {
@@ -101,7 +99,6 @@ function mostrarFormularioCasa() {
         inicializarSwitchCocheraCasa();
         inicializarSwitchBauleraCasa();
         inicializarServicios();
-        inicializarAmbientesInforme();
     });
 }
 

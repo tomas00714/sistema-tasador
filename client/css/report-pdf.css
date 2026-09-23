@@ -288,8 +288,6 @@
     border-bottom: 1px solid var(--report-border-light);
 }
 
-.report-technical-item:last-child,
-.report-technical-item-full:last-child,
 .report-reference-item:last-child,
 .report-summary-item:last-child,
 .report-closing-item:last-child,
@@ -300,6 +298,10 @@
 .report-ambiente-descripcion:last-child {
     border-bottom: none;
 }
+
+/* En el informe técnico TODAS las filas conservan su renglón inferior,
+   incluso la última de cada cuadro: sin él la distribución queda
+   visualmente despareja (items de media fila con y sin línea). */
 
 /* Item que ocupa todo el ancho dentro de una grilla de 2 columnas */
 .report-technical-item-full {

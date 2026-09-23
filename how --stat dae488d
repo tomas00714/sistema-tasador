@@ -1,0 +1,24 @@
+[33mcommit ffc1b0a0e5eddd7f225483e1b4fcea9d058f9be3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: tomas00714 <tomasbragado17l@gmail.com>
+Date:   Wed Sep 23 16:56:42 2026 -0300
+
+    migraciones
+
+ client/app/_qa_audit_fixes.py        |  99 [32m++++++++++++++++++++++++++++[m
+ client/app/_qa_lote_fixes.py         |  55 [32m++++++++++++++++[m
+ client/app/vista-previa-informe.html |  21 [32m+++[m[31m---[m
+ client/css/global.css                |  11 [32m+++[m[31m-[m
+ client/css/report-pdf.css            |  57 [32m++++++++++++++[m[31m--[m
+ client/css/tasacion.css              |  18 [32m+++[m[31m--[m
+ client/css/vista-previa-informe.css  |  37 [32m++++++++++[m[31m-[m
+ client/js/autocomplete-manager.js    |  41 [32m+++++++++[m[31m---[m
+ client/js/comparable-formulario.js   |  99 [32m+++++++[m[31m---------------------[m
+ client/js/global.js                  |  40 [32m++++++++++[m[31m-[m
+ client/js/report-components.js       | 106 [32m+++++++++++++[m[31m-----------------[m
+ client/js/report-data-adapter.js     |  35 [32m+++++++++[m[31m-[m
+ client/js/tasacion-casa.js           |  20 [32m++++++[m
+ client/js/tasacion-core.js           |   1 [32m+[m
+ client/js/tasacion-datos.js          |   1 [32m+[m
+ client/js/tasacion-departamento.js   |   2 [32m+[m[31m-[m
+ client/js/vista-previa-informe.js    | 124 [32m++++++++++++++++++++++[m[31m-------------[m
+ 17 files changed, 554 insertions(+), 213 deletions(-)
