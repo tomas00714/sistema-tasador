@@ -332,6 +332,32 @@ body {
     background: var(--color-primary);
 }
 
+/* Fila de puntos de color para el tema de acento del informe */
+.config-theme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.config-theme-dot {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--dot);
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.config-theme-dot:hover {
+    transform: scale(1.08);
+}
+
+.config-theme-dot.is-selected {
+    box-shadow: 0 0 0 2px var(--color-white), 0 0 0 4px var(--dot);
+}
+
 .config-toggle input[type="checkbox"]:disabled + span {
     opacity: 0.5;
 }
@@ -552,6 +578,9 @@ body {
     white-space: nowrap;
 }
 
+/* absolute dentro del contenedor scrolleable: queda pegada al botón
+   (se mueve con él al scrollear el panel) y el panel la recorta en sus
+   bordes, como los autocomplete de tasacion.html. */
 .config-dropdown-menu {
     position: absolute;
     top: calc(100% + 4px);
@@ -564,9 +593,15 @@ body {
     border-radius: var(--radius-input);
     background: var(--color-white);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    z-index: 50;
+    z-index: 1000;
     max-height: 240px;
     overflow-y: auto;
+}
+
+/* Sin espacio abajo dentro del panel → abre hacia arriba. */
+.config-dropdown-menu-up {
+    top: auto;
+    bottom: calc(100% + 4px);
 }
 
 .config-dropdown-option {

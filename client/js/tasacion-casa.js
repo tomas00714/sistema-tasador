@@ -120,6 +120,13 @@ function mostrarCaracteristicasCasa() {
         <div class="form-grid-caracteristicas" id="caracteristicasCasaGrid">
             ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta', value: datosTasacion.casa.superficieCubierta, coefValue: datosTasacion.casa.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
 
+            <div class="input-group input-2-3">
+                <label>Superficie del terreno (m²)</label>
+                <input type="number" id="superficieTerrenoInput" placeholder="Ej: 250" step="0.01" min="0" value="${datosTasacion.casa.superficieTerreno || ''}">
+            </div>
+
+            ${generarInputSuperficieTotal({ inputId: 'superficieTotalInput', listId: 'superficieTotalList', coefInputId: 'superficieTotalCoef', value: datosTasacion.casa.superficieTotal, coefValue: datosTasacion.casa.superficieTotalCoef || '', claseInputGroup: 'input-2-3' })}
+
             ${generarInputCaracteristicaConstructiva({ inputId: 'caracteristicaConstructivaInput', listId: 'caracteristicaConstructivaList', coefInputId: 'caracteristicaConstructivaCoef', value: datosTasacion.casa.caracteristicaConstructiva, coefValue: datosTasacion.casa.caracteristicaConstructivaCoef, claseInputGroup: 'input-2-3' })}
 
             ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.casa.estadoConservacion, claseInputGroup: 'input-2-3' })}
@@ -156,6 +163,7 @@ function mostrarCaracteristicasCasa() {
 
     requestAnimationFrame(() => {
         inicializarSuperficieCubierta('casa');
+        inicializarSuperficieTotal();
         inicializarEstadoConservacion('casa');
         inicializarAntiguedad('casa');
         inicializarCaracteristicaConstructiva('casa');
@@ -396,6 +404,18 @@ function guardarDatosCaracteristicasCasa() {
     }
     if (superficieCubiertaCoef) {
         datosTasacion.casa.superficieCubiertaCoef = parseFloat(superficieCubiertaCoef.value) || 1;
+    }
+    const superficieTerrenoInput = document.getElementById("superficieTerrenoInput");
+    const superficieTotalInput = document.getElementById("superficieTotalInput");
+    const superficieTotalCoef = document.getElementById("superficieTotalCoef");
+    if (superficieTerrenoInput) {
+        datosTasacion.casa.superficieTerreno = superficieTerrenoInput.value !== "" ? parseFloat(superficieTerrenoInput.value) : "";
+    }
+    if (superficieTotalInput) {
+        datosTasacion.casa.superficieTotal = superficieTotalInput.value;
+    }
+    if (superficieTotalCoef) {
+        datosTasacion.casa.superficieTotalCoef = parseFloat(superficieTotalCoef.value) || 1;
     }
     if (estadoConservacionInput) {
         datosTasacion.casa.estadoConservacion = estadoConservacionInput.value;

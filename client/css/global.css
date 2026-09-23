@@ -32,7 +32,7 @@ h3 {
 }
 
 p {
-    color: var(--color-white);
+    color: var(--color-text-primary);
     margin: 0 0 12px 0;
 }
 
@@ -268,6 +268,15 @@ a {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+/* Aviso rojo bajo el input de Vida útil */
+.vida-util-aviso {
+    display: block;
+    margin-top: 6px;
+    font-size: var(--font-size-small);
+    color: var(--color-error-text);
+    line-height: 1.3;
 }
 
 /* Panel principal para tasacion.html */

@@ -86,6 +86,28 @@ function inicializarBanos(tipo = 'departamento') {
    AUTOCOMPLETES CON COEFICIENTES
 ========================= */
 
+// Devuelve la base de validación de un input de coeficiente según la
+// opción actualmente seleccionada en la lista (su data-coef/data-rango).
+// Sin esto, al re-inicializar la pantalla la base quedaba en el coef
+// ya editado por el usuario y "fuera de rango" se medía contra sí mismo.
+function obtenerBaseCoeficiente(list, textoSeleccionado, coefGuardado) {
+    const texto = (textoSeleccionado || '').trim();
+    if (texto && list) {
+        const item = [...list.querySelectorAll('.autocomplete-item')].find(i => {
+            const span = i.querySelector('span:first-child');
+            return ((span ? span.textContent : i.textContent) || '').trim() === texto;
+        });
+        if (item) {
+            return {
+                coef: parseFloat(item.dataset.coef) || 1,
+                rango: item.dataset.rango || null,
+                encontrada: true
+            };
+        }
+    }
+    return { coef: coefGuardado || 1, rango: null, encontrada: false };
+}
+
 /**
  * Inicializa autocomplete de ubicación en planta (departamento)
  */
@@ -96,7 +118,7 @@ function inicializarUbicacionPlanta() {
 
     if (!input || !list) return;
 
-    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPlantaCoef || 1;
+    let coeficienteSeleccionado = obtenerBaseCoeficiente(list, datosTasacion.departamento.ubicacionPlanta, datosTasacion.departamento.ubicacionPlantaCoef).coef;
 
     inicializarAutocomplete("ubicacionPlantaInput", "ubicacionPlantaList", {
         onSelect: (item, input) => {
@@ -147,7 +169,7 @@ function inicializarUbicacionPiso() {
 
     if (!input || !list) return;
 
-    let coeficienteSeleccionado = datosTasacion.departamento.ubicacionPisoCoef || 1;
+    let coeficienteSeleccionado = obtenerBaseCoeficiente(list, datosTasacion.departamento.ubicacionPiso, datosTasacion.departamento.ubicacionPisoCoef).coef;
 
     inicializarAutocomplete("ubicacionPisoInput", "ubicacionPisoList", {
         onSelect: (item, input) => {
@@ -201,8 +223,9 @@ function inicializarSuperficieCubierta(tipo = 'departamento') {
 
     if (!input || !list) return;
 
-    let coeficienteSeleccionado = datos[coefKey] || 1;
-    let rangoSeleccionado = null;
+    const _base = obtenerBaseCoeficiente(list, datos.superficieCubierta, datos[coefKey]);
+    let coeficienteSeleccionado = _base.coef;
+    let rangoSeleccionado = _base.rango;
 
     inicializarAutocomplete("superficieCubiertaInput", "superficieCubiertaList", {
         onSelect: (item, input) => {
@@ -254,8 +277,9 @@ function inicializarSuperficieTotal() {
 
     if (!input || !list) return;
 
-    let coeficienteSeleccionado = datosTasacion.casa.superficieTotalCoef || 1;
-    let rangoSeleccionado = null;
+    const _base = obtenerBaseCoeficiente(list, datosTasacion.casa.superficieTotal, datosTasacion.casa.superficieTotalCoef);
+    let coeficienteSeleccionado = _base.coef;
+    let rangoSeleccionado = _base.rango;
 
     inicializarAutocomplete("superficieTotalInput", "superficieTotalList", {
         onSelect: (item, input) => {
@@ -340,8 +364,9 @@ function inicializarCaracteristicaConstructiva(tipo = 'departamento') {
 
     if (!input || !list || !datos) return;
 
-    let coeficienteSeleccionado = datos.caracteristicaConstructivaCoef || 1;
-    let rangoSeleccionado = null;
+    const _base = obtenerBaseCoeficiente(list, datos.caracteristicaConstructiva, datos.caracteristicaConstructivaCoef);
+    let coeficienteSeleccionado = _base.coef;
+    let rangoSeleccionado = _base.rango;
 
     inicializarAutocomplete("caracteristicaConstructivaInput", "caracteristicaConstructivaList", {
         onSelect: (item, input) => {

@@ -23,13 +23,18 @@
 
             <div class="config-panel-content">
                 
-                <!-- Selector de Plantilla -->
+                <!-- Tema de acento del informe -->
                 <div class="config-section">
-                    <label for="templateSelector">Plantilla</label>
-                    <select id="templateSelector" class="config-select" disabled>
-                        <option value="classica">Clásica</option>
-                    </select>
-                    <small class="config-hint">Más plantillas próximamente</small>
+                    <h3>Tema</h3>
+                    <div class="config-theme-row" id="themeSelector">
+                        <button type="button" class="config-theme-dot" data-accent="verde" title="Verde" style="--dot:#285C4D"></button>
+                        <button type="button" class="config-theme-dot" data-accent="azul" title="Azul" style="--dot:#1F4E79"></button>
+                        <button type="button" class="config-theme-dot" data-accent="celeste" title="Celeste" style="--dot:#2F7FA6"></button>
+                        <button type="button" class="config-theme-dot" data-accent="rojo" title="Rojo" style="--dot:#9B2C2C"></button>
+                        <button type="button" class="config-theme-dot" data-accent="naranja" title="Naranja" style="--dot:#B85A1E"></button>
+                        <button type="button" class="config-theme-dot" data-accent="violeta" title="Violeta" style="--dot:#5F3D9B"></button>
+                        <button type="button" class="config-theme-dot" data-accent="negro" title="Negro" style="--dot:#3D3D3D"></button>
+                    </div>
                 </div>
 
                 <!-- Toggles de visibilidad -->
@@ -117,12 +122,12 @@
                     </label>
 
                     <label class="config-toggle">
-                        <input type="checkbox" id="showCompetition">
+                        <input type="checkbox" id="showCompetition" checked>
                         <span>Mostrar propiedades en competencia</span>
                     </label>
 
                     <label class="config-toggle">
-                        <input type="checkbox" id="showFODA">
+                        <input type="checkbox" id="showFODA" checked>
                         <span>Mostrar análisis FODA</span>
                     </label>
                 </div>

@@ -9,6 +9,8 @@
 :root {
     --report-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
+    /* Acento del informe: el tema 'verde' es el default. Los demás temas
+       se aplican vía data-report-theme en #reportViewer (bloque abajo). */
     --report-primary: #285C4D;
     --report-primary-dark: #1E493D;
     --report-primary-light: #EAF2EF;
@@ -33,6 +35,47 @@
     --report-space-5: 32px;
     --report-space-6: 48px;
     --report-space-7: 64px;
+}
+
+/* =========================
+   TEMAS DE ACENTO DEL INFORME
+   El selector del panel setea data-report-theme en #reportViewer;
+   cada tema redefine las tres variables de acento.
+========================= */
+#reportViewer[data-report-theme="verde"] {
+    --report-primary: #285C4D;
+    --report-primary-dark: #1E493D;
+    --report-primary-light: #EAF2EF;
+}
+#reportViewer[data-report-theme="azul"] {
+    --report-primary: #1F4E79;
+    --report-primary-dark: #163A5C;
+    --report-primary-light: #E8EFF6;
+}
+#reportViewer[data-report-theme="celeste"] {
+    --report-primary: #2F7FA6;
+    --report-primary-dark: #245F7E;
+    --report-primary-light: #E6F2F7;
+}
+#reportViewer[data-report-theme="rojo"] {
+    --report-primary: #9B2C2C;
+    --report-primary-dark: #792222;
+    --report-primary-light: #F6E9E9;
+}
+#reportViewer[data-report-theme="naranja"] {
+    --report-primary: #B85A1E;
+    --report-primary-dark: #934616;
+    --report-primary-light: #FAEEE5;
+}
+#reportViewer[data-report-theme="violeta"] {
+    --report-primary: #5F3D9B;
+    --report-primary-dark: #4A2F7B;
+    --report-primary-light: #EFEBF7;
+}
+#reportViewer[data-report-theme="negro"] {
+    --report-primary: #3D3D3D;
+    --report-primary-dark: #262626;
+    --report-primary-light: #EDEDED;
 }
 
 /* =========================
@@ -378,8 +421,11 @@
 }
 
 .report-technical-grid > .report-technical-item {
-    flex: 1 1 auto;
-    min-width: 42%;
+    /* Cada item ocupa ~la mitad de la fila (dos por línea). Un item solo
+       NO se estira al ancho completo; si su contenido excede la mitad,
+       puede crecer y empujar al siguiente a la fila de abajo. */
+    flex: 0 1 auto;
+    min-width: calc(50% - var(--report-space-5) / 2);
     max-width: 100%;
 }
 
@@ -1161,9 +1207,10 @@
 ========================= */
 
 .report-cover {
-    /* 256mm y no 257mm: el área útil real es ~256.2mm por los bordes
-       de 1px de .report-page; 257mm producía 2px de clipping. */
-    min-height: 256mm;
+    /* 251mm: área útil nominal 252mm (297 − 25 top − 20 bottom) menos
+       ~1mm por los bordes de 1px de .report-page. Mismo criterio que el
+       viejo 256mm cuando el padding superior era 20mm. */
+    min-height: 251mm;
     display: flex;
     flex-direction: column;
     align-items: center;

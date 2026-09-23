@@ -50,6 +50,14 @@ class TasacionDataSelector {
         );
     }
 
+    getSuperficieTerreno() {
+        return this.getDato(
+            'caracteristicas.superficie',
+            null,
+            'superficieTerreno'
+        );
+    }
+
     getAmbientes() {
         return this.getDato(
             null,
@@ -454,7 +462,7 @@ function mapearPropiedad(tasacion) {
 
     if (tasacion.tipo === 'casa') {
         const c = tasacion.casa || {};
-        base.surfaceTotal = valorSeguro(c.superficieTotal || c.superficieCubierta);
+        base.surfaceTotal = valorSeguro(c.superficieTerreno || c.superficieTotal || c.superficieCubierta);
         base.surfaceCovered = valorSeguro(c.superficieCubierta);
         base.rooms = valorSeguro(c.ambientes);
         base.bedrooms = valorSeguro(c.dormitorios);
@@ -554,17 +562,40 @@ function mapearValuacion(tasacion) {
 
 function mapearMetodologia(tasacion) {
     const tipo = tasacion.tipo || 'inmueble';
+
+    if (tipo === 'lote') {
+        return {
+            description: 'Se utilizó el método de comparación de mercado sobre lotes similares, aplicando criterios de homogeneización por coeficientes de ajuste.',
+            factors: [
+                'Ubicación y entorno',
+                'Dimensiones del lote (frente y fondo)',
+                'Superficie del terreno',
+                'Zonificación y factores de ocupación',
+                'Servicios e infraestructura disponible',
+                'Comparables de mercado seleccionados'
+            ],
+            adjustments: [
+                'Coeficiente de ubicación',
+                'Coeficiente de frente y fondo (Fitto-Cervini)',
+                'Coeficiente de esquina (Valvano)',
+                'Coeficiente de actualización',
+                'Promediado de valores unitarios homogeneizados'
+            ]
+        };
+    }
+
     return {
         description: `Se utilizó el método de comparación de mercado sobre propiedades similares, aplicando criterios de homogeneización propios del tipo ${tipo}.`,
         factors: [
             'Ubicación y entorno',
-            'Superficie y distribución',
+            tipo === 'casa' ? 'Superficie cubierta y del terreno' : 'Superficie y distribución',
             'Estado y característica constructiva',
             'Antigüedad y conservación',
             'Comparables de mercado seleccionados'
         ],
         adjustments: [
             'Homogeneización por coeficientes de ajuste',
+            'Coeficiente de Ross-Heidecke',
             'Promediado de valores unitarios homogeneizados'
         ]
     };

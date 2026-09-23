@@ -12,7 +12,9 @@ const reportConfig = {
     showLogo: true,
     // Forma del logo en el informe y en el encabezado de páginas
     logoForma: "cuadrada",
-    logoHeader: true,
+    logoHeader: false,
+    // Tema de acento del informe (verde|azul|celeste|rojo|naranja|violeta|negro)
+    accentTheme: "verde",
     showPhotos: true,
     showComparables: true,
     showMethodology: true,
@@ -47,9 +49,9 @@ const reportConfig = {
     valorRangoMax: "",
     rangoEstimado: "",
     // Propiedades en competencia
-    showCompetition: false,
+    showCompetition: true,
     // Análisis FODA
-    showFODA: false,
+    showFODA: true,
     fodaFortalezas: "",
     fodaOportunidades: "",
     fodaDebilidades: "",
@@ -316,19 +318,12 @@ function setupPhotosState() {
     const showPhotosCheckbox = document.getElementById('showPhotos');
     if (!showPhotosCheckbox) return;
 
-    const tieneFotos = fotosTasacion.length > 0 ||
-        comparablesResueltos.some(c => (c.fotos || c.photos || []).length > 0);
-    showPhotosCheckbox.disabled = !tieneFotos;
-
+    // Siempre habilitado: aunque la tasación no tenga fotos todavía, el
+    // panel desplegable permite adjuntarlas ("Adjuntar fotografías").
+    showPhotosCheckbox.disabled = false;
     const toggleLabel = showPhotosCheckbox.closest('.config-toggle');
-    if (toggleLabel) toggleLabel.classList.toggle('config-toggle-disabled', !tieneFotos);
-
-    if (!tieneFotos) {
-        showPhotosCheckbox.checked = false;
-        reportConfig.showPhotos = false;
-    } else {
-        showPhotosCheckbox.checked = reportConfig.showPhotos;
-    }
+    if (toggleLabel) toggleLabel.classList.remove('config-toggle-disabled');
+    showPhotosCheckbox.checked = reportConfig.showPhotos;
 }
 
 function setupComparablesState() {
@@ -401,6 +396,7 @@ function renderComparablesPanel() {
         return;
     }
 
+    const esLote = tasacionCargada?.tipo === 'lote';
     list.innerHTML = comparablesResueltos.map(comp => {
         const dir = comp.ubicacion?.direccion || comp.direccion || 'Sin dirección';
         const selected = selectedComparableIds.has(comp.id);
@@ -422,9 +418,9 @@ function renderComparablesPanel() {
                         <span class="config-comparable-dot"></span>
                         <span class="config-comparable-address">${dir}</span>
                     </button>
-                    <button type="button" class="config-comparable-photo-btn" data-id="${comp.id}" title="Adjuntar fotografías del comparable (máx. ${FOTOS_COMPARABLE_MAX})">
+                    ${esLote ? '' : `<button type="button" class="config-comparable-photo-btn" data-id="${comp.id}" title="Adjuntar fotografías del comparable (máx. ${FOTOS_COMPARABLE_MAX})">
                         <i class="fa-solid fa-camera"></i>${fotos.length ? ` ${fotos.length}/${FOTOS_COMPARABLE_MAX}` : ''}
-                    </button>
+                    </button>`}
                 </div>
                 ${thumbsHtml}
             </div>
@@ -721,10 +717,37 @@ function setupValorModalidadDropdown() {
         btn.setAttribute('aria-expanded', 'false');
     };
 
+    // La lista es absolute dentro del contenedor scrolleable: queda
+    // pegada al botón y el panel la recorta en sus bordes. Solo hay que
+    // decidir si abre hacia abajo o hacia arriba según el espacio que
+    // queda dentro del área visible del panel.
+    const evaluarDireccion = () => {
+        const r = btn.getBoundingClientRect();
+        const panel = document.querySelector('.config-panel-content');
+        const pr = panel ? panel.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+        const h = menu.offsetHeight;
+        const espacioAbajo = pr.bottom - r.bottom - 4;
+        const espacioArriba = r.top - pr.top - 4;
+        const arriba = espacioAbajo < h && espacioArriba > espacioAbajo;
+        menu.classList.toggle('config-dropdown-menu-up', arriba);
+    };
+
     btn.addEventListener('click', () => {
         const abrir = menu.hidden;
-        menu.hidden = !abrir;
-        btn.setAttribute('aria-expanded', String(abrir));
+        if (abrir) {
+            menu.hidden = false; // visible para poder medir su alto
+            evaluarDireccion();
+            btn.setAttribute('aria-expanded', 'true');
+        } else {
+            cerrarMenu();
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        if (!menu.hidden) evaluarDireccion();
+    }, true);
+    window.addEventListener('resize', () => {
+        if (!menu.hidden) evaluarDireccion();
     });
 
     menu.addEventListener('click', (e) => {
@@ -861,6 +884,16 @@ function setupConfigListeners() {
             persistirConfigInforme();
             syncLogoOptionButtons();
             renderReportPreview();
+        });
+    });
+
+    // Tema de acento del informe: cambia solo variables CSS
+    // (data-report-theme en #reportViewer) — no requiere re-render.
+    document.querySelectorAll('[data-accent]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            reportConfig.accentTheme = btn.dataset.accent;
+            persistirConfigInforme();
+            aplicarTemaAcento();
         });
     });
 
@@ -1034,35 +1067,21 @@ function actualizarOpcionesSegunTipo() {
     
     const tipo = tasacionCargada.tipo || 'lote';
     
-    // FODA: solo para casas y departamentos
-    const showFODACheckbox = document.getElementById('showFODA');
-    const fodaSection = showFODACheckbox?.closest('.config-section');
-    if (showFODACheckbox && fodaSection) {
-        if (tipo === 'lote') {
-            showFODACheckbox.disabled = true;
-            showFODACheckbox.checked = false;
-            reportConfig.showFODA = false;
-            fodaSection.style.opacity = '0.5';
-        } else {
-            showFODACheckbox.disabled = false;
-            fodaSection.style.opacity = '1';
+    // FODA y propiedades en competencia: no aplican a lotes — se oculta
+    // solo su propio renglón (las demás opciones del grupo quedan visibles).
+    const esLote = tipo === 'lote';
+    const ocultarOpcion = (checkboxId, configKey) => {
+        const checkbox = document.getElementById(checkboxId);
+        const fila = checkbox?.closest('label.config-toggle') || checkbox?.closest('.config-section');
+        if (!fila) return;
+        fila.style.display = esLote ? 'none' : '';
+        if (esLote) {
+            checkbox.checked = false;
+            reportConfig[configKey] = false;
         }
-    }
-    
-    // Propiedades en competencia: más relevante para casas y departamentos
-    const showCompetitionCheckbox = document.getElementById('showCompetition');
-    const competitionSection = showCompetitionCheckbox?.closest('.config-section');
-    if (showCompetitionCheckbox && competitionSection) {
-        if (tipo === 'lote') {
-            showCompetitionCheckbox.disabled = true;
-            showCompetitionCheckbox.checked = false;
-            reportConfig.showCompetition = false;
-            competitionSection.style.opacity = '0.5';
-        } else {
-            showCompetitionCheckbox.disabled = false;
-            competitionSection.style.opacity = '1';
-        }
-    }
+    };
+    ocultarOpcion('showFODA', 'showFODA');
+    ocultarOpcion('showCompetition', 'showCompetition');
     
     // Documentación: disponible para todos los tipos, pero principalmente para casas y departamentos
     // Se mantiene disponible para todos por ahora
@@ -1130,6 +1149,7 @@ function syncConfigInputs() {
     if (document.getElementById('valorModalidad')) document.getElementById('valorModalidad').value = reportConfig.valorModalidad;
 
     syncLogoOptionButtons();
+    aplicarTemaAcento();
 }
 
 function syncLogoOptionButtons() {
@@ -1137,6 +1157,16 @@ function syncLogoOptionButtons() {
         b.classList.toggle('is-selected', b.dataset.logoForma === reportConfig.logoForma));
     document.querySelectorAll('[data-logo-header]').forEach(b =>
         b.classList.toggle('is-selected', (b.dataset.logoHeader === '1') === !!reportConfig.logoHeader));
+}
+
+// Tema de acento: aplica data-report-theme sobre el contenedor del
+// informe (las variables --report-* del tema viven en report-pdf.css)
+// y marca el punto seleccionado en el panel.
+function aplicarTemaAcento() {
+    const viewer = document.getElementById('reportViewer');
+    if (viewer) viewer.dataset.reportTheme = reportConfig.accentTheme || 'verde';
+    document.querySelectorAll('[data-accent]').forEach(b =>
+        b.classList.toggle('is-selected', b.dataset.accent === reportConfig.accentTheme));
 }
 
 function getReportConfig() {

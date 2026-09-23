@@ -178,6 +178,14 @@ const OPCIONES_SUPERFICIE_CUBIERTA = [
     { label: 'Más de 150m²', coef: 0.90, rango: '0.90', coefDisplay: '0.90' }
 ];
 
+const OPCIONES_SUPERFICIE_TOTAL = [
+    { label: 'Hasta 100 m²', coef: 1.10, rango: '1.10', coefDisplay: '1.10' },
+    { label: '100-200 m²', coef: 1.05, rango: '1.05', coefDisplay: '1.05' },
+    { label: '200-300 m²', coef: 1, rango: '1', coefDisplay: '1' },
+    { label: '300-500 m²', coef: 0.95, rango: '0.95', coefDisplay: '0.95' },
+    { label: 'Más de 500 m²', coef: 0.90, rango: '0.90', coefDisplay: '0.90' }
+];
+
 const OPCIONES_CARACTERISTICA_CONSTRUCTIVA = [
     { label: 'Económica', coef: 0.90, rango: '0.90', coefDisplay: '0.90' },
     { label: 'Buena económica', coef: 1.00, rango: '1', coefDisplay: '1' },
@@ -287,7 +295,7 @@ function generarInputAutocompletadoConCoef({ label, inputId, listId, coefInputId
                     </div>
                 </div>
                 <div class="input-dividido-coef">
-                    <input type="number" id="${coefInputId}" placeholder="Coef" step="0.01" min="0" value="${coefValue ?? ''}">
+                    <input type="number" id="${coefInputId}" placeholder="Coef" step="0.01" min="0" value="${value && coefValue ? escapeHtml(String(coefValue)) : ''}">
                 </div>
             </div>
         </div>
@@ -333,13 +341,29 @@ function generarInputBanos({ inputId = 'banosInput', listId = 'banosList', label
 
 function generarInputVidaUtil({ inputId = 'vidaUtilInput', label = 'Vida útil (años)', value = '80', placeholder = '80', min = 1, step = 1, claseInputGroup = '' } = {}) {
     const clase = claseInputGroup ? `input-group ${claseInputGroup}` : 'input-group';
+    const vidaUtilNum = parseFloat(value || '80');
+    const avisoVisible = !isNaN(vidaUtilNum) && vidaUtilNum !== 80;
     return `
         <div class="${clase}">
             <label>${escapeHtml(label)}</label>
             <input type="number" id="${inputId}" placeholder="${escapeHtml(placeholder)}" min="${min}" step="${step}" value="${escapeHtml(value || '80')}">
+            <span class="vida-util-aviso" data-vida-util-aviso="${inputId}"${avisoVisible ? '' : ' style="display:none"'}>
+                Modificar la vida útil afecta el cálculo de los coeficientes de tasación (depreciación por antigüedad).
+            </span>
         </div>
     `;
 }
+
+// Muestra/oculta el aviso de "Vida útil" cuando el valor difiere del
+// default (80). Delegado: funciona para cualquier pantalla que se re-renderice.
+document.addEventListener('input', (e) => {
+    const id = e.target?.id;
+    if (!id) return;
+    const aviso = document.querySelector(`[data-vida-util-aviso="${id}"]`);
+    if (!aviso) return;
+    const valor = parseFloat(e.target.value);
+    aviso.style.display = (!isNaN(valor) && valor !== 80) ? '' : 'none';
+});
 
 function generarInputSuperficieCubierta({ inputId, listId, coefInputId, label = 'Superficie cubierta propia', placeholder = 'Seleccionar rango', value = '', coefValue = '', claseInputGroup = '' } = {}) {
     return generarInputAutocompletadoConCoef({
@@ -349,6 +373,20 @@ function generarInputSuperficieCubierta({ inputId, listId, coefInputId, label = 
         coefInputId,
         placeholder,
         opciones: OPCIONES_SUPERFICIE_CUBIERTA,
+        value,
+        coefValue,
+        claseInputGroup
+    });
+}
+
+function generarInputSuperficieTotal({ inputId, listId, coefInputId, label = 'Superficie total (rango)', placeholder = 'Seleccionar rango', value = '', coefValue = '', claseInputGroup = '' } = {}) {
+    return generarInputAutocompletadoConCoef({
+        label,
+        inputId,
+        listId,
+        coefInputId,
+        placeholder,
+        opciones: OPCIONES_SUPERFICIE_TOTAL,
         value,
         coefValue,
         claseInputGroup

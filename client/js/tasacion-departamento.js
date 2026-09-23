@@ -178,7 +178,7 @@ function mostrarCaracteristicasDepartamento() {
                         </div>
                     </div>
                     <div class="input-dividido-coef">
-                        <input type="number" id="ubicacionPisoCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.departamento.ubicacionPisoCoef || ""}">
+                        <input type="number" id="ubicacionPisoCoef" placeholder="Coef" step="0.01" min="0" value="${datosTasacion.departamento.ubicacionPiso && datosTasacion.departamento.ubicacionPisoCoef ? datosTasacion.departamento.ubicacionPisoCoef : ""}">
                     </div>
                 </div>
             </div>

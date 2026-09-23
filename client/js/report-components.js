@@ -326,53 +326,6 @@ function ReportDocumentation({ config }) {
 }
 
 // =========================
-// COMPONENTE: ReportComparables
-// Tabla de propiedades comparables
-// =========================
-function ReportComparables({ comparables, valuation }) {
-    const formatearPrecio = (n) => formatearMonto(n);
-
-    const comparablesRows = comparables.map(comp => `
-        <tr>
-            <td>${comp.address}</td>
-            <td>${comp.surfaceTotal}${typeof comp.surfaceTotal === 'number' ? ' m2' : comp.surfaceTotal !== '-' ? ' m2' : ''}</td>
-            <td>${comp.rooms}</td>
-            <td>${comp.age}${typeof comp.age === 'number' ? ' años' : comp.age !== '-' ? '' : ''}</td>
-            <td>${typeof comp.distance === 'number' ? comp.distance + ' m' : comp.distance}</td>
-            <td>$${formatearPrecio(comp.price)}</td>
-            <td>$${formatearPrecio(comp.pricePerM2)}</td>
-        </tr>
-    `).join('');
-
-    return `
-        <section class="report-section">
-            <h2 class="report-section-title">Comparables de Mercado</h2>
-            <table class="report-comparables-table">
-                <thead>
-                    <tr>
-                        <th>Dirección</th>
-                        <th>Sup. Total</th>
-                        <th>Ambientes</th>
-                        <th>Antigüedad</th>
-                        <th>Distancia</th>
-                        <th>Precio</th>
-                        <th>Precio/m2</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${comparablesRows}
-                </tbody>
-            </table>
-            <div style="margin-top: 16px; padding: 16px; background: var(--color-primary-light); border-radius: 8px;">
-                <strong>Valor de tasación estimado:</strong> 
-                $${formatearMonto(valuation.estimatedValue)} ${valuation.currency}
-                ($${formatearMonto(valuation.valuePerM2)} ${valuation.currency}/m2)
-            </div>
-        </section>
-    `;
-}
-
-// =========================
 // COMPONENTE: ReportPhotos
 // Grid de fotografías de la propiedad
 // =========================
@@ -671,7 +624,6 @@ function ReportReference({ selector, reportInfo, config }) {
     if (selector.tipo === 'lote') {
         const tipoLote = selector.getTipoLote();
         const superficie = selector.getSuperficieTotal();
-        const antiguedad = selector.getAntiguedad();
         caracteristicasInmueble = `
             <div class="report-reference-item${claseSiVacio(tipoLote)}">
                 <span class="report-reference-label">Tipo de lote:</span>
@@ -681,14 +633,11 @@ function ReportReference({ selector, reportInfo, config }) {
                 <span class="report-reference-label">Superficie:</span>
                 <span class="report-reference-value">${superficie || '-'}${!isEmptyEditable(superficie) && !/m/i.test(String(superficie)) ? ' m2' : ''}</span>
             </div>
-            <div class="report-reference-item${claseSiVacio(antiguedad)}">
-                <span class="report-reference-label">Antigüedad:</span>
-                <span class="report-reference-value">${!isEmptyEditable(antiguedad) ? antiguedad + ' años' : '-'}</span>
-            </div>
         `;
     } else if (selector.mostrarAmbientes()) {
         const ambientes = selector.getAmbientes();
         const superficie = selector.getSuperficieCubierta();
+        const superficieTerreno = selector.tipo === 'casa' ? selector.getSuperficieTerreno() : null;
         const antiguedad = selector.getAntiguedad();
         caracteristicasInmueble = `
             <div class="report-reference-item${claseSiVacio(ambientes)}">
@@ -699,6 +648,11 @@ function ReportReference({ selector, reportInfo, config }) {
                 <span class="report-reference-label">Superficie cubierta:</span>
                 <span class="report-reference-value">${superficie || '-'}${!isEmptyEditable(superficie) && !/m/i.test(String(superficie)) ? ' m2' : ''}</span>
             </div>
+            ${selector.tipo === 'casa' ? `
+            <div class="report-reference-item${claseSiVacio(superficieTerreno)}">
+                <span class="report-reference-label">Superficie del terreno:</span>
+                <span class="report-reference-value">${superficieTerreno || '-'}${!isEmptyEditable(superficieTerreno) && !/m/i.test(String(superficieTerreno)) ? ' m2' : ''}</span>
+            </div>` : ''}
             <div class="report-reference-item${claseSiVacio(antiguedad)}">
                 <span class="report-reference-label">Antigüedad:</span>
                 <span class="report-reference-value">${!isEmptyEditable(antiguedad) ? antiguedad + ' años' : '-'}</span>
@@ -1035,6 +989,7 @@ function ReportTechnical({ selector, config }) {
     const servicios = selector.getServicios() || [];
     
     if (selector.tipo === 'lote') {
+        const superficieLote = selector.getSuperficieTotal();
         const frente = selector.getFrente();
         const fondo = selector.getFondo();
         const fondoFicticio = selector.getFondoFicticio();
@@ -1043,9 +998,10 @@ function ReportTechnical({ selector, config }) {
         const mejoras = selector.getMejoras();
         const observaciones = selector.getObservaciones();
 
-        const hayAlgo = [frente, fondo, fondoFicticio, segundaCalle, zona, mejoras, observaciones].some(v => !isEmptyEditable(v)) || servicios.length > 0;
+        const hayAlgo = [superficieLote, frente, fondo, fondoFicticio, segundaCalle, zona, mejoras, observaciones].some(v => !isEmptyEditable(v)) || servicios.length > 0;
         if (hayAlgo) {
             const itemsLote = [];
+            if (!isEmptyEditable(superficieLote)) itemsLote.push(itemTecnico('Superficie:', `${superficieLote} m2`));
             if (!isEmptyEditable(frente)) itemsLote.push(itemTecnico('Frente:', `${frente} m`));
             if (!isEmptyEditable(fondo)) itemsLote.push(itemTecnico('Fondo:', `${fondo} m`));
             if (!isEmptyEditable(fondoFicticio)) itemsLote.push(itemTecnico('Fondo ficticio:', `${fondoFicticio} m`));
@@ -1445,12 +1401,24 @@ function ReportComparableAnalysis({ comparables, valuation, reportData }) {
         </tfoot>
     `;
 
-    // Calcular resumen si hay datos disponibles
+    // Calcular resumen si hay datos disponibles. Los promedios se calculan
+    // sobre los comparables efectivamente mostrados (filas), igual que el
+    // tfoot de la tabla: el "original" promedia valor_m2 sin homogeneizar.
     let resumenHTML = '';
-    if (resultado && comparablesResultado.length > 0) {
-        const cantidadComparables = comparablesResultado.length;
-        const valorPromedioOriginal = resultado.valor_promedio_m2 || null;
-        const valorPromedioHomogeneizado = resultado.valor_promedio_m2 || null;
+    if (resultado && filas.length > 0) {
+        const cantidadComparables = filas.length;
+        const promedioDe = (getter) => {
+            const valores = filas.map(f => getter(f.compR)).filter(v => Number.isFinite(v) && v > 0);
+            return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
+        };
+        const valorPromedioOriginal = promedioDe(c => {
+            const v = parseFloat(c.valor_m2);
+            if (Number.isFinite(v) && v > 0) return v;
+            const sup = parseFloat(c.superficie);
+            const valor = parseFloat(c.valor);
+            return (Number.isFinite(sup) && sup > 0 && Number.isFinite(valor)) ? valor / sup : null;
+        });
+        const valorPromedioHomogeneizado = promedioDe(c => parseFloat(c.valor_m2_homogeneizado));
         const valorM2Final = valuation.valuePerM2 || null;
         
         resumenHTML = `
@@ -1537,7 +1505,23 @@ function ReportValuation({ valuation, selector, config }) {
         if (valuation.estimatedValue > 0 && valuation.valuePerM2 > 0) {
             return valuation.estimatedValue / valuation.valuePerM2;
         }
-        const s = parseFloat(selector?.getSuperficieTotal?.());
+        let s = null;
+        if (selector?.tipo === 'lote') {
+            s = parseFloat(selector.getSuperficieTotal?.());
+        } else {
+            // En construidos el valor/m² se calcula sobre la superficie
+            // homogeneizada (o cubierta como aproximación), nunca el terreno.
+            const datosTipo = selector?.tasacion?.[selector.tipo] || {};
+            s = parseFloat(datosTipo.homogeneizacion?.totalHomogeneizada)
+                || parseFloat(datosTipo.superficieHomogeneizada);
+            if (!s) {
+                const nums = String(selector?.getSuperficieCubierta?.() ?? '')
+                    .match(/\d+(?:[.,]\d+)?/g);
+                if (nums?.length) {
+                    s = nums.reduce((sum, n) => sum + parseFloat(n.replace(',', '.')), 0) / nums.length;
+                }
+            }
+        }
         return Number.isFinite(s) && s > 0 ? s : null;
     })();
     const m2Desde = (v) => (v != null && superficieRef ? Math.round(v / superficieRef) : null);
@@ -1913,8 +1897,8 @@ async function ReportViewerProfessional({ reportData, config }) {
         });
     }
 
-    // Análisis FODA
-    const fodaHtml = ReportFODA({ config });
+    // Análisis FODA (no aplica a lotes)
+    const fodaHtml = selector.tipo !== 'lote' ? ReportFODA({ config }) : '';
     if (fodaHtml && tieneContenido(fodaHtml)) {
         sections.push({
             html: fodaHtml,

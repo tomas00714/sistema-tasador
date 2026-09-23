@@ -166,6 +166,7 @@ function limpiarDatosTasacion() {
             superficieCubiertaCoef: 0,
             superficieTotal: "",
             superficieTotalCoef: 0,
+            superficieTerreno: "",
             antiguedad: "",
             estadoConservacion: "",
             caracteristicaConstructiva: "",

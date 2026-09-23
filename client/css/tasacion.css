@@ -124,9 +124,9 @@
 
 .card-tipo-icono {
 
-    width: 48px;
+    width: 100px;
 
-    height: 48px;
+    height: 100px;
 
     border-radius: 50%;
 
@@ -3627,7 +3627,7 @@ input:checked + .slider:before {
 
 /* Panel principal consistente */
 .panel-principal {
-    width: min(1000px, 100%);
+    width: min(1100px, 100%);
     margin: 84px auto;
     padding: 28px;
     background: var(--color-white);
@@ -3640,6 +3640,16 @@ input:checked + .slider:before {
     max-width: none;
     max-height: none;
     height: auto;
+    /* Animar los reajustes de tamaño/margen al cambiar de pantalla */
+    interpolate-size: allow-keywords;
+    transition: width .35s ease, height .35s ease, margin .35s ease;
+}
+
+/* Pantalla 1 (selección de tipo): la barra de pasos aún no existe, así
+   que el panel no reserva su espacio — solo el mismo margen superior
+   que deja la barra (--shell-margin). */
+.panel-principal:has(.grid-tipos) {
+    margin-top: 0;
 }
 
 .panel-principal:has(.tasacion-contenido > .comparables-layout),
@@ -3755,7 +3765,7 @@ input:checked + .slider:before {
     border-radius: var(--radius-card);
     background: var(--color-white);
     font-family: var(--font-family-base);
-    font-size: var(--font-size-body);
+    font-size: 25px;
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     min-height: 120px;

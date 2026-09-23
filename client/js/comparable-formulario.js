@@ -7,14 +7,6 @@
 let comparableMapa = null;
 let comparableMarcador = null;
 
-// Configurar iconos de Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
 /**
  * Obtiene el objeto de homogeneización de los datos de edición del comparable
  * @param {string} tipoInmueble - 'departamento' o 'casa'
@@ -229,26 +221,7 @@ function generarSeccionCaracteristicasCasa() {
                     <input type="number" id="compFormSuperficieTerrenoInput" placeholder="0" step="0.01" min="0">
                 </div>
                 ${generarInputSuperficieCubierta({ inputId: 'compFormSuperficieCubiertaInput', listId: 'compFormSuperficieCubiertaList', coefInputId: 'compFormSuperficieCubiertaCoef', label: 'Superficie cubierta (rango)' })}
-                <div class="input-group">
-                    <label>Superficie total (rango)</label>
-                    <div class="input-dividido-container">
-                        <div class="input-dividido-principal">
-                            <div class="autocomplete-container">
-                                <input type="text" id="compFormSuperficieTotalInput" placeholder="Seleccionar rango" autocomplete="off" readonly>
-                                <div class="autocomplete-list" id="compFormSuperficieTotalList">
-                                    <div class="autocomplete-item" data-coef="1.10" data-rango="1.10"><span>Hasta 100 m²</span><span class="coef-display">1.10</span></div>
-                                    <div class="autocomplete-item" data-coef="1.05" data-rango="1.05"><span>100-200 m²</span><span class="coef-display">1.05</span></div>
-                                    <div class="autocomplete-item" data-coef="1" data-rango="1"><span>200-300 m²</span><span class="coef-display">1</span></div>
-                                    <div class="autocomplete-item" data-coef="0.95" data-rango="0.95"><span>300-500 m²</span><span class="coef-display">0.95</span></div>
-                                    <div class="autocomplete-item" data-coef="0.90" data-rango="0.90"><span>Más de 500 m²</span><span class="coef-display">0.90</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-dividido-coef">
-                            <input type="number" id="compFormSuperficieTotalCoef" placeholder="Coef" step="0.01" min="0">
-                        </div>
-                    </div>
-                </div>
+                ${generarInputSuperficieTotal({ inputId: 'compFormSuperficieTotalInput', listId: 'compFormSuperficieTotalList', coefInputId: 'compFormSuperficieTotalCoef' })}
                 ${generarInputCaracteristicaConstructiva({ inputId: 'compFormCaracteristicaConstructivaInput', listId: 'compFormCaracteristicaConstructivaList', coefInputId: 'compFormCaracteristicaConstructivaCoef' })}
                 <div class="input-group">
                     <label>Antigüedad (años)</label>
@@ -749,51 +722,20 @@ function actualizarLabelsMedidasLoteForm(tipoLote) {
  */
 async function inicializarMapaComparable(latInicial = null, lonInicial = null) {
     const mapaContainer = document.getElementById("compFormMapa");
-    if (!mapaContainer) return;
+    if (!mapaContainer || typeof MapaCore === 'undefined') return;
 
-    let zoomInicial = 15;
+    // MapaCore aplica el pin, tiles y geolocalizacion compartidos con el
+    // resto del sistema; sin coordenadas previas usa la vista por defecto.
+    const instancia = await MapaCore.inicializarEdicion('compFormMapa', {
+        lat: latInicial,
+        lon: lonInicial,
+        zoom: (latInicial != null && lonInicial != null) ? 15 : null,
+        draggable: true
+    });
+    if (!instancia) return;
 
-    if (latInicial == null || lonInicial == null) {
-        latInicial = -34.6037;
-        lonInicial = -58.3816;
-        zoomInicial = 13;
-
-        const ubicacionUsuario = await obtenerUbicacionUsuario();
-        if (ubicacionUsuario) {
-            latInicial = ubicacionUsuario.lat;
-            lonInicial = ubicacionUsuario.lon;
-            zoomInicial = 12;
-        }
-    }
-
-    // Inicializar mapa Leaflet
-    if (typeof L !== 'undefined') {
-        comparableMapa = L.map('compFormMapa').setView([latInicial, lonInicial], zoomInicial);
-        
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(comparableMapa);
-        
-        // Agregar marcador draggable
-        comparableMarcador = L.marker([latInicial, lonInicial], {
-            draggable: true
-        }).addTo(comparableMapa);
-
-        comparableMapa.on('click', (e) => {
-            comparableMarcador.setLatLng(e.latlng);
-        });
-        
-        // Event listener cuando se mueve el marcador
-        comparableMarcador.on('dragend', function(e) {
-            const position = e.target.getLatLng();
-            console.log('Marcador movido a:', position.lat, position.lng);
-            // Aquí se podría actualizar la dirección inversa si se desea
-        });
-        
-        // Guardar referencia al mapa
-        mapaContainer._mapa = comparableMapa;
-    }
+    comparableMapa = instancia.mapa;
+    comparableMarcador = instancia.marcador;
 }
 
 /**
@@ -1157,16 +1099,25 @@ function inicializarAutocompleteConCoeficienteCompForm(inputId, listId, coefInpu
     });
 
     if (coefInput) {
+        // La base se resuelve en el momento de validar: si el input muestra
+        // una opción de la lista, su data-coef/data-rango manda (los datos se
+        // cargan después de la inicialización, así que no se puede fijar acá).
+        const resolverBase = () => {
+            const base = obtenerBaseCoeficiente(document.getElementById(listId), input.value, coeficienteSeleccionado);
+            return base.encontrada ? base : { coef: coeficienteSeleccionado, rango: rangoSeleccionado };
+        };
         coefInput.addEventListener('input', () => {
             const valor = parseFloat(coefInput.value);
             if (!isNaN(valor) && typeof validarRangoCoeficiente === 'function') {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado, rangoSeleccionado);
+                const base = resolverBase();
+                validarRangoCoeficiente(coefInput, valor, base.coef, base.rango);
             }
         });
         coefInput.addEventListener('focus', () => {
             const valor = parseFloat(coefInput.value);
             if (!isNaN(valor) && typeof validarRangoCoeficiente === 'function') {
-                validarRangoCoeficiente(coefInput, valor, coeficienteSeleccionado, rangoSeleccionado);
+                const base = resolverBase();
+                validarRangoCoeficiente(coefInput, valor, base.coef, base.rango);
             }
         });
         coefInput.addEventListener('blur', () => {
