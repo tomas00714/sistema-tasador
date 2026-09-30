@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional, Dict, Any
 from repositories.base_repository import BaseRepository
@@ -29,14 +30,37 @@ class MercadoPagoSellerRepository(BaseRepository):
         return results[0] if results else None
 
     def upsert_por_mp_user_id(self, mp_user_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Crea o actualiza la autorización de un Seller por su mp_user_id."""
+        """Crea o actualiza la autorización de un Seller por su mp_user_id.
+
+        Es una única sentencia INSERT ... ON CONFLICT: atómica e
+        idempotente. Aunque la operación se repita (reintento, doble
+        callback, etc.), nunca produce filas duplicadas: el UNIQUE de
+        mp_user_id garantiza una sola autorización por Seller.
+        """
         data = dict(data)
-        data["actualizada_en"] = datetime.utcnow()
-        existente = self.find_by_mp_user_id(mp_user_id)
-        if existente:
-            return self.update(existente["id"], data)
         data["mp_user_id"] = mp_user_id
-        return self.create(data)
+        data["actualizada_en"] = datetime.utcnow()
+
+        columns = list(data.keys())
+        values = tuple(
+            json.dumps(v) if isinstance(v, dict) else v
+            for v in data.values()
+        )
+        columns_str = ", ".join(columns)
+        placeholders = ", ".join(["%s"] * len(values))
+        updates = ", ".join(
+            f"{col} = EXCLUDED.{col}" for col in columns if col != "mp_user_id"
+        )
+
+        query = f"""
+            INSERT INTO {self.table_name} ({columns_str})
+            VALUES ({placeholders})
+            ON CONFLICT (mp_user_id) DO UPDATE SET {updates}
+            RETURNING *
+        """
+
+        results = self.execute_query(query, values)
+        return results[0] if results else None
 
     def marcar_revocado(self, seller_auth_id: int) -> Optional[Dict[str, Any]]:
         """Marca una autorización como revocada (no borra el registro)."""

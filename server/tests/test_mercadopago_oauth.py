@@ -239,5 +239,114 @@ class TestMercadoPagoOAuthEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
 
 
+def _db_available() -> bool:
+    """Verifica si la base de datos local está disponible."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        import database
+        if database.connection_pool is None and not database.init_db_pool():
+            return False
+        conn = database.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        database.release_connection(conn)
+        return True
+    except Exception:
+        return False
+
+
+def _usuario_existente_id():
+    """Devuelve el id de un usuario real para cumplir la FK del vínculo."""
+    import database
+    if database.connection_pool is None:
+        database.init_db_pool()
+    conn = database.get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM usuarios ORDER BY id LIMIT 1")
+        row = cur.fetchone()
+        cur.close()
+        return row[0] if row else None
+    finally:
+        database.release_connection(conn)
+
+
+@unittest.skipUnless(_db_available(), "PostgreSQL local no disponible")
+class TestMercadoPagoOAuthPersistencia(unittest.TestCase):
+    """Caso C: callback con exchange mockeado persiste la autorización.
+
+    Usa la base de datos local real para verificar que el ciclo completo
+    code -> tokens -> persistencia -> status funciona. No contacta a
+    Mercado Pago ni requiere una cuenta Seller real.
+    """
+
+    FAKE_MP_USER_ID = 880000777001  # user_id ficticio, solo para este test
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = TestClient(app)
+        cls.admin_uid = _usuario_existente_id()
+        if cls.admin_uid is None:
+            raise unittest.SkipTest("No hay usuarios en la DB local")
+        app.dependency_overrides[middleware.require_admin] = lambda: cls.admin_uid
+
+    @classmethod
+    def tearDownClass(cls):
+        app.dependency_overrides.clear()
+        # Limpiar el seller ficticio persistido por el test
+        try:
+            from repositories.mercadopago_seller_repository import MercadoPagoSellerRepository
+            repo = MercadoPagoSellerRepository()
+            repo.execute_query(
+                "DELETE FROM mercadopago_sellers WHERE mp_user_id = %s",
+                (cls.FAKE_MP_USER_ID,), fetch=False
+            )
+        except Exception:
+            pass
+        import database
+        if database.connection_pool is not None:
+            database.close_db_pool()
+
+    def test_callback_persiste_autorizacion(self):
+        """Caso C: exchange 200 -> persiste -> status reporta seller_vinculado."""
+        state = create_mp_oauth_state(usuario_id=self.admin_uid)
+        fake_tokens = {
+            "access_token": "APP_USR-TEST-NOT-REAL",
+            "refresh_token": "TG-TEST-NOT-REAL",
+            "user_id": self.FAKE_MP_USER_ID,
+            "expires_in": 15552000,
+            "scope": "offline_access read write",
+            "token_type": "Bearer",
+            "public_key": "APP_USR-test-pk",
+            "live_mode": False,
+        }
+
+        with patch.object(
+            main, "mp_exchange_code_for_tokens", return_value=fake_tokens
+        ):
+            response = self.client.get(
+                "/api/mercadopago/oauth/callback",
+                params={"code": "TG-test-code", "state": state}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            status = self.client.get("/api/mercadopago/oauth/status")
+            self.assertEqual(status.status_code, 200)
+            body = status.json()
+            self.assertTrue(body["seller_vinculado"])
+            self.assertEqual(body["mp_user_id"], self.FAKE_MP_USER_ID)
+            self.assertEqual(body["estado"], "activa")
+
+        # Los tokens no deben quedar en texto plano en la DB
+        from repositories.mercadopago_seller_repository import MercadoPagoSellerRepository
+        repo = MercadoPagoSellerRepository()
+        row = repo.find_by_mp_user_id(self.FAKE_MP_USER_ID)
+        self.assertNotEqual(row["access_token_enc"], fake_tokens["access_token"])
+        self.assertNotEqual(row["refresh_token_enc"], fake_tokens["refresh_token"])
+        self.assertNotIn("APP_USR-TEST-NOT-REAL", row["access_token_enc"])
+
+
 if __name__ == "__main__":
     unittest.main()
