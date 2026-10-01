@@ -347,6 +347,53 @@ class TestMercadoPagoOAuthPersistencia(unittest.TestCase):
         self.assertNotEqual(row["refresh_token_enc"], fake_tokens["refresh_token"])
         self.assertNotIn("APP_USR-TEST-NOT-REAL", row["access_token_enc"])
 
+    def test_callback_scope_largo_no_falla(self):
+        """Regresión del error 'value too long for type character varying(500)'.
+
+        MP devuelve en ``scope`` la lista completa de permisos del Seller,
+        que en producción superó los 500 caracteres. Tras la migración 029
+        (scope -> TEXT), el callback debe persistir sin errores.
+        """
+        scope_largo = " ".join(
+            f"scope_permiso_{i}" for i in range(80)
+        )  # ~1400 caracteres, supera VARCHAR(500)
+        self.assertGreater(len(scope_largo), 500)
+
+        state = create_mp_oauth_state(usuario_id=self.admin_uid)
+        fake_tokens = {
+            # Tokens con longitud realista (cifrados Fernet quedan ~200+ chars)
+            "access_token": "APP_USR-" + "a" * 120,
+            "refresh_token": "TG-" + "b" * 100,
+            "user_id": self.FAKE_MP_USER_ID,
+            "expires_in": 15552000,
+            "scope": scope_largo,
+            "token_type": "Bearer",
+            "public_key": "APP_USR-" + "c" * 40,
+            "live_mode": True,
+        }
+
+        with patch.object(
+            main, "mp_exchange_code_for_tokens", return_value=fake_tokens
+        ):
+            response = self.client.get(
+                "/api/mercadopago/oauth/callback",
+                params={"code": "TG-test-code", "state": state}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            status = self.client.get("/api/mercadopago/oauth/status")
+            body = status.json()
+            self.assertTrue(body["seller_vinculado"])
+            self.assertEqual(body["mp_user_id"], self.FAKE_MP_USER_ID)
+
+        # Scope completo persistido y tokens cifrados
+        from repositories.mercadopago_seller_repository import MercadoPagoSellerRepository
+        repo = MercadoPagoSellerRepository()
+        row = repo.find_by_mp_user_id(self.FAKE_MP_USER_ID)
+        self.assertEqual(row["scope"], scope_largo)
+        self.assertNotIn(fake_tokens["access_token"], row["access_token_enc"])
+        self.assertNotIn(fake_tokens["refresh_token"], row["refresh_token_enc"])
+
 
 if __name__ == "__main__":
     unittest.main()
