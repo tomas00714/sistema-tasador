@@ -20,7 +20,6 @@ load_dotenv()
 import psycopg2
 import database
 from repositories.base_repository import BaseRepository
-from repositories.mercadopago_seller_repository import MercadoPagoSellerRepository
 
 
 def _db_available() -> bool:
@@ -45,7 +44,7 @@ class _DummyRepo(BaseRepository):
     """Repository mínimo para ejercitar execute_query directamente."""
 
     def __init__(self):
-        super().__init__("mercadopago_sellers")
+        super().__init__("usuarios")
 
 
 @unittest.skipUnless(DB_AVAILABLE, "PostgreSQL local no disponible")
@@ -71,25 +70,27 @@ class TestPoolResilience(unittest.TestCase):
 
     def test_repository_read_write(self):
         """Caso A: un repository puede leer y escribir normalmente."""
-        repo = MercadoPagoSellerRepository()
-        fake_mp_user_id = -880000001  # ID ficticio solo para este test
+        repo = _DummyRepo()
+        fake_email = "pool-test-880000001@test.invalid"
         try:
-            creado = repo.upsert_por_mp_user_id(fake_mp_user_id, {
-                "access_token_enc": "enc-test",
-                "estado": "activa",
-            })
+            creado = repo.execute_query(
+                "INSERT INTO usuarios (email, estado) VALUES (%s, 'activo') "
+                "RETURNING id, email",
+                (fake_email,)
+            )
             self.assertIsNotNone(creado)
-            self.assertEqual(creado["mp_user_id"], fake_mp_user_id)
+            self.assertEqual(creado[0]["email"], fake_email)
 
-            encontrado = repo.find_by_mp_user_id(fake_mp_user_id)
+            encontrado = repo.execute_query(
+                "SELECT id, email FROM usuarios WHERE email = %s",
+                (fake_email,)
+            )
             self.assertIsNotNone(encontrado)
-
-            activo = repo.find_activo()
-            self.assertIsNotNone(activo)
+            self.assertEqual(encontrado[0]["id"], creado[0]["id"])
         finally:
             repo.execute_query(
-                "DELETE FROM mercadopago_sellers WHERE mp_user_id = %s",
-                (fake_mp_user_id,), fetch=False
+                "DELETE FROM usuarios WHERE email = %s",
+                (fake_email,), fetch=False
             )
 
     # ------------------------- CASO B -------------------------
@@ -178,9 +179,8 @@ class TestPoolResilience(unittest.TestCase):
         with patch("repositories.base_repository.get_connection", get_mock):
             with self.assertRaises(psycopg2.OperationalError):
                 repo.execute_query(
-                    "INSERT INTO mercadopago_sellers (mp_user_id, access_token_enc) "
-                    "VALUES (%s, %s) RETURNING *",
-                    (-880000002, "enc-test")
+                    "INSERT INTO usuarios (email) VALUES (%s) RETURNING *",
+                    ("pool-test-880000002@test.invalid",)
                 )
         # Sin retry: una sola conexión pedida al pool
         self.assertEqual(get_mock.call_count, 1)
@@ -201,9 +201,8 @@ class TestPoolResilience(unittest.TestCase):
         with patch("repositories.base_repository.get_connection", get_mock):
             with self.assertRaises(psycopg2.OperationalError):
                 repo.execute_query(
-                    "INSERT INTO mercadopago_sellers (mp_user_id, access_token_enc) "
-                    "VALUES (%s, %s) RETURNING *",
-                    (-880000002, "enc-test")
+                    "INSERT INTO usuarios (email) VALUES (%s) RETURNING *",
+                    ("pool-test-880000002@test.invalid",)
                 )
         self.assertEqual(get_mock.call_count, 1)
 
@@ -222,22 +221,22 @@ class TestPoolResilience(unittest.TestCase):
                 return calls.pop()
             return real_get()
 
-        fake_mp_user_id = -880000003
+        fake_email = "pool-test-880000003@test.invalid"
         try:
             with patch(
                 "repositories.base_repository.get_connection",
                 side_effect=fake_get_connection
             ):
                 result = repo.execute_query(
-                    "INSERT INTO mercadopago_sellers (mp_user_id, access_token_enc) "
-                    "VALUES (%s, %s) RETURNING id, mp_user_id",
-                    (fake_mp_user_id, "enc-test")
+                    "INSERT INTO usuarios (email, estado) VALUES (%s, 'activo') "
+                    "RETURNING id, email",
+                    (fake_email,)
                 )
-            self.assertEqual(result[0]["mp_user_id"], fake_mp_user_id)
+            self.assertEqual(result[0]["email"], fake_email)
         finally:
             repo.execute_query(
-                "DELETE FROM mercadopago_sellers WHERE mp_user_id = %s",
-                (fake_mp_user_id,), fetch=False
+                "DELETE FROM usuarios WHERE email = %s",
+                (fake_email,), fetch=False
             )
 
     def test_lectura_con_error_ambiguo_si_reintenta(self):
@@ -279,33 +278,30 @@ class TestPoolResilience(unittest.TestCase):
             with self.assertRaises(psycopg2.IntegrityError):
                 repo.execute_query("SELECT 1")
 
-    def test_upsert_es_idempotente(self):
-        """Repetir el upsert del Seller nunca duplica filas."""
-        repo = MercadoPagoSellerRepository()
-        fake_mp_user_id = -880000004
+    def test_upsert_on_conflict_es_idempotente(self):
+        """Un INSERT ... ON CONFLICT repetido nunca duplica filas."""
+        repo = _DummyRepo()
+        fake_email = "pool-test-880000004@test.invalid"
+        upsert = (
+            "INSERT INTO usuarios (email, nombre) VALUES (%s, %s) "
+            "ON CONFLICT (email) DO UPDATE SET nombre = EXCLUDED.nombre "
+            "RETURNING id, nombre"
+        )
         try:
-            r1 = repo.upsert_por_mp_user_id(fake_mp_user_id, {
-                "access_token_enc": "enc-v1",
-                "scope": "read",
-                "estado": "activa",
-            })
-            r2 = repo.upsert_por_mp_user_id(fake_mp_user_id, {
-                "access_token_enc": "enc-v2",
-                "scope": "read write",
-                "estado": "activa",
-            })
-            self.assertEqual(r1["id"], r2["id"])  # misma fila, actualizada
-            self.assertEqual(r2["access_token_enc"], "enc-v2")
+            r1 = repo.execute_query(upsert, (fake_email, "v1"))
+            r2 = repo.execute_query(upsert, (fake_email, "v2"))
+            self.assertEqual(r1[0]["id"], r2[0]["id"])  # misma fila, actualizada
+            self.assertEqual(r2[0]["nombre"], "v2")
 
             filas = repo.execute_query(
-                "SELECT COUNT(*) AS n FROM mercadopago_sellers WHERE mp_user_id = %s",
-                (fake_mp_user_id,)
+                "SELECT COUNT(*) AS n FROM usuarios WHERE email = %s",
+                (fake_email,)
             )
             self.assertEqual(filas[0]["n"], 1)
         finally:
             repo.execute_query(
-                "DELETE FROM mercadopago_sellers WHERE mp_user_id = %s",
-                (fake_mp_user_id,), fetch=False
+                "DELETE FROM usuarios WHERE email = %s",
+                (fake_email,), fetch=False
             )
 
 
