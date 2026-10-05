@@ -4,12 +4,31 @@ const USER_DATA_KEY = 'auth_user';
 const GOOGLE_POPUP_NAME = 'google_oauth_popup';
 const GOOGLE_POPUP_FEATURES = 'width=500,height=600,resizable,scrollbars=yes';
 
+// Solo destinos del mismo origen: rutas relativas ("compartir.html",
+// "app/index.html") o URLs absolutas que resuelvan a window.location.origin
+// (mercado-pago.js envía location.href completa). Rechaza javascript:,
+// data:, vbscript:, //externo.com y cualquier otro esquema/origen.
+function destinoRedirectSeguro(destino) {
+    if (!destino || typeof destino !== 'string') return null;
+    const v = destino.trim();
+    if (!v || /[\x00-\x1f\x7f]/.test(v)) return null;
+    try {
+        const u = new URL(v, window.location.origin);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+        if (u.origin !== window.location.origin) return null;
+        return u.pathname + u.search + u.hash;
+    } catch (e) {
+        return null;
+    }
+}
+
 function getAuthRedirect() {
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    const redirect = destinoRedirectSeguro(params.get('redirect'));
     const shareToken = params.get('share_token');
     if (redirect && shareToken) {
-        return `${redirect}?token=${encodeURIComponent(shareToken)}`;
+        const separador = redirect.includes('?') ? '&' : '?';
+        return `${redirect}${separador}token=${encodeURIComponent(shareToken)}`;
     }
     if (redirect) {
         return redirect;
@@ -190,7 +209,16 @@ function completarLoginGoogle(tokenData) {
 }
 
 function handleGoogleAuthMessage(event) {
-    // Solo confiar en el origen del sitio (callback del mismo dominio)
+    // Solo aceptar mensajes del backend que sirvió el callback de Google.
+    // Sin esta verificación cualquier ventana/origen podría inyectar un
+    // token o un mensaje falso en el flujo de login.
+    try {
+        const apiOrigin = new URL(getApiUrl(), window.location.href).origin;
+        if (event.origin !== apiOrigin) return;
+    } catch (e) {
+        return;
+    }
+
     if (!event.data || typeof event.data !== 'object') return;
     const data = event.data;
 

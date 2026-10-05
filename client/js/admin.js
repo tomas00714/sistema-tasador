@@ -81,8 +81,12 @@
     }
 
     function capitalizar(texto) {
+        // Todos los usos de esta función terminan dentro de innerHTML:
+        // el valor puede venir de campos libres (tipo/estado/fuente) y se
+        // escapa aquí para que ningún renderer necesite recordar hacerlo.
         if (!texto) return '-';
-        return texto.charAt(0).toUpperCase() + texto.slice(1);
+        const s = String(texto);
+        return escapeHtml(s.charAt(0).toUpperCase() + s.slice(1));
     }
 
     function formatearEstado(estado) {
@@ -240,9 +244,9 @@
                         <td>${escapeHtml(u.plan || '-')}</td>
                         <td>${formatearFecha(u.fecha_creacion)}</td>
                         <td>${formatearFecha(u.ultimo_acceso)}</td>
-                        <td>${u.cantidad_tasaciones || 0}</td>
-                        <td>${u.cantidad_comparables || 0}</td>
-                        <td>${u.cantidad_recibidas || 0}</td>
+                        <td>${Number(u.cantidad_tasaciones) || 0}</td>
+                        <td>${Number(u.cantidad_comparables) || 0}</td>
+                        <td>${Number(u.cantidad_recibidas) || 0}</td>
                     `;
                     tr.addEventListener('click', () => abrirPerfilUsuario(u.id));
                     body.appendChild(tr);
@@ -331,9 +335,9 @@
             `;
 
             uso.innerHTML = `
-                <div class="admin-profile-item"><span class="admin-profile-label">Tasaciones</span><span class="admin-profile-value">${usuario.cantidad_tasaciones || 0}</span></div>
-                <div class="admin-profile-item"><span class="admin-profile-label">Comparables</span><span class="admin-profile-value">${usuario.cantidad_comparables || 0}</span></div>
-                <div class="admin-profile-item"><span class="admin-profile-label">Recibidas por compartir</span><span class="admin-profile-value">${usuario.cantidad_recibidas || 0}</span></div>
+                <div class="admin-profile-item"><span class="admin-profile-label">Tasaciones</span><span class="admin-profile-value">${Number(usuario.cantidad_tasaciones) || 0}</span></div>
+                <div class="admin-profile-item"><span class="admin-profile-label">Comparables</span><span class="admin-profile-value">${Number(usuario.cantidad_comparables) || 0}</span></div>
+                <div class="admin-profile-item"><span class="admin-profile-label">Recibidas por compartir</span><span class="admin-profile-value">${Number(usuario.cantidad_recibidas) || 0}</span></div>
             `;
 
             tasacionesList.innerHTML = '';
@@ -400,4 +404,7 @@
 
     // Cargar dashboard al iniciar
     loadDashboard();
+
+    // Hook de solo lectura para tests automatizados de sanitización.
+    window.__adminTestHooks = { capitalizar, formatearEstado, formatearFuente };
 })();

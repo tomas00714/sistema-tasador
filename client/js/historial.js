@@ -74,6 +74,23 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
+// Copia profunda con todos los strings escapados: el modal de perfil
+// interpola muchos campos en innerHTML, incluidos datos que pueden venir
+// de terceros (tasaciones compartidas, comparables aportados por links
+// públicos). Escapar los datos una sola vez cubre todas las salidas.
+function escaparDatosProfundo(valor) {
+    if (typeof valor === 'string') return escapeHtml(valor);
+    if (Array.isArray(valor)) return valor.map(escaparDatosProfundo);
+    if (valor && typeof valor === 'object' && valor.constructor === Object) {
+        const copia = {};
+        for (const [k, v] of Object.entries(valor)) {
+            copia[k] = escaparDatosProfundo(v);
+        }
+        return copia;
+    }
+    return valor;
+}
+
 function formatearDireccion(direccion) {
     if (!direccion) return "";
     return direccion
@@ -302,7 +319,7 @@ function renderHistorial() {
             estadoBadgeClass = item.estado === "borrador"
                 ? "card-minimizada-badge-borrador"
                 : "card-minimizada-badge-completada";
-            onClick = `abrirPerfilTasacion('${item.id}')`;
+            onClick = `abrirPerfilTasacion(${JSON.stringify(String(item.id))})`;
         } else {
             if (item.valor) {
                 precio = `USD ${(item.valor).toLocaleString('es-AR')}`;
@@ -310,7 +327,7 @@ function renderHistorial() {
             tipoLabel = (item.tipoInmueble || "comparable").charAt(0).toUpperCase() + (item.tipoInmueble || "comparable").slice(1);
             estadoLabel = "";
             estadoBadgeClass = "card-minimizada-badge-completada";
-            onClick = `abrirPerfilComparable('${item.id}')`;
+            onClick = `abrirPerfilComparable(${JSON.stringify(String(item.id))})`;
         }
 
         lista.innerHTML += construirCardMinimizada({
@@ -330,10 +347,10 @@ function renderHistorial() {
                 lat: item.ubicacion.lat,
                 lon: item.ubicacion.lon,
                 popupHtml: `
-                    <b>${item.ubicacion.direccion}</b><br>
-                    ${item.ubicacion.localidad}, ${item.ubicacion.provincia}<br>
-                    Tipo: ${esComparable ? (item.tipoInmueble || "comparable") : item.tipo}<br>
-                    ${esComparable ? `Valor: ${precio}` : `Estado: ${item.estado || "completada"}`}
+                    <b>${escapeHtml(item.ubicacion.direccion)}</b><br>
+                    ${escapeHtml(item.ubicacion.localidad)}, ${escapeHtml(item.ubicacion.provincia)}<br>
+                    Tipo: ${escapeHtml(esComparable ? (item.tipoInmueble || "comparable") : item.tipo)}<br>
+                    ${esComparable ? `Valor: ${escapeHtml(precio)}` : `Estado: ${escapeHtml(item.estado || "completada")}`}
                 `
             });
         }
@@ -526,6 +543,11 @@ window.abrirPerfilTasacion = async function(id) {
         if (remota) {
             tasacion.compartido_por = remota.compartido_por;
         }
+
+        // Todos los campos de la tasación se renderizan por innerHTML:
+        // se usa una copia con strings escapados (anti-XSS). El original
+        // en memoria y en el servidor queda en texto plano.
+        tasacion = escaparDatosProfundo(tasacion);
 
     tasacionPerfilAbiertaId = id;
 
@@ -1166,6 +1188,15 @@ window.abrirPerfilComparable = async function(comparableOrId) {
 
         comparablePerfilAbiertoId = comparable.id;
 
+        // Los datos del comparable vienen del backend y pueden haber sido
+        // ingresados por terceros (p. ej. contribuciones a solicitudes
+        // públicas): se escapa el árbol completo antes de interpolarlo en
+        // innerHTML. Los ids/flags usados por la lógica quedan en crudo.
+        const comparableIdRaw = comparable.id;
+        const solicitudIdRaw = comparable.solicitudId;
+        const estadoAceptacionRaw = comparable.estadoAceptacion;
+        comparable = escaparDatosProfundo(comparable);
+
         const tipo = comparable.tipoInmueble || 'lote';
         const esLote = tipo === 'lote';
 
@@ -1287,7 +1318,7 @@ window.abrirPerfilComparable = async function(comparableOrId) {
         const fuenteDetalle = comparable.fuenteInformacion?.detalle || comparable.fuenteDetalle || '';
 
         let accionesHtml;
-        if (comparable.estadoAceptacion === 'pendiente') {
+        if (estadoAceptacionRaw === 'pendiente') {
             accionesHtml = `
                 <div class="perfil-barra-inferior">
                     <div class="perfil-barra-inferior-derecha">
@@ -1300,7 +1331,7 @@ window.abrirPerfilComparable = async function(comparableOrId) {
                     </div>
                 </div>
             `;
-        } else if (comparable.estadoAceptacion === 'rechazado') {
+        } else if (estadoAceptacionRaw === 'rechazado') {
             accionesHtml = `
                 <div class="perfil-barra-inferior">
                     <div class="perfil-barra-inferior-derecha">
@@ -1403,12 +1434,12 @@ window.abrirPerfilComparable = async function(comparableOrId) {
             btnVolver.addEventListener("click", cerrarPerfil);
         }
 
-        if (comparable.estadoAceptacion === 'pendiente') {
+        if (estadoAceptacionRaw === 'pendiente') {
             const btnAceptar = document.getElementById("btnAceptarPerfil");
             if (btnAceptar) {
                 btnAceptar.addEventListener("click", () => {
                     if (typeof window.aceptarComparableSolicitud === 'function') {
-                        window.aceptarComparableSolicitud(comparable.solicitudId, comparable.id);
+                        window.aceptarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
                     }
                 });
             }
@@ -1417,14 +1448,14 @@ window.abrirPerfilComparable = async function(comparableOrId) {
             if (btnRechazar) {
                 btnRechazar.addEventListener("click", () => {
                     if (typeof window.rechazarComparableSolicitud === 'function') {
-                        window.rechazarComparableSolicitud(comparable.solicitudId, comparable.id);
+                        window.rechazarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
                     }
                 });
             }
         } else {
             const btnEliminar = document.getElementById("btnEliminarPerfil");
             if (btnEliminar) {
-                btnEliminar.addEventListener("click", () => eliminarComparable(comparable.id));
+                btnEliminar.addEventListener("click", () => eliminarComparable(comparableIdRaw));
             }
         }
 

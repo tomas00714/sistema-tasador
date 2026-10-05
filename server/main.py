@@ -45,7 +45,8 @@ from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
 from utils.hybrid_mapper import mapear_tasacion_a_columnas, mapear_comparable_a_columnas
 from utils.id_encoder import generar_codigo_publico, obtener_id_desde_codigo, TIPO_TASACION, TIPO_COMPARABLE, TIPO_SOLICITUD
-from utils.public_links import link_solicitud_publico, link_compartir_publico
+from utils.public_links import link_solicitud_publico, link_compartir_publico, generar_token_link, PUBLIC_APP_URL
+from urllib.parse import urlparse
 from utils.webhook_validator import validate_webhook_signature
 import auth
 import middleware
@@ -70,6 +71,9 @@ UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 # Extensiones permitidas para imágenes de perfil/logo
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
 
+# Tamaño máximo aceptado por archivo subido (10 MB)
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
 
 def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
     """Guarda un archivo subido en UPLOAD_DIR con nombre único."""
@@ -80,6 +84,17 @@ def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
         raise HTTPException(
             status_code=400,
             detail=f"Formato no permitido: {ext}. Use {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}"
+        )
+
+    # Límite de tamaño: sin él, un usuario autenticado podría agotar el
+    # disco del servidor subiendo archivos arbitrariamente grandes.
+    upload.file.seek(0, os.SEEK_END)
+    size = upload.file.tell()
+    upload.file.seek(0)
+    if size > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"El archivo supera el máximo permitido de {MAX_UPLOAD_BYTES // (1024 * 1024)} MB"
         )
 
     filename = f"{prefix}_{uuid.uuid4().hex}{ext}"
@@ -97,6 +112,32 @@ def _guardar_archivo_subido(upload: UploadFile, prefix: str) -> str:
         upload.file.close()
 
     return filename
+
+
+def _verificar_comparables_propios(comparables_ids, usuario_id: int):
+    """Rechaza si algún comparable referenciado no pertenece al usuario.
+
+    Los códigos públicos C* son reversibles (Optimus sobre ID secuencial):
+    sin este chequeo, un usuario podía adjuntar comparables ajenos a su
+    tasación y exfiltrar su snapshot completo (IDOR).
+
+    - ids 'deleted_*': snapshots ya desvinculados, siguen su flujo previo.
+    - ids inexistentes: no se validan (POST los ignora, PUT falla por FK
+      como antes).
+    """
+    comp_repo = ComparableRepository()
+    for comp_id in comparables_ids or []:
+        if not isinstance(comp_id, str) or comp_id.startswith('deleted_'):
+            continue
+        comp_id_interno = obtener_id_desde_codigo(comp_id)
+        if not comp_id_interno:
+            continue
+        comparable = comp_repo.find_by_id(comp_id_interno)
+        if comparable and comparable.get('usuario_id') != usuario_id:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permiso para usar este comparable"
+            )
 
 
 def _crear_comparable(usuario_id: int, tipo_inmueble: str, fuente: str,
@@ -197,6 +238,20 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """Headers de seguridad aplicados a todas las respuestas.
+
+    X-Content-Type-Options: nosniff impide que el navegador intente
+    detectar el tipo de contenido por sniffing — mitiga que un archivo
+    subido como imagen (o servido desde /uploads) pueda interpretarse
+    como HTML/Script en algunos navegadores.
+    """
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
 @app.get("/")
 def home():
     return {"mensaje": "Servidor funcionando"}
@@ -220,7 +275,7 @@ def endpoint_run_migrations(usuario_id: int = Depends(middleware.require_admin))
         raise
     except Exception as e:
         logger.error(f"Error en endpoint de migraciones: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/migrations/status")
@@ -246,7 +301,7 @@ def endpoint_migration_status(usuario_id: int = Depends(middleware.require_admin
         raise
     except Exception as e:
         logger.error(f"Error al obtener estado de migraciones: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/tasar/lote")
@@ -433,7 +488,7 @@ def endpoint_tasar(request: TasacionRequest, usuario_id: int = Depends(middlewar
         raise
     except Exception as e:
         logger.error(f"Error en endpoint_tasar: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
@@ -447,7 +502,11 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
     
     try:
         repo = TasacionRepository()
-        
+
+        # IDOR: los comparables adjuntos deben pertenecer al usuario.
+        # Se valida antes de crear la tasación para no dejar filas huérfanas.
+        _verificar_comparables_propios(tasacion.comparables_ids, usuario_id)
+
         # Construir datos de tasación con columnas específicas extraídas del JSON
         datos_limpios = dict(tasacion.datos)
         datos_limpios.pop('origen', None)
@@ -514,7 +573,7 @@ def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middlewar
         raise
     except Exception as e:
         logger.error(f"Error al crear tasación: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/tasaciones/{tasacion_id}", response_model=TasacionResponse)
@@ -577,7 +636,7 @@ def obtener_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_
         raise
     except Exception as e:
         logger.error(f"Error al obtener tasación: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/tasaciones", response_model=list[TasacionResponse])
@@ -628,7 +687,7 @@ def listar_tasaciones(
         raise
     except Exception as e:
         logger.error(f"Error al listar tasaciones: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.put("/api/tasaciones/{tasacion_id}", response_model=TasacionResponse)
@@ -652,7 +711,13 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         # Verificar que la tasación pertenezca al usuario autenticado
         if tasacion_existente['usuario_id'] != usuario_id:
             raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta tasación")
-        
+
+        # IDOR: los comparables adjuntos deben pertenecer al usuario.
+        # Se valida antes de escribir para no dejar la tasación
+        # actualizada a medias si la operación se rechaza.
+        if tasacion.comparables_ids is not None:
+            _verificar_comparables_propios(tasacion.comparables_ids, usuario_id)
+
         # Construir diccionario de actualización solo con campos proporcionados
         datos_actualizacion = {}
         if tasacion.estado is not None:
@@ -847,7 +912,7 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
         raise
     except Exception as e:
         logger.error(f"Error al actualizar tasación: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.delete("/api/tasaciones/{tasacion_id}")
@@ -881,7 +946,7 @@ def eliminar_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get
         raise
     except Exception as e:
         logger.error(f"Error al eliminar tasación: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
@@ -926,7 +991,7 @@ def crear_compartir_tasacion(
         raise
     except Exception as e:
         logger.error(f"Error al crear enlace de compartir: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/tasaciones/compartir/{token}", response_model=VistaPreviaTasacionResponse)
@@ -942,7 +1007,7 @@ def obtener_vista_previa_compartir(token: str):
         raise
     except Exception as e:
         logger.error(f"Error al obtener vista previa: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/tasaciones/compartir/{token}/guardar", response_model=TasacionResponse)
@@ -974,7 +1039,7 @@ def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware
         raise
     except Exception as e:
         logger.error(f"Error al guardar tasación compartida: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.delete("/api/tasaciones/compartir/{token}", response_model=RevocarTasacionCompartidaResponse)
@@ -990,7 +1055,7 @@ def revocar_compartir_tasacion(token: str, usuario_id: int = Depends(middleware.
         raise
     except Exception as e:
         logger.error(f"Error al revocar enlace: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
@@ -1027,7 +1092,7 @@ def crear_comparable(comparable: ComparableCreate, usuario_id: int = Depends(mid
     except Exception as e:
         logger.error(f"Error al crear comparable: {e}")
         logger.error(f"Payload recibido: {comparable.datos}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/comparables/{comparable_id}", response_model=ComparableResponse)
@@ -1064,7 +1129,7 @@ def obtener_comparable(comparable_id: str, usuario_id: int = Depends(middleware.
         raise
     except Exception as e:
         logger.error(f"Error al obtener comparable: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/comparables/batch", response_model=list[ComparableResponse])
@@ -1116,7 +1181,7 @@ def obtener_comparables_batch(request: ComparableBatchRequest, usuario_id: int =
         raise
     except Exception as e:
         logger.error(f"Error al obtener comparables batch: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/comparables", response_model=list[ComparableResponse])
@@ -1159,7 +1224,7 @@ def listar_comparables(
         raise
     except Exception as e:
         logger.error(f"Error al listar comparables: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.put("/api/comparables/{comparable_id}", response_model=ComparableResponse)
@@ -1212,7 +1277,7 @@ def actualizar_comparable(comparable_id: str, comparable: ComparableUpdate, usua
         raise
     except Exception as e:
         logger.error(f"Error al actualizar comparable: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.put("/api/tasaciones/{tasacion_id}/comparables/{comparable_id}")
@@ -1274,7 +1339,7 @@ def actualizar_snapshot_comparable_tasacion(
         raise
     except Exception as e:
         logger.error(f"Error al actualizar snapshot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.delete("/api/comparables/{comparable_id}")
@@ -1308,7 +1373,7 @@ def eliminar_comparable(comparable_id: str, usuario_id: int = Depends(middleware
         raise
     except Exception as e:
         logger.error(f"Error al eliminar comparable: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
@@ -1349,7 +1414,10 @@ def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middle
             'usuario_id': usuario_id,
             'estado': solicitud.estado,
             'datos': solicitud.datos,
-            'fecha_expiracion': fecha_expiracion
+            'fecha_expiracion': fecha_expiracion,
+            # Secreto aleatorio del link público: el código Optimus es
+            # enumerable, no puede funcionar como capability de acceso.
+            'token_link': generar_token_link()
         }
 
         # Agregar tasacion_id solo si se proporcionó
@@ -1365,8 +1433,8 @@ def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middle
         # Generar código público para la solicitud
         codigo_publico = generar_codigo_publico(TIPO_SOLICITUD, solicitud_creada['id'])
 
-        # Generar link público dinámicamente
-        link_publico = link_solicitud_publico(codigo_publico)
+        # El link público lleva el token aleatorio, no el código enumerable
+        link_publico = link_solicitud_publico(solicitud_creada.get('token_link') or '')
 
         # Preparar tasacion_id para la respuesta (código público si existe)
         tasacion_id_publico = None
@@ -1390,7 +1458,7 @@ def crear_solicitud(solicitud: SolicitudCreate, usuario_id: int = Depends(middle
         raise
     except Exception as e:
         logger.error(f"Error al crear solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/solicitudes/{solicitud_id}", response_model=SolicitudResponse)
@@ -1421,7 +1489,7 @@ def obtener_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.ge
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud['tasacion_id']) if solicitud['tasacion_id'] else None
         
         # Generar link público dinámicamente
-        link_publico = link_solicitud_publico(solicitud_id)
+        link_publico = link_solicitud_publico(solicitud.get('token_link') or '')
         
         return SolicitudResponse(
             id=solicitud_id,
@@ -1440,7 +1508,7 @@ def obtener_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.ge
         raise
     except Exception as e:
         logger.error(f"Error al obtener solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/solicitudes", response_model=list[SolicitudResponse])
@@ -1479,7 +1547,7 @@ def listar_solicitudes(
                 id=generar_codigo_publico(TIPO_SOLICITUD, s['id']),
                 usuario_id=s['usuario_id'],
                 tasacion_id=tasacion_public_ids.get(s['tasacion_id']),
-                link_publico=link_solicitud_publico(generar_codigo_publico(TIPO_SOLICITUD, s['id'])),
+                link_publico=link_solicitud_publico(s.get('token_link') or ''),
                 estado=s['estado'],
                 datos=s['datos'],
                 fecha_creacion=s['fecha_creacion'],
@@ -1495,7 +1563,7 @@ def listar_solicitudes(
         raise
     except Exception as e:
         logger.error(f"Error al listar solicitudes: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/solicitudes/link/{link_publico:path}/comparables", response_model=list[ComparableResponse])
@@ -1546,7 +1614,7 @@ def obtener_comparables_de_solicitud(link_publico: str):
         raise
     except Exception as e:
         logger.error(f"Error al obtener comparables de solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 def _expirar_si_vencida(repo: SolicitudRepository, solicitud: dict) -> dict:
@@ -1590,7 +1658,7 @@ def obtener_solicitud_por_link(link_publico: str):
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud['tasacion_id']) if solicitud['tasacion_id'] else None
 
         # Generar link público dinámicamente
-        link_publico = link_solicitud_publico(codigo_publico)
+        link_publico = link_solicitud_publico(solicitud.get('token_link') or '')
         
         return SolicitudResponse(
             id=codigo_publico,
@@ -1609,7 +1677,7 @@ def obtener_solicitud_por_link(link_publico: str):
         raise
     except Exception as e:
         logger.error(f"Error al obtener solicitud por link: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.put("/api/solicitudes/{solicitud_id}", response_model=SolicitudResponse)
@@ -1673,7 +1741,7 @@ def actualizar_solicitud(solicitud_id: str, solicitud: SolicitudUpdate, usuario_
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud_actualizada['tasacion_id']) if solicitud_actualizada['tasacion_id'] else None
         
         # Generar link público dinámicamente
-        link_publico = link_solicitud_publico(solicitud_id)
+        link_publico = link_solicitud_publico(solicitud_actualizada.get('token_link') or '')
         
         return SolicitudResponse(
             id=solicitud_id,
@@ -1692,7 +1760,7 @@ def actualizar_solicitud(solicitud_id: str, solicitud: SolicitudUpdate, usuario_
         raise
     except Exception as e:
         logger.error(f"Error al actualizar solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.delete("/api/solicitudes/{solicitud_id}")
@@ -1726,7 +1794,7 @@ def eliminar_solicitud(solicitud_id: str, usuario_id: int = Depends(middleware.g
         raise
     except Exception as e:
         logger.error(f"Error al eliminar solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/solicitudes/link/{link_publico:path}/contribuir", response_model=SolicitudResponse)
@@ -1754,11 +1822,32 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
         if not payload.comparables:
             raise HTTPException(status_code=400, detail="No se proporcionaron comparables")
 
+        # Un aporte legítimo incluye pocos comparables; limitar la cantidad
+        # evita escrituras masivas desde el endpoint anónimo.
+        if len(payload.comparables) > 50:
+            raise HTTPException(status_code=400, detail="Demasiados comparables en una sola contribución")
+
         id_interno = solicitud['id']
         usuario_id = solicitud['usuario_id']
         colaborador = payload.colaborador or {}
+
+        # El endpoint es anónimo: los datos del colaborador son "declarados",
+        # no verificables. Solo se aceptan tipos esperados.
         id_creador = colaborador.get('usuario_id')
+        if id_creador is not None and not isinstance(id_creador, int):
+            id_creador = None
         nombre_creador = colaborador.get('nombre')
+        if nombre_creador is not None and not isinstance(nombre_creador, str):
+            nombre_creador = None
+
+        # Claves internas que no deben persistirse dentro del JSON datos:
+        # son metadatos que el servidor controla por columnas.
+        CLAVES_INTERNAS_DATOS = (
+            'id', 'usuario_id', 'solicitud_origen_id', 'id_creador',
+            'nombre_creador', 'estado_aceptacion', 'observaciones',
+            'usuario_decision', 'fecha_decision'
+        )
+        TIPOS_INMUEBLE_VALIDOS = ('lote', 'departamento', 'casa')
 
         # Validar todos los comparables ANTES de escribir nada
         comparables_validados = []
@@ -1767,7 +1856,14 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
             if not isinstance(datos, dict):
                 raise HTTPException(status_code=400, detail="Cada comparable debe tener datos válidos")
 
-            tipo_inmueble = (datos.get('tipoInmueble') or datos.get('tipo') or solicitud.get('tipo_inmueble') or 'lote').lower()
+            datos = dict(datos)
+            for clave_interna in CLAVES_INTERNAS_DATOS:
+                datos.pop(clave_interna, None)
+
+            tipo_raw = datos.get('tipoInmueble') or datos.get('tipo') or solicitud.get('tipo_inmueble')
+            tipo_inmueble = str(tipo_raw).lower() if tipo_raw is not None else 'lote'
+            if tipo_inmueble not in TIPOS_INMUEBLE_VALIDOS:
+                tipo_inmueble = (solicitud.get('tipo_inmueble') or 'lote')
             origen_solicitud = datos.get('origen_solicitud') or item.get('origen') or 'manual'
 
             if origen_solicitud == 'tasacion':
@@ -1828,7 +1924,7 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
         tasacion_publico = generar_codigo_publico(TIPO_TASACION, solicitud_actualizada['tasacion_id']) if solicitud_actualizada['tasacion_id'] else None
 
         # Generar link público dinámicamente
-        link_publico = link_solicitud_publico(codigo_publico)
+        link_publico = link_solicitud_publico(solicitud_actualizada.get('token_link') or '')
 
         return SolicitudResponse(
             id=codigo_publico,
@@ -1847,7 +1943,7 @@ def contribuir_solicitud(link_publico: str, payload: SolicitudContribuirRequest)
         raise
     except Exception as e:
         logger.error(f"Error al contribuir a la solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.get("/api/solicitudes/{solicitud_id}/comparables", response_model=list[ComparableResponse])
@@ -1905,7 +2001,7 @@ def obtener_comparables_de_solicitud_por_id(solicitud_id: str, usuario_id: int =
         raise
     except Exception as e:
         logger.error(f"Error al obtener comparables de solicitud: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/aceptar", response_model=SolicitudComparableAceptacionResponse)
@@ -1966,7 +2062,7 @@ def aceptar_comparable_solicitud(solicitud_id: str, comparable_id: str, usuario_
         raise
     except Exception as e:
         logger.error(f"Error al aceptar comparable: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/rechazar", response_model=SolicitudComparableAceptacionResponse)
@@ -2028,7 +2124,7 @@ def rechazar_comparable_solicitud(solicitud_id: str, comparable_id: str, decisio
         raise
     except Exception as e:
         logger.error(f"Error al rechazar comparable: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
@@ -2080,7 +2176,7 @@ def register(request: RegisterRequest):
         raise
     except Exception as e:
         logger.error(f"Error al registrar usuario: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/auth/login", response_model=TokenResponse)
@@ -2091,13 +2187,14 @@ def login(request: LoginRequest):
     try:
         repo = UsuarioRepository()
         
-        # Buscar usuario por email
+        # Buscar usuario por email. La verificación bcrypt corre siempre:
+        # - email inexistente → hash dummy;
+        # - cuenta Google-only (password_hash NULL) → hash dummy.
+        # Así la respuesta y el costo temporal son iguales a un password
+        # incorrecto: no hay oráculo de enumeración ni 500 sobre NULL.
         usuario = repo.find_by_email(request.email)
-        if not usuario:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        # Verificar contraseña
-        if not auth.verify_password(request.password, usuario['password_hash']):
+        password_hash = (usuario or {}).get('password_hash') or auth.DUMMY_PASSWORD_HASH
+        if not usuario or not auth.verify_password(request.password, password_hash):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
         # Verificar estado del usuario
@@ -2124,7 +2221,7 @@ def login(request: LoginRequest):
         raise
     except Exception as e:
         logger.error(f"Error en login: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/auth/logout")
@@ -2138,50 +2235,79 @@ def forgot_password(request: ForgotPasswordRequest):
     """Envía un email para recuperación de contraseña (preparado)."""
     logger.info(f"Solicitud de recuperación de contraseña: {request.email}")
     
+    # Respuesta uniforme: no revelar si el email existe o no en el
+    # sistema (evita enumeración de cuentas registradas).
+    mensaje_generico = {"mensaje": "Si el email existe, se enviará un enlace de recuperación"}
+
     try:
         repo = UsuarioRepository()
-        
-        # Buscar usuario por email
         usuario = repo.find_by_email(request.email)
-        if not usuario:
-            # Por seguridad, no revelamos si el email existe o no
-            return {"mensaje": "Si el email existe, se enviará un enlace de recuperación"}
-        
-        # Preparado para implementación futura
-        # Generar token y enviar email
-        
-        return {"mensaje": "Funcionalidad de recuperación de contraseña preparada para implementación futura"}
+
+        if usuario:
+            # Preparado para implementación futura:
+            # generar token de un solo uso y enviar email.
+            pass
+
+        return mensaje_generico
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error en forgot-password: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 # =========================
 #   GOOGLE OAUTH HELPERS
 # =========================
 
+def _google_post_message_origin() -> Optional[str]:
+    """Origen esperado del opener para postMessage del callback OAuth.
+
+    El payload incluye el JWT del usuario: postMessage con "*" lo entrega
+    a cualquier origen que ocupe la ventana opener. Se restringe al origen
+    del frontend (derivado de PUBLIC_APP_URL). Si PUBLIC_APP_URL no es una
+    URL http(s) válida devuelve None: fail-closed, nunca "*".
+    """
+    parsed = urlparse(PUBLIC_APP_URL)
+    if parsed.scheme in ("http", "https") and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    logger.error(
+        "PUBLIC_APP_URL inválida (%r): el callback de Google OAuth no "
+        "enviará el resultado por postMessage", PUBLIC_APP_URL
+    )
+    return None
+
+
 def _google_callback_html(data: Dict[str, Any]) -> HTMLResponse:
-    """Renderiza una página de callback que postea el resultado a window.opener."""
+    """Renderiza una página de callback que postea el resultado a window.opener.
+
+    Si no hay un origen destino válido (PUBLIC_APP_URL mal configurada), el
+    script no ejecuta postMessage: el JWT nunca sale hacia un origen
+    desconocido y se muestra un error en su lugar.
+    """
     payload = base64.b64encode(
         json.dumps(data, ensure_ascii=False).encode("utf-8")
     ).decode("utf-8")
+    target_origin = json.dumps(_google_post_message_origin())
     html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><title>Autenticación con Google</title></head>
 <body>
-    <p>Cerrando ventana...</p>
+    <p id="estado">Cerrando ventana...</p>
     <script>
         try {{
+            const targetOrigin = {target_origin};
             const data = JSON.parse(atob("{payload}"));
-            if (window.opener) {{
-                window.opener.postMessage(data, "*");
+            if (targetOrigin && window.opener) {{
+                window.opener.postMessage(data, targetOrigin);
+                setTimeout(() => window.close(), 500);
+            }} else {{
+                document.getElementById("estado").textContent =
+                    "Error de configuración del servidor. Cerrá esta ventana e intentá de nuevo.";
             }}
         }} catch (e) {{
             console.error("Error procesando respuesta de Google:", e);
         }}
-        setTimeout(() => window.close(), 500);
     </script>
 </body>
 </html>"""
@@ -2571,12 +2697,19 @@ def get_valvano_data():
         raise
     except Exception as e:
         logger.error(f"Error al leer valvano_data.json: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @app.post("/api/admin/clean-db")
 def endpoint_clean_db(usuario_id: int = Depends(middleware.require_admin)):
-    """Endpoint temporal para limpiar la base de datos. Solo administradores."""
+    """Endpoint temporal para limpiar la base de datos. Solo administradores.
+
+    Herramienta de desarrollo/testing: en producción el endpoint no existe
+    (404). Un JWT de admin robado no puede destruir la base por esta vía.
+    """
+    if os.getenv("APP_ENV", "development").strip().lower() in ("production", "prod"):
+        raise HTTPException(status_code=404, detail="Not found")
+
     tablas = ['tasacion_comparable', 'solicitudes', 'comparables', 'tasaciones']
     
     conn = get_connection()
@@ -2600,7 +2733,7 @@ def endpoint_clean_db(usuario_id: int = Depends(middleware.require_admin)):
     except Exception as e:
         conn.rollback()
         logger.error(f"Error al limpiar base de datos: {e}")
-        raise HTTPException(status_code=500, detail=f"Error al limpiar base de datos: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al limpiar la base de datos")
     finally:
         cursor.close()
         release_connection(conn)

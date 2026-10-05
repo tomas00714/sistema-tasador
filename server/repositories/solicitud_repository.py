@@ -15,27 +15,22 @@ class SolicitudRepository(BaseRepository):
         """
         Busca una solicitud por link público.
 
-        Acepta el código público puro, el path corto ".../s/{codigo}" o la
-        URL completa de la página pública ".../solicitud.html?link={codigo}".
+        El link lleva el token aleatorio ``token_link`` de la solicitud
+        (``secrets.token_urlsafe``). Acepta el token puro, el path corto
+        ".../s/{token}" o la URL completa ".../solicitud.html?link={token}".
+
+        Los links históricos con código Optimus (enumerables) ya no
+        resuelven: la solicitud debe compartirse de nuevo con el link que
+        incluye el token.
         """
-        from utils.id_encoder import obtener_id_desde_codigo, obtener_tipo_codigo, TIPO_SOLICITUD
         from utils.public_links import extraer_codigo_de_link
 
-        codigo_publico = extraer_codigo_de_link(link_publico)
-        if not codigo_publico:
+        token = extraer_codigo_de_link(link_publico)
+        if not token:
             return None
 
-        # Decodificar código público a ID interno
-        id_interno = obtener_id_desde_codigo(codigo_publico)
-        if not id_interno:
-            return None
-
-        # Validar que sea una solicitud
-        if obtener_tipo_codigo(codigo_publico) != TIPO_SOLICITUD:
-            return None
-
-        # Buscar por ID interno
-        return self.find_by_id(id_interno)
+        resultados = self.find_where({"token_link": token}, limit=1)
+        return resultados[0] if resultados else None
     
     def find_by_usuario(self, usuario_id: int, limit: int = None, offset: int = None) -> List[Dict[str, Any]]:
         """Busca solicitudes de un usuario."""

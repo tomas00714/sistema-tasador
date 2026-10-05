@@ -43,6 +43,13 @@ for i in range(1, 100):  # Soporta hasta 99 administradores por entorno
 # })
 
 
+# Hash bcrypt válido de un valor cualquiera. Se usa en login cuando la
+# cuenta no tiene contraseña local (usuario Google-only): mantiene el
+# costo temporal de bcrypt y la respuesta "Credenciales inválidas",
+# evitando el 500 sobre NULL y el oráculo de enumeración de cuentas.
+DUMMY_PASSWORD_HASH = "$2b$12$aRjXuhagGD/Di5GnJ7hgqOs5QS9rS6keNpUxCxlSEzuJMp/48EhAa"
+
+
 def hash_password(password: str) -> str:
     # Truncar contraseña a 72 bytes máximo (limitación de bcrypt)
     password_bytes = password.encode('utf-8')[:72]

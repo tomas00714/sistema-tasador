@@ -136,7 +136,17 @@ async function initCompartirPublico() {
             return;
         }
 
-        const remitente = [preview.remitente_nombre, preview.remitente_apellido].filter(Boolean).join(' ');
+        // Los datos de la tasación compartida son texto libre del usuario
+        // que la generó: se escapan antes de inyectarlos en innerHTML
+        // para que no puedan ejecutar markup/JS en esta página pública.
+        const esc = (v) => String(v ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const remitente = esc([preview.remitente_nombre, preview.remitente_apellido].filter(Boolean).join(' '));
 
         const acciones = typeof isAuthenticated === 'function' && isAuthenticated()
             ? `<button type="button" class="compartir-btn-principal" id="btnGuardarTasacionCompartida">Guardar tasación</button>`
@@ -149,10 +159,10 @@ async function initCompartirPublico() {
                 <p class="compartir-remitente">${remitente ? `${remitente} te compartió una tasación` : 'Te compartieron una tasación'}</p>
 
                 <div class="compartir-datos">
-                    <div class="compartir-dato"><span>Tipo de inmueble</span><span>${preview.tipo_inmueble || '—'}</span></div>
-                    <div class="compartir-dato"><span>Dirección</span><span>${preview.direccion || '—'}</span></div>
-                    <div class="compartir-dato"><span>Localidad</span><span>${preview.localidad || '—'}</span></div>
-                    <div class="compartir-dato"><span>Provincia</span><span>${preview.provincia || '—'}</span></div>
+                    <div class="compartir-dato"><span>Tipo de inmueble</span><span>${esc(preview.tipo_inmueble) || '—'}</span></div>
+                    <div class="compartir-dato"><span>Dirección</span><span>${esc(preview.direccion) || '—'}</span></div>
+                    <div class="compartir-dato"><span>Localidad</span><span>${esc(preview.localidad) || '—'}</span></div>
+                    <div class="compartir-dato"><span>Provincia</span><span>${esc(preview.provincia) || '—'}</span></div>
                     <div class="compartir-dato"><span>Valor estimado</span><span>${formatearValorCompartir(preview.valor_final)}</span></div>
                     <div class="compartir-dato"><span>Fecha</span><span>${preview.fecha_creacion ? new Date(preview.fecha_creacion).toLocaleDateString('es-AR') : '—'}</span></div>
                 </div>

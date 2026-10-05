@@ -54,7 +54,7 @@ function construirCardMinimizada({
         .map(([key, value]) => ` ${key}="${escapeHtml(value)}"`)
         .join("");
 
-    const clickAttr = onClick ? ` onclick="${onClick}"` : "";
+    const clickAttr = onClick ? ` onclick="${escapeHtml(onClick)}"` : "";
 
     return `
         <div class="card-minimizada ${extraClass}"${dataAttrs}${clickAttr} role="${role}" tabindex="${tabIndex}">

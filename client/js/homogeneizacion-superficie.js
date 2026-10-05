@@ -33,6 +33,14 @@ function idConPrefijo(prefijo, id) {
     return prefijo ? `${prefijo}${id}` : id;
 }
 
+// Escape local: homogeneizacion-superficie.js se carga en páginas que
+// no siempre incluyen global.js. Los valores de homogeneización vienen de
+// la tasación (datos persistidos, potencialmente de terceros) y se
+// interpolan en value="..."/celdas de la tabla generada con innerHTML.
+const _escHom = typeof escapeHtml === 'function'
+    ? escapeHtml
+    : (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 function asegurarEstructuraHomogeneizacion(homData, config) {
     if (!homData) homData = {};
     config.filas.forEach(fila => {
@@ -61,16 +69,16 @@ function generarTablaHomogeneizacion(tipo, homData, prefijo = '', lectura = fals
         const homId = idConPrefijo(prefijo, fila.idHomogeneizada);
         const celdaSuperficie = lectura
             ? `<td>${parseFloat(h?.superficie) > 0 ? formatearNumero(h.superficie) + ' m²' : '—'}</td>`
-            : `<td><input type="number" id="${supId}" class="input-tabla" placeholder="${fila.placeholder}" value="${h.superficie || ''}"></td>`;
+            : `<td><input type="number" id="${supId}" class="input-tabla" placeholder="${fila.placeholder}" value="${_escHom(h.superficie || '')}"></td>`;
         const celdaCoef = lectura
             ? `<td>${formatearNumero(coef)}</td>`
             : `<td>
-                    <input type="number" id="${coefId}" class="input-tabla-coef" step="0.01" value="${coef}">
+                    <input type="number" id="${coefId}" class="input-tabla-coef" step="0.01" value="${_escHom(coef)}">
                     <div class="coef-placeholder">${fila.rango}</div>
                </td>`;
         const celdaHom = lectura
             ? `<td>${parseFloat(h?.homogeneizada) > 0 ? formatearNumero(h.homogeneizada) + ' m²' : '—'}</td>`
-            : `<td><input type="number" id="${homId}" class="input-tabla" value="${h.homogeneizada ? formatearNumero(h.homogeneizada) : 0}" disabled></td>`;
+            : `<td><input type="number" id="${homId}" class="input-tabla" value="${h.homogeneizada ? _escHom(formatearNumero(h.homogeneizada)) : 0}" disabled></td>`;
 
         return `
             ${separador}
@@ -87,10 +95,10 @@ function generarTablaHomogeneizacion(tipo, homData, prefijo = '', lectura = fals
     const totalHomId = idConPrefijo(prefijo, 'totalHomogeneizada');
     const celdaTotalSup = lectura
         ? `<td><strong>${parseFloat(homData.totalSuperficie) > 0 ? formatearNumero(homData.totalSuperficie) + ' m²' : '—'}</strong></td>`
-        : `<td><input type="number" id="${totalSupId}" class="input-tabla" value="${homData.totalSuperficie ? formatearNumero(homData.totalSuperficie) : 0}" disabled></td>`;
+        : `<td><input type="number" id="${totalSupId}" class="input-tabla" value="${homData.totalSuperficie ? _escHom(formatearNumero(homData.totalSuperficie)) : 0}" disabled></td>`;
     const celdaTotalHom = lectura
         ? `<td><strong>${parseFloat(homData.totalHomogeneizada) > 0 ? formatearNumero(homData.totalHomogeneizada) + ' m²' : '—'}</strong></td>`
-        : `<td><input type="number" id="${totalHomId}" class="input-tabla" value="${homData.totalHomogeneizada ? formatearNumero(homData.totalHomogeneizada) : 0}" disabled></td>`;
+        : `<td><input type="number" id="${totalHomId}" class="input-tabla" value="${homData.totalHomogeneizada ? _escHom(formatearNumero(homData.totalHomogeneizada)) : 0}" disabled></td>`;
 
     return `
         <table class="tabla-homogeneizacion resultado-tabla">

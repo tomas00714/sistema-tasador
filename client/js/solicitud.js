@@ -310,15 +310,15 @@ function generarDetallesFallback(comparable) {
 
     if (tipo === 'lote') {
         parts.push(`Lote: ${comparable.tipoLote ? escapeHtml(comparable.tipoLote) : '—'}`);
-        if (comparable.frente) parts.push(`Frente: ${comparable.frente} m`);
-        if (comparable.fondo) parts.push(`Fondo: ${comparable.fondo} m`);
-        if (comparable.superficie) parts.push(`Sup: ${comparable.superficie} m²`);
+        if (comparable.frente) parts.push(`Frente: ${escapeHtml(comparable.frente)} m`);
+        if (comparable.fondo) parts.push(`Fondo: ${escapeHtml(comparable.fondo)} m`);
+        if (comparable.superficie) parts.push(`Sup: ${escapeHtml(comparable.superficie)} m²`);
     } else {
-        if (comparable.superficie) parts.push(`Sup: ${comparable.superficie} m²`);
-        if (comparable.superficieTerreno) parts.push(`Terreno: ${comparable.superficieTerreno} m²`);
-        if (comparable.ambientes) parts.push(`${comparable.ambientes} amb`);
-        if (comparable.dormitorios) parts.push(`${comparable.dormitorios} dorm`);
-        if (comparable.banos) parts.push(`${comparable.banos} baño`);
+        if (comparable.superficie) parts.push(`Sup: ${escapeHtml(comparable.superficie)} m²`);
+        if (comparable.superficieTerreno) parts.push(`Terreno: ${escapeHtml(comparable.superficieTerreno)} m²`);
+        if (comparable.ambientes) parts.push(`${escapeHtml(comparable.ambientes)} amb`);
+        if (comparable.dormitorios) parts.push(`${escapeHtml(comparable.dormitorios)} dorm`);
+        if (comparable.banos) parts.push(`${escapeHtml(comparable.banos)} baño`);
         const amenities = [];
         if (comparable.cochera) amenities.push('cochera');
         if (comparable.tieneAscensor) amenities.push('ascensor');

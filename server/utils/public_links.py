@@ -4,13 +4,18 @@
 para compartir solicitudes y tasaciones. La base configurable es
 PUBLIC_APP_URL (URL pública del frontend), con default de desarrollo local.
 
+Links de solicitudes: el parámetro ``link`` lleva el token aleatorio
+``token_link`` de la solicitud (``secrets.token_urlsafe``), no el código
+Optimus — ese código es enumerable y no puede usarse como secreto.
+
 Formatos soportados al parsear (compatibilidad con links históricos):
-- Código público puro:            "S3ZjaGjVDYK"
-- Path corto:                     ".../s/S3ZjaGjVDYK"
-- Página pública con query param: ".../solicitud.html?link=S3ZjaGjVDYK"
+- Token puro:                     "abc...token_urlsafe"
+- Path corto:                     ".../s/{token}"
+- Página pública con query param: ".../solicitud.html?link={token}"
 """
 
 import os
+import secrets
 from urllib.parse import urlparse, parse_qs
 
 # URL base pública del frontend (sin barra final).
@@ -21,9 +26,18 @@ PUBLIC_APP_URL = os.getenv(
 ).rstrip("/")
 
 
-def link_solicitud_publico(codigo_publico: str) -> str:
-    """Link que se comparte a terceros para responder una solicitud."""
-    return f"{PUBLIC_APP_URL}/solicitud.html?link={codigo_publico}"
+def generar_token_link() -> str:
+    """Token aleatorio criptográficamente seguro para links públicos."""
+    return secrets.token_urlsafe(32)
+
+
+def link_solicitud_publico(token_link: str) -> str:
+    """Link que se comparte a terceros para responder una solicitud.
+
+    Lleva el token aleatorio de la solicitud (columna ``token_link``),
+    no el código Optimus — ese es enumerable y no es un secreto.
+    """
+    return f"{PUBLIC_APP_URL}/solicitud.html?link={token_link}"
 
 
 def link_compartir_publico(token: str) -> str:
@@ -38,9 +52,10 @@ def link_compartir_publico(token: str) -> str:
 
 
 def extraer_codigo_de_link(link_o_codigo: str) -> str:
-    """Extrae el código público de cualquiera de los formatos soportados.
+    """Extrae el token/código de cualquiera de los formatos soportados.
 
-    Devuelve el código (p.ej. 'S3ZjaGjVDYK') o string vacío si no se puede.
+    Devuelve el valor del parámetro (p.ej. el token del link de solicitud)
+    o string vacío si no se puede.
     """
     if not link_o_codigo:
         return ""

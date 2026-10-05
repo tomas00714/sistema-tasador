@@ -372,6 +372,30 @@ function setupExpandPanel(btnId, panelId) {
     });
 }
 
+// Escape contextual para valores que terminan interpolados en innerHTML de
+// los paneles de configuración. Reutiliza escaparDatosInforme
+// (report-data-adapter.js): sobre un string equivale a escapeHtml.
+function escPanel(valor) {
+    return escaparDatosInforme(valor);
+}
+
+// Las URLs de fotos solo pueden ser http(s), rutas relativas/absolutas del
+// propio servidor o data: de imagen (FileReader produce data:image/...).
+// Cualquier otro esquema (javascript:, data:text/html, vbscript:, etc.) o
+// valor que pueda romper el atributo queda descartado → placeholder.
+function urlImagenSegura(url) {
+    if (!url || typeof url !== 'string') return '';
+    const u = url.trim();
+    if (/^data:/i.test(u)) {
+        return /^data:image\//i.test(u) ? u : '';
+    }
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) {
+        return /^https?:/i.test(u) ? u : '';
+    }
+    if (/[<>\\]/.test(u)) return '';
+    return u;
+}
+
 function renderPhotosPanel() {
     const carousel = document.getElementById('photosCarousel');
     if (!carousel) return;
@@ -382,10 +406,10 @@ function renderPhotosPanel() {
     }
 
     carousel.innerHTML = fotosTasacion.map((foto, i) => {
-        const url = foto.url || foto.src;
-        const desc = foto.description || foto.descripcion || 'Foto ' + (i + 1);
+        const url = urlImagenSegura(foto.url || foto.src);
+        const desc = escPanel(foto.description || foto.descripcion || 'Foto ' + (i + 1));
         const inner = url
-            ? `<img src="${url}" alt="${desc}">`
+            ? `<img src="${escPanel(url)}" alt="${desc}">`
             : `<span class="config-photo-thumb-placeholder">${desc}</span>`;
         return `<div class="config-photo-thumb">${inner}
             <button type="button" class="config-photo-remove" data-index="${i}" title="Quitar fotografía">&times;</button>
@@ -408,27 +432,28 @@ function renderComparablesPanel() {
 
     const esLote = tasacionCargada?.tipo === 'lote';
     list.innerHTML = comparablesResueltos.map(comp => {
-        const dir = comp.ubicacion?.direccion || comp.direccion || 'Sin dirección';
+        const dir = escPanel(comp.ubicacion?.direccion || comp.direccion || 'Sin dirección');
+        const compId = escPanel(comp.id);
         const selected = selectedComparableIds.has(comp.id);
         const fotos = comp.fotos || comp.photos || [];
         const thumbsHtml = fotos.length ? `
             <div class="config-comparable-photos">
                 ${fotos.map((f, i) => {
-                    const url = f.url || f.src;
+                    const url = urlImagenSegura(f.url || f.src);
                     return `<div class="config-photo-thumb config-photo-thumb-sm">
-                        ${url ? `<img src="${url}" alt="">` : `<span class="config-photo-thumb-placeholder">Foto ${i + 1}</span>`}
-                        <button type="button" class="config-photo-remove" data-comp="${comp.id}" data-index="${i}" title="Quitar fotografía">&times;</button>
+                        ${url ? `<img src="${escPanel(url)}" alt="">` : `<span class="config-photo-thumb-placeholder">Foto ${i + 1}</span>`}
+                        <button type="button" class="config-photo-remove" data-comp="${compId}" data-index="${i}" title="Quitar fotografía">&times;</button>
                     </div>`;
                 }).join('')}
             </div>` : '';
         return `
             <div class="config-comparable-row">
                 <div class="config-comparable-main">
-                    <button type="button" class="config-comparable-item${selected ? ' selected' : ''}" data-id="${comp.id}">
+                    <button type="button" class="config-comparable-item${selected ? ' selected' : ''}" data-id="${compId}">
                         <span class="config-comparable-dot"></span>
                         <span class="config-comparable-address">${dir}</span>
                     </button>
-                    ${esLote ? '' : `<button type="button" class="config-comparable-photo-btn" data-id="${comp.id}" title="Adjuntar fotografías del comparable (máx. ${FOTOS_COMPARABLE_MAX})">
+                    ${esLote ? '' : `<button type="button" class="config-comparable-photo-btn" data-id="${compId}" title="Adjuntar fotografías del comparable (máx. ${FOTOS_COMPARABLE_MAX})">
                         <i class="fa-solid fa-camera"></i>${fotos.length ? ` ${fotos.length}/${FOTOS_COMPARABLE_MAX}` : ''}
                     </button>`}
                 </div>
@@ -1045,10 +1070,13 @@ async function renderReportPreview() {
     try {
         reportViewer.innerHTML = await ReportViewerProfessional({
             reportData,
-            config: {
+            // Los textos editables del config también se renderizan por
+            // innerHTML: se pasa una copia con strings escapados (misma
+            // protección que reportData; el original queda en claro).
+            config: escaparDatosInforme({
                 ...reportConfig,
                 showComparables
-            }
+            })
         });
 
         // Numeración "x de y" en el pie de cada hoja + encabezado en
@@ -1063,7 +1091,7 @@ async function renderReportPreview() {
                 const header = document.createElement('div');
                 header.className = 'report-page-header';
                 const logoImg = (reportConfig.showLogo !== false && reportConfig.logoHeader && logoHeaderUrl)
-                    ? `<img class="report-page-header-logo${logoCircular ? ' circular' : ''}" src="${logoHeaderUrl}" alt="" onerror="this.style.display='none'">`
+                    ? `<img class="report-page-header-logo${logoCircular ? ' circular' : ''}" src="${urlImagenSegura(logoHeaderUrl)}" alt="" onerror="this.style.display='none'">`
                     : '';
                 header.innerHTML = `
                     <div class="report-page-header-left">${logoImg}</div>
