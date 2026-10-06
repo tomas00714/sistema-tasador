@@ -1,31 +1,11 @@
 /**
  * Mercado Pago Checkout Integration
- * Maneja la integración con Mercado Pago CardToken Brick para suscripciones
+ * Maneja la integración con Mercado Pago checkout sin CardToken Brick
+ * El usuario completa el pago directamente en Mercado Pago mediante init_point
  */
 
 // Estado global del checkout
-let mpCardInstance = null;
 let isProcessing = false;
-
-/**
- * Obtiene la configuración de Mercado Pago desde el backend
- */
-async function getMercadoPagoConfig() {
-    try {
-        const apiUrl = getApiUrl();
-        const response = await fetch(`${apiUrl}/api/suscripcion/config`);
-        
-        if (!response.ok) {
-            throw new Error('Error al obtener configuración de Mercado Pago');
-        }
-        
-        const config = await response.json();
-        return config;
-    } catch (error) {
-        console.error('[MercadoPago] Error obteniendo configuración:', error);
-        throw error;
-    }
-}
 
 /**
  * Obtiene el estado de suscripción del usuario
@@ -59,71 +39,12 @@ async function getSubscriptionStatus() {
 }
 
 /**
- * Inicializa el CardToken Brick de Mercado Pago
+ * Inicia el checkout de suscripción via Mercado Pago
  */
-async function initializeCardToken(containerId, publicKey) {
-    try {
-        if (mpCardInstance) {
-            mpCardInstance.unmount();
-        }
-        
-        const cardTokenBrickBuilder = mp.bricks({
-            settings: {
-                initialization: {
-                    amount: 10, // Este valor es solo visual, el backend usa MP_PLAN_PRICE
-                    payer: {
-                        email: ''
-                    }
-                },
-                customization: {
-                    visual: {
-                        style: {
-                            customVariables: {
-                                baseColor: '#0055ff',
-                                textPrimaryColor: '#333333',
-                                textSecondaryColor: '#666666',
-                                formBackgroundColor: '#ffffff',
-                            }
-                        }
-                    },
-                    paymentMethods: {
-                        minInstallments: 1,
-                        maxInstallments: 1
-                    }
-                },
-                callbacks: {
-                    onReady: () => {
-                        console.log('[MercadoPago] CardToken Brick listo');
-                    },
-                    onSubmit: (cardFormData) => {
-                        return new Promise((resolve, reject) => {
-                            handleCardTokenSubmit(cardFormData, resolve, reject);
-                        });
-                    },
-                    onError: (error) => {
-                        console.error('[MercadoPago] Error en brick:', error);
-                        showCheckoutError('Error al procesar la tarjeta. Por favor, intentá nuevamente.');
-                    }
-                }
-            },
-        });
-        
-        mpCardInstance = cardTokenBrickBuilder.create('cardPayment', containerId);
-        
-        return mpCardInstance;
-    } catch (error) {
-        console.error('[MercadoPago] Error inicializando CardToken:', error);
-        throw error;
-    }
-}
-
-/**
- * Maneja el envío del formulario de tarjeta
- */
-async function handleCardTokenSubmit(cardFormData, resolve, reject) {
+async function iniciarCheckout() {
     try {
         if (isProcessing) {
-            reject(new Error('Ya hay un proceso en curso'));
+            console.warn('[MercadoPago] Ya hay un proceso de checkout en curso');
             return;
         }
         
@@ -131,46 +52,39 @@ async function handleCardTokenSubmit(cardFormData, resolve, reject) {
         
         const token = getToken();
         if (!token) {
-            reject(new Error('Debes iniciar sesión para suscribirte'));
-            isProcessing = false;
+            // Redirigir a login
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
             return;
         }
         
-        const cardToken = cardFormData.token;
         const apiUrl = getApiUrl();
         
-        // Enviar el token al backend
-        const response = await fetch(`${apiUrl}/api/suscripcion/crear`, {
+        // Llamar al backend para iniciar el checkout
+        const response = await fetch(`${apiUrl}/api/suscripcion/iniciar-checkout`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                card_token_id: cardToken,
-                back_url: window.location.href
-            })
+            }
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Error al crear suscripción' }));
-            throw new Error(errorData.detail || 'Error al crear suscripción');
+            const errorData = await response.json().catch(() => ({ detail: 'Error al iniciar checkout' }));
+            throw new Error(errorData.detail || 'Error al iniciar checkout');
         }
         
         const result = await response.json();
         
-        // Éxito: la suscripción fue creada en estado pending
-        resolve(result);
-        
-        // Cerrar modal
-        closeCheckoutModal();
-        
-        // Actualizar UI
-        showSubscriptionPending();
+        // Redirigir al usuario al init_point de Mercado Pago
+        if (result.init_point) {
+            window.location.href = result.init_point;
+        } else {
+            throw new Error('No se recibió init_point de Mercado Pago');
+        }
         
     } catch (error) {
-        console.error('[MercadoPago] Error en envío:', error);
-        reject(error);
+        console.error('[MercadoPago] Error iniciando checkout:', error);
+        alert('Error al iniciar el checkout: ' + error.message);
     } finally {
         isProcessing = false;
     }
@@ -200,7 +114,7 @@ function showSubscriptionPending() {
     messageDiv.className = 'subscription-message pending';
     messageDiv.innerHTML = `
         <i class="fa-solid fa-clock"></i>
-        <p>Suscripción creada correctamente. Estamos esperando la confirmación del primer pago de Mercado Pago. Te avisaremos cuando tu plan Pro esté activo.</p>
+        <p>Suscripción iniciada. Completa el checkout en Mercado Pago para activar tu plan Pro.</p>
     `;
     
     pricingCard.insertBefore(messageDiv, ctaButton);
@@ -237,96 +151,6 @@ function showSubscriptionActive() {
 }
 
 /**
- * Muestra el modal de checkout
- */
-async function showCheckoutModal() {
-    try {
-        const token = getToken();
-        if (!token) {
-            // Redirigir a login
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
-            return;
-        }
-        
-        // Verificar estado de suscripción actual
-        const subscriptionStatus = await getSubscriptionStatus();
-        if (subscriptionStatus && subscriptionStatus.tiene_acceso_pro) {
-            showSubscriptionActive();
-            return;
-        }
-        
-        if (subscriptionStatus && subscriptionStatus.estado === 'pending') {
-            showSubscriptionPending();
-            return;
-        }
-        
-        // Obtener configuración
-        const config = await getMercadoPagoConfig();
-        
-        // Crear modal
-        const modal = document.createElement('div');
-        modal.className = 'mp-checkout-modal';
-        modal.innerHTML = `
-            <div class="mp-checkout-modal-content">
-                <div class="mp-checkout-modal-header">
-                    <h3>Suscribirse al Plan Pro</h3>
-                    <button class="mp-checkout-modal-close" onclick="window.MercadoPagoCheckout.closeCheckoutModal()">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
-                </div>
-                <div class="mp-checkout-modal-body">
-                    <div id="cardPayment-container"></div>
-                    <div id="mp-error-message" class="mp-error-message" style="display: none;"></div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Inicializar CardToken Brick
-        await initializeCardToken('cardPayment-container', config.mp_public_key);
-        
-        // Cerrar modal al hacer click fuera
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                window.MercadoPagoCheckout.closeCheckoutModal();
-            }
-        });
-        
-    } catch (error) {
-        console.error('[MercadoPago] Error mostrando checkout:', error);
-        showCheckoutError(error.message);
-    }
-}
-
-/**
- * Cierra el modal de checkout
- */
-function closeCheckoutModal() {
-    const modal = document.querySelector('.mp-checkout-modal');
-    if (modal) {
-        if (mpCardInstance) {
-            mpCardInstance.unmount();
-            mpCardInstance = null;
-        }
-        modal.remove();
-    }
-}
-
-/**
- * Muestra error en el checkout
- */
-function showCheckoutError(message) {
-    const errorElement = document.getElementById('mp-error-message');
-    if (errorElement) {
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-    } else {
-        alert(message);
-    }
-}
-
-/**
  * Configura el botón de suscripción en la página de precios
  */
 function setupSubscriptionButton() {
@@ -354,7 +178,7 @@ function setupSubscriptionButton() {
             return;
         }
         
-        await showCheckoutModal();
+        await iniciarCheckout();
     });
 }
 
@@ -395,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Exponer funciones globalmente
 window.MercadoPagoCheckout = {
-    showCheckoutModal,
-    closeCheckoutModal,
+    iniciarCheckout,
     checkSubscriptionStatusAndUpdateUI
 };

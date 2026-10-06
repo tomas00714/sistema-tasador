@@ -3106,6 +3106,98 @@ def obtener_estado_suscripcion(usuario_id: int = Depends(middleware.get_current_
         raise HTTPException(status_code=500, detail="Error al obtener estado de suscripción")
 
 
+@app.post("/api/suscripcion/iniciar-checkout")
+def iniciar_checkout_suscripcion(
+    plan_id: int = 2,  # Default Pro
+    usuario_id: int = Depends(middleware.get_current_user_id)
+):
+    """Inicia el flujo de checkout de suscripción via Mercado Pago.
+
+    Crea una suscripción en estado pending en MP sin tarjeta, devuelve el init_point
+    para que el usuario complete el checkout directamente en Mercado Pago.
+    """
+    try:
+        suscripcion_service = SuscripcionService()
+        usuario_repo = UsuarioRepository()
+        mp_service = MercadoPagoService()
+
+        # Obtener email del usuario
+        usuario = usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        payer_email = usuario.get('email')
+        if not payer_email:
+            raise HTTPException(status_code=400, detail="Usuario sin email configurado")
+
+        # Crear suscripción interna en estado pending (genera external_reference)
+        mp_plan_price = float(os.getenv("MP_PLAN_PRICE", "10.0"))
+        mp_plan_currency = os.getenv("MP_PLAN_CURRENCY", "USD")
+        mp_back_url = os.getenv("MP_BACK_URL", "")
+
+        suscripcion_interna = suscripcion_service.crear_suscripcion_pendiente(
+            usuario_id=usuario_id,
+            plan_id=plan_id,
+            monto=mp_plan_price,
+            moneda=mp_plan_currency,
+            frecuencia=1,
+            frecuencia_tipo="months",
+            init_point=None  # Se llenará después de crear en MP
+        )
+
+        mp_external_reference = suscripcion_interna.get('mp_external_reference')
+        if not mp_external_reference:
+            raise HTTPException(status_code=500, detail="Error al generar external_reference")
+
+        # Llamar a Mercado Pago para crear suscripción pending
+        try:
+            respuesta_mp = mp_service.crear_suscripcion_pending_mp(
+                payer_email=payer_email,
+                external_reference=mp_external_reference,
+                back_url=mp_back_url,
+                monto=mp_plan_price,
+                frecuencia=1,
+                frecuencia_tipo="months",
+                moneda=mp_plan_currency
+            )
+        except Exception as mp_error:
+            logger.error(f"Error al crear suscripción pending en Mercado Pago: {mp_error}")
+            # Si falla MP, eliminamos la suscripción interna para mantener consistencia
+            suscripcion_repo = SuscripcionRepository()
+            suscripcion_repo.delete(suscripcion_interna['id'])
+            raise HTTPException(
+                status_code=502,
+                detail="Error al comunicarse con Mercado Pago. La suscripción no fue creada."
+            )
+
+        # Guardar el preapproval_id e init_point en nuestra suscripción
+        preapproval_id = respuesta_mp.get('id')
+        init_point = respuesta_mp.get('init_point')
+        
+        if preapproval_id or init_point:
+            suscripcion_repo = SuscripcionRepository()
+            suscripcion_repo.update(suscripcion_interna['id'], {
+                'mp_preapproval_id': preapproval_id,
+                'init_point': init_point
+            })
+        else:
+            logger.warning("Mercado Pago no devolvió preapproval_id ni init_point")
+
+        # Devolver init_point para redirigir al usuario
+        return {
+            "mensaje": "Suscripción iniciada. Completa el checkout en Mercado Pago para activar tu plan Pro.",
+            "init_point": init_point,
+            "estado_interno": "pending",
+            "tiene_acceso_pro": False
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al iniciar checkout de suscripción: {e}")
+        raise HTTPException(status_code=500, detail="Error al iniciar checkout de suscripción")
+
+
 @app.post("/api/suscripcion/crear")
 def crear_suscripcion(
     request: CrearSuscripcionRequest,
@@ -3246,8 +3338,9 @@ def _procesar_preapproval(preapproval_id: str, mp_service: MercadoPagoService, s
         # Consultar el recurso real en Mercado Pago
         preapproval_data = mp_service.obtener_suscripcion_mp(preapproval_id)
         status = preapproval_data.get("status")
+        external_reference = preapproval_data.get("external_reference")
 
-        logger.info(f"Preapproval status: {status}")
+        logger.info(f"Preapproval status: {status}, external_reference: {external_reference}")
 
         # Mapear estados de MP a nuestros estados
         if status == "canceled":
@@ -3261,9 +3354,37 @@ def _procesar_preapproval(preapproval_id: str, mp_service: MercadoPagoService, s
         elif status == "authorized":
             # authorized significa que la suscripción está activa en MP
             # pero NO significa que ya pagó. La activación real depende de pagos aprobados.
+            # Intentar vincular suscripción si no está asociada
+            suscripcion_repo = SuscripcionRepository()
+            suscripcion = suscripcion_repo.find_by_mp_preapproval_id(preapproval_id)
+            
+            if not suscripcion and external_reference:
+                # Fallback: vincular por external_reference
+                usuario_id = mp_service.extraer_usuario_id_de_external_reference(external_reference)
+                if usuario_id:
+                    suscripcion_service.vincular_suscripcion_mp_existente(
+                        usuario_id=usuario_id,
+                        mp_preapproval_id=preapproval_id,
+                        external_reference=external_reference
+                    )
+            
             logger.info(f"Preapproval authorized (esperando pago): {preapproval_id}")
         elif status == "pending":
             # pending: suscripción creada pero sin método de pago válido
+            # Intentar vincular suscripción si no está asociada
+            suscripcion_repo = SuscripcionRepository()
+            suscripcion = suscripcion_repo.find_by_mp_preapproval_id(preapproval_id)
+            
+            if not suscripcion and external_reference:
+                # Fallback: vincular por external_reference
+                usuario_id = mp_service.extraer_usuario_id_de_external_reference(external_reference)
+                if usuario_id:
+                    suscripcion_service.vincular_suscripcion_mp_existente(
+                        usuario_id=usuario_id,
+                        mp_preapproval_id=preapproval_id,
+                        external_reference=external_reference
+                    )
+            
             logger.info(f"Preapproval pending: {preapproval_id}")
 
         return {"status": "processed", "preapproval_status": status}
@@ -3320,7 +3441,8 @@ def _procesar_authorized_payment(
                 date_approved,
                 auth_payment_data,
                 suscripcion_service,
-                pago_repo
+                pago_repo,
+                mp_service
             )
         elif status == "rejected":
             _procesar_pago_rechazado(
@@ -3365,7 +3487,8 @@ def _procesar_pago_aprobado(
     date_approved: str,
     raw_response: Dict[str, Any],
     suscripcion_service: SuscripcionService,
-    pago_repo: PagoRepository
+    pago_repo: PagoRepository,
+    mp_service: MercadoPagoService
 ):
     """Procesa un pago aprobado."""
     from datetime import datetime
@@ -3373,7 +3496,29 @@ def _procesar_pago_aprobado(
     # Parsear fecha de aprobación (formato ISO de MP)
     fecha_aprobacion = datetime.fromisoformat(date_approved.replace("Z", "+00:00"))
 
-    # Registrar el pago
+    # Obtener detalles financieros del payment (net_amount, fee_details)
+    monto_neto = None
+    comision_mp = None
+    
+    if payment_id:
+        try:
+            payment_details = mp_service.obtener_payment_details(payment_id)
+            
+            # Extraer net_received_amount
+            transaction_details = payment_details.get("transaction_details", {})
+            monto_neto = transaction_details.get("net_received_amount")
+            
+            # Extraer fee_details
+            fee_details = payment_details.get("fee_details", [])
+            if fee_details:
+                # Sumar todas las comisiones
+                comision_mp = sum(fd.get("amount", 0) for fd in fee_details)
+            
+            logger.info(f"Payment details: monto_neto={monto_neto}, comision_mp={comision_mp}")
+        except Exception as e:
+            logger.warning(f"Error al obtener payment details para payment_id={payment_id}: {e}")
+
+    # Registrar el pago con detalles financieros
     suscripcion_service.registrar_pago_aprobado(
         suscripcion_id=suscripcion['id'],
         mp_authorized_payment_id=authorized_payment_id,
@@ -3381,7 +3526,9 @@ def _procesar_pago_aprobado(
         monto=monto,
         moneda=moneda,
         fecha_aprobacion=fecha_aprobacion,
-        raw_response=raw_response
+        raw_response=raw_response,
+        monto_neto=monto_neto,
+        comision_mp=comision_mp
     )
 
     # Calcular fecha de fin del período (1 mes desde la aprobación)

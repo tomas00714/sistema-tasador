@@ -138,9 +138,13 @@ class TestProcesamientoPreapproval(unittest.TestCase):
 
     @patch.dict(os.environ, {"MP_ACCESS_TOKEN": "test_token"})
     @patch.object(MercadoPagoService, 'obtener_suscripcion_mp')
-    def test_procesa_authorized(self, mock_obtener):
+    @patch.object(SuscripcionRepository, 'find_by_mp_preapproval_id')
+    @patch.object(SuscripcionRepository, 'find_by_external_reference')
+    def test_procesa_authorized(self, mock_find_ext, mock_find, mock_obtener):
         """Debe procesar authorized sin activar (espera pago)."""
-        mock_obtener.return_value = {"status": "authorized"}
+        mock_obtener.return_value = {"status": "authorized", "external_reference": "SUB-123-a1b2c3d4e5f6"}
+        mock_find.return_value = None  # No hay suscripción vinculada por preapproval_id
+        mock_find_ext.return_value = None  # No hay suscripción para vincular por external_reference
 
         from main import _procesar_preapproval
 

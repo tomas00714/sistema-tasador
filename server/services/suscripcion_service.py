@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
 from repositories.usuario_repository import UsuarioRepository
+from services.mercado_pago_service import MercadoPagoService
 
 logger = logging.getLogger(__name__)
 
@@ -116,12 +117,25 @@ class SuscripcionService:
         monto: float = 10.0,
         moneda: str = 'USD',
         frecuencia: int = 1,
-        frecuencia_tipo: str = 'months'
+        frecuencia_tipo: str = 'months',
+        init_point: Optional[str] = None
     ) -> Dict[str, Any]:
         """Crea internamente una suscripción en estado pending.
 
         No integra Mercado Pago. El mp_external_reference se genera con un UUID
         estable para poder vincularlo posteriormente con eventos de Mercado Pago.
+
+        Args:
+            usuario_id: ID del usuario
+            plan_id: ID del plan
+            monto: Monto mensual
+            moneda: Moneda
+            frecuencia: Frecuencia numérica
+            frecuencia_tipo: Tipo de frecuencia
+            init_point: URL de checkout de Mercado Pago (opcional, si ya se creó en MP)
+
+        Returns:
+            Suscripción creada
         """
         usuario = self.usuario_repo.find_by_id(usuario_id)
         if not usuario:
@@ -144,6 +158,7 @@ class SuscripcionService:
             'renovacion_automatica': True,
             'mp_preapproval_id': None,
             'mp_external_reference': mp_external_reference,
+            'init_point': init_point,
             'monto': monto,
             'moneda': moneda,
             'frecuencia': frecuencia,
@@ -237,7 +252,9 @@ class SuscripcionService:
         monto: float,
         moneda: str,
         fecha_aprobacion: datetime,
-        raw_response: Dict[str, Any]
+        raw_response: Dict[str, Any],
+        monto_neto: Optional[float] = None,
+        comision_mp: Optional[float] = None
     ) -> Dict[str, Any]:
         """Registra un pago aprobado en la tabla pagos.
 
@@ -249,6 +266,8 @@ class SuscripcionService:
             moneda: Moneda del pago
             fecha_aprobacion: Fecha de aprobación
             raw_response: Respuesta completa de MP
+            monto_neto: Importe neto recibido (opcional)
+            comision_mp: Comisión de MP (opcional)
 
         Returns:
             Pago registrado
@@ -261,6 +280,8 @@ class SuscripcionService:
             'monto': monto,
             'moneda': moneda,
             'fecha_aprobacion': fecha_aprobacion,
+            'monto_neto': monto_neto,
+            'comision_mp': comision_mp,
             'raw_response': raw_response,
         })
 
@@ -342,5 +363,51 @@ class SuscripcionService:
         })
 
         logger.info(f"Suscripción cancelada por MP: id={suscripcion['id']}, preapproval_id={preapproval_id}")
+
+        return actualizada
+
+    def vincular_suscripcion_mp_existente(
+        self,
+        usuario_id: int,
+        mp_preapproval_id: str,
+        external_reference: str
+    ) -> Optional[Dict[str, Any]]:
+        """Vincula una suscripción creada en MP directamente por el usuario.
+
+        Este método se usa como fallback cuando recibimos un webhook de una suscripción
+        que no está vinculada en nuestra DB (por ejemplo, si el usuario completó el checkout
+        antes de que guardáramos el preapproval_id).
+
+        Args:
+            usuario_id: ID del usuario
+            mp_preapproval_id: ID de la suscripción en Mercado Pago
+            external_reference: Referencia externa de MP
+
+        Returns:
+            Suscripción actualizada o None si no se encuentra
+        """
+        # Buscar suscripción por external_reference (más directo que buscar todas del usuario)
+        suscripcion = self.suscripcion_repo.find_by_external_reference(external_reference)
+        
+        if not suscripcion:
+            logger.warning(f"No se encontró suscripción para external_reference={external_reference}")
+            return None
+
+        # Validar que la suscripción pertenezca al usuario correcto
+        if suscripcion.get('usuario_id') != usuario_id:
+            logger.warning(f"Suscripción external_reference={external_reference} pertenece a usuario_id={suscripcion['usuario_id']}, no {usuario_id}")
+            return None
+
+        # Validar que la suscripción no tenga ya un mp_preapproval_id diferente
+        if suscripcion.get('mp_preapproval_id') and suscripcion['mp_preapproval_id'] != mp_preapproval_id:
+            logger.warning(f"Suscripción ya tiene mp_preapproval_id diferente: {suscripcion['mp_preapproval_id']} vs {mp_preapproval_id}")
+            return None
+
+        # Actualizar con el preapproval_id de MP
+        actualizada = self.suscripcion_repo.update(suscripcion['id'], {
+            'mp_preapproval_id': mp_preapproval_id
+        })
+
+        logger.info(f"Suscripción MP vinculada: id={suscripcion['id']}, preapproval_id={mp_preapproval_id}")
 
         return actualizada

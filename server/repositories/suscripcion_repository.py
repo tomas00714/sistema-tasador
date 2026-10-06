@@ -19,6 +19,10 @@ class SuscripcionRepository(BaseRepository):
         """Busca una suscripción por su ID de preapproval de Mercado Pago."""
         return self.find_where({"mp_preapproval_id": mp_preapproval_id}, limit=1)[0] if self.find_where({"mp_preapproval_id": mp_preapproval_id}, limit=1) else None
 
+    def find_by_external_reference(self, external_reference: str) -> Optional[Dict[str, Any]]:
+        """Busca una suscripción por su external_reference de Mercado Pago."""
+        return self.find_where({"mp_external_reference": external_reference}, limit=1)[0] if self.find_where({"mp_external_reference": external_reference}, limit=1) else None
+
     def find_vigentes_por_usuario(self, usuario_id: int) -> List[Dict[str, Any]]:
         """Busca suscripciones vigentes de un usuario (pending, activa, en_gracia, cancelada)."""
         query = """
