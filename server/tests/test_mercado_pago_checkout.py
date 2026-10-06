@@ -41,10 +41,10 @@ class TestMercadoPagoService(unittest.TestCase):
                     payer_email="test@example.com",
                     external_reference="SUB-123-a1b2c3d4e5f6",
                     back_url="https://example.com/retorno",
-                    monto=10.0,
+                    monto=15000,
                     frecuencia=1,
                     frecuencia_tipo="months",
-                    moneda="USD"
+                    moneda="ARS"
                 )
 
                 # Verificar que se llamó al endpoint correcto
@@ -59,7 +59,8 @@ class TestMercadoPagoService(unittest.TestCase):
                 self.assertEqual(payload['payer_email'], "test@example.com")
                 self.assertEqual(payload['status'], "pending")  # Importante: no "authorized"
                 self.assertNotIn('card_token_id', payload)  # Importante: sin card_token_id
-                self.assertEqual(payload['auto_recurring']['transaction_amount'], 10.0)
+                self.assertEqual(payload['auto_recurring']['transaction_amount'], 15000)
+                self.assertEqual(payload['auto_recurring']['currency_id'], "ARS")
 
                 # Verificar response
                 self.assertEqual(response['id'], "2c938084726fca480172750000000000")
@@ -142,9 +143,8 @@ class TestSuscripcionService(unittest.TestCase):
         
         result = service.crear_suscripcion_pendiente(
             usuario_id=123,
-            plan_id=2,
-            monto=10.0,
-            moneda='USD',
+            monto=15000,
+            moneda='ARS',
             frecuencia=1,
             frecuencia_tipo='months',
             init_point='https://example.com/checkout'

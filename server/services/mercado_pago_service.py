@@ -110,7 +110,7 @@ class MercadoPagoService:
         frecuencia: int = 1,
         frecuencia_tipo: str = "months",
         moneda: str = "USD",
-        reason: str = "Suscripción Pro Tasador",
+        reason: str = "Suscripción Sistema Tasador",
     ) -> Dict[str, Any]:
         """Crea una suscripción/preapproval en Mercado Pago.
 
@@ -244,7 +244,7 @@ class MercadoPagoService:
         frecuencia: int = 1,
         frecuencia_tipo: str = "months",
         moneda: str = "USD",
-        reason: str = "Suscripción Pro Tasador",
+        reason: str = "Suscripción Sistema Tasador",
     ) -> Dict[str, Any]:
         """Crea una suscripción/preapproval en Mercado Pago con estado pending (sin tarjeta).
 

@@ -3108,7 +3108,6 @@ def obtener_estado_suscripcion(usuario_id: int = Depends(middleware.get_current_
 
 @app.post("/api/suscripcion/iniciar-checkout")
 def iniciar_checkout_suscripcion(
-    plan_id: int = 2,  # Default Pro
     usuario_id: int = Depends(middleware.get_current_user_id)
 ):
     """Inicia el flujo de checkout de suscripción via Mercado Pago.
@@ -3131,13 +3130,12 @@ def iniciar_checkout_suscripcion(
             raise HTTPException(status_code=400, detail="Usuario sin email configurado")
 
         # Crear suscripción interna en estado pending (genera external_reference)
-        mp_plan_price = float(os.getenv("MP_PLAN_PRICE", "10.0"))
-        mp_plan_currency = os.getenv("MP_PLAN_CURRENCY", "USD")
+        mp_plan_price = float(os.getenv("MP_PLAN_PRICE", "15000"))
+        mp_plan_currency = os.getenv("MP_PLAN_CURRENCY", "ARS")
         mp_back_url = os.getenv("MP_BACK_URL", "")
 
         suscripcion_interna = suscripcion_service.crear_suscripcion_pendiente(
             usuario_id=usuario_id,
-            plan_id=plan_id,
             monto=mp_plan_price,
             moneda=mp_plan_currency,
             frecuencia=1,

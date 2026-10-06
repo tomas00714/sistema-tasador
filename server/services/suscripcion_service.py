@@ -113,9 +113,8 @@ class SuscripcionService:
     def crear_suscripcion_pendiente(
         self,
         usuario_id: int,
-        plan_id: int,
-        monto: float = 10.0,
-        moneda: str = 'USD',
+        monto: float = 15000,
+        moneda: str = 'ARS',
         frecuencia: int = 1,
         frecuencia_tipo: str = 'months',
         init_point: Optional[str] = None
@@ -127,7 +126,6 @@ class SuscripcionService:
 
         Args:
             usuario_id: ID del usuario
-            plan_id: ID del plan
             monto: Monto mensual
             moneda: Moneda
             frecuencia: Frecuencia numérica
@@ -153,7 +151,6 @@ class SuscripcionService:
 
         nueva = self.suscripcion_repo.create({
             'usuario_id': usuario_id,
-            'plan_id': plan_id,
             'estado': 'pending',
             'renovacion_automatica': True,
             'mp_preapproval_id': None,
