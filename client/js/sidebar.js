@@ -53,11 +53,15 @@ function inicializarSidebarToggle() {
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebarToggle');
     const mainLayout = document.getElementById('mainLayout');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
     if (!sidebar || !toggle || !mainLayout) {
         return;
     }
 
+    // Toggle desktop (colapsar/expandir)
     toggle.addEventListener('click', () => {
         sidebar.classList.toggle('collapsed');
         mainLayout.classList.toggle('with-sidebar-collapsed');
@@ -76,6 +80,68 @@ function inicializarSidebarToggle() {
 
     // Limpiar la clase inicial después de cargar
     document.documentElement.classList.remove('sidebar-collapsed-initial');
+
+    // Funcionalidad móvil - hamburger button (ya no se usa con top/bottom bar)
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            if (sidebarBackdrop) {
+                sidebarBackdrop.classList.add('visible');
+            }
+            document.body.classList.add('modal-open');
+        });
+    }
+
+    // Funcionalidad móvil - botón de cierre (ya no se usa con top/bottom bar)
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            if (sidebarBackdrop) {
+                sidebarBackdrop.classList.remove('visible');
+            }
+            document.body.classList.remove('modal-open');
+        });
+    }
+
+    // Funcionalidad móvil - backdrop (ya no se usa con top/bottom bar)
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarBackdrop.classList.remove('visible');
+            document.body.classList.remove('modal-open');
+        });
+    }
+    
+    // Navegación móvil - barra inferior
+    const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+    const mobileAppearanceBtn = document.getElementById('mobileAppearanceBtn');
+    
+    mobileNavItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Actualizar estado activo
+            mobileNavItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            
+            // Si es un botón, navegar programáticamente
+            if (item.tagName === 'BUTTON') {
+                const page = item.getAttribute('data-page');
+                if (page === 'perfil') {
+                    window.location.href = 'perfil.html';
+                }
+            }
+        });
+    });
+    
+    // Botón de apariencia móvil
+    if (mobileAppearanceBtn) {
+        mobileAppearanceBtn.addEventListener('click', () => {
+            // Llamar a la misma función que el botón de apariencia del sidebar
+            const appearanceBtn = document.getElementById('appearanceBtn');
+            if (appearanceBtn) {
+                appearanceBtn.click();
+            }
+        });
+    }
 }
 
 function inicializarLogoClick() {

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vista Previa de Informe - Sistema de Tasaciones</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <title>Vista Previa de Informe - ACM studio</title>
 
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/shell.css">
@@ -19,6 +20,9 @@
             <div class="config-panel-header">
                 <h2>Configuración del Informe</h2>
                 <p>Personaliza la apariencia y contenido del informe</p>
+                <button type="button" class="config-panel-close-btn" id="configPanelCloseBtn" aria-label="Cerrar configuración">
+                    <i class="fa-solid fa-times"></i>
+                </button>
             </div>
 
             <div class="config-panel-content">
@@ -185,6 +189,9 @@
         <!-- Panel Derecho: Vista Previa -->
         <main class="preview-panel">
             <div class="preview-panel-header">
+                <button class="btn-preview-action config-toggle-btn" id="configToggleBtn" title="Configuración" style="display: none;">
+                    <i class="fa-solid fa-cog"></i>
+                </button>
                 <h2>Vista Previa</h2>
                 <div class="preview-actions">
                     <button class="btn-preview-action" id="btnPrint" title="Imprimir">

@@ -8,6 +8,11 @@ body {
     font-size: var(--font-size-body);
     font-weight: var(--font-weight-body);
     color: var(--color-text-primary);
+    
+    /* Prevenir overflow horizontal */
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
 }
 
 h1 {
@@ -685,38 +690,23 @@ body.dark-mode .leaflet-tile {
 .sidebar-logo {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    margin-bottom: 32px;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
     flex-shrink: 0;
 }
 
 .sidebar-logo-img {
-    width: 48px;
-    height: 48px;
-    background: var(--color-primary);
-    border-radius: var(--radius-card);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-white);
-    font-size: 1.5rem;
+    height: 70px;
+    width: auto;
+    aspect-ratio: 2048 / 1250;
+    object-fit: contain;
     flex-shrink: 0;
+    transition: all var(--sidebar-transition);
 }
 
-.sidebar-logo-text {
-    margin-left: 12px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    opacity: 1;
-    transition: opacity var(--sidebar-transition);
-}
-
-.sidebar.collapsed .sidebar-logo-text {
-    opacity: 0;
-    width: 0;
+.sidebar.collapsed .sidebar-logo-img {
+    height: 40px;
 }
 
 .sidebar-nav {
@@ -724,6 +714,7 @@ body.dark-mode .leaflet-tile {
     flex-direction: column;
     gap: 8px;
     flex: 1;
+    margin-top: 16px;
 }
 
 .sidebar-nav-item {
@@ -874,7 +865,6 @@ body.dark-mode .leaflet-tile {
     cursor: pointer;
     transition: transform var(--sidebar-transition);
     color: var(--color-text-secondary);
-    margin-bottom: 16px;
     flex-shrink: 0;
 }
 
@@ -942,17 +932,13 @@ html.sidebar-collapsed-initial .main-layout {
     margin-bottom: 32px;
 }
 
-.auth-logo {
-    width: 64px;
+.auth-logo-img {
     height: 64px;
-    background: var(--color-primary);
-    border-radius: var(--radius-card);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: auto;
+    aspect-ratio: 2048 / 1250;
+    object-fit: contain;
     margin: 0 auto 20px;
-    color: var(--color-white);
-    font-size: 28px;
+    display: block;
 }
 
 .auth-title {
@@ -1329,4 +1315,260 @@ html.sidebar-collapsed-initial .main-layout {
     background: var(--color-primary-light);
     color: var(--color-primary);
     border: 1px solid var(--color-primary-light);
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+   Estrategia unificada: 768px (móvil/tablet), 1024px (desktop)
+========================= */
+
+/* Hamburger button - oculto por defecto en desktop */
+.hamburger-btn {
+    display: none;
+}
+
+/* Sidebar close button - oculto por defecto en desktop */
+.sidebar-close-btn {
+    display: none;
+}
+
+/* Sidebar backdrop - oculto por defecto */
+.sidebar-backdrop {
+    display: none;
+}
+
+/* Barra inferior de navegación móvil - oculta por defecto */
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Tablet (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .sidebar-logo-img {
+        height: 56px;
+    }
+    
+    .sidebar.collapsed .sidebar-logo-img {
+        height: 36px;
+    }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+    /* Sidebar - reestructurado como top bar + bottom bar en móvil */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: auto;
+        width: 100%;
+        height: auto;
+        max-height: none;
+        padding: 12px 16px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+        z-index: 1000;
+        margin-top: 0;
+        overflow: visible;
+    }
+    
+    .sidebar-logo {
+        margin: 0;
+        flex-shrink: 0;
+    }
+    
+    .sidebar-logo-img {
+        height: 40px;
+    }
+    
+    .sidebar-close-btn {
+        display: none;
+    }
+    
+    /* Ocultar toggle en móvil */
+    .sidebar-toggle {
+        display: none;
+    }
+    
+    /* Ocultar divider en móvil */
+    .sidebar-divider {
+        display: none;
+    }
+    
+    /* Ocultar nav del sidebar en móvil */
+    .sidebar-nav {
+        display: none;
+    }
+    
+    /* Ocultar botón de apariencia en móvil */
+    #appearanceBtn {
+        display: none;
+    }
+    
+    /* Barra inferior de navegación móvil */
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--color-white);
+        border-top: 1px solid var(--color-border);
+        padding: 10px 0;
+        padding-bottom: env(safe-area-inset-bottom, 10px);
+        z-index: 999;
+        justify-content: space-around;
+        align-items: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        text-decoration: none;
+        color: var(--color-text-secondary);
+        font-size: 11px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        min-width: 0;
+        min-height: auto;
+        flex-shrink: 0;
+    }
+    
+    .mobile-nav-item.active {
+        color: var(--color-primary);
+    }
+    
+    .mobile-nav-item i {
+        font-size: 22px;
+    }
+    
+    /* Ajustes al main layout cuando sidebar está oculto */
+    .main-layout {
+        margin-left: 0 !important;
+        padding-top: 64px;
+        padding-bottom: 75px;
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+    
+    body.sidebar-collapsed-initial .main-layout {
+        margin-left: 0 !important;
+        padding-top: 64px;
+        padding-bottom: 75px;
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+    
+    /* Ocultar sidebar backdrop y hamburger en móvil */
+    .sidebar-backdrop {
+        display: none !important;
+    }
+    
+    .hamburger-btn {
+        display: none !important;
+    }
+    
+    /* Sidebar profile en móvil - solo mostrar avatar */
+    .sidebar-profile {
+        padding: 0;
+        min-width: auto;
+    }
+    
+    .sidebar-profile-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .sidebar-profile-info {
+        display: none;
+    }
+    
+    /* Modales full width en móvil */
+    .modal-overlay {
+        padding: 16px;
+    }
+    
+    .modal-confirmacion-salir,
+    .modal-tasacion,
+    .modal-confirmacion-salir,
+    .modal-compartir {
+        max-width: 100%;
+        max-height: 90vh;
+        margin: 0;
+        border-radius: var(--radius-card);
+    }
+    
+    /* Evitar scroll del body cuando modal está abierto */
+    body.modal-open {
+        overflow: hidden;
+    }
+    
+    /* Cards width 100% en móvil */
+    .card-minimizada {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    /* Inputs full width en móvil */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    select,
+    textarea {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Auth cards responsive */
+    .auth-card {
+        padding: 24px 20px;
+        margin: 16px;
+    }
+    
+    .auth-logo-img {
+        height: 56px;
+    }
+    
+    .auth-title {
+        font-size: 22px;
+    }
+    
+    /* Touch targets mínimos en móvil (44px) */
+    button,
+    .btn,
+    .sidebar-nav-item,
+    .admin-tab,
+    .btn-preview-action,
+    .cerrar-modal,
+    .config-toggle-expand-btn,
+    .sidebar-toggle,
+    .sidebar-profile {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Excepciones para botones pequeños conocidos */
+    .config-theme-dot,
+    .config-logo-opt,
+    .config-toggle-expand-btn,
+    .mobile-nav-item {
+        min-height: auto;
+        min-width: auto;
+    }
 }

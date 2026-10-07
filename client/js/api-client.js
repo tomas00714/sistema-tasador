@@ -890,21 +890,33 @@ async function guardarTasacionCompartidaAPI(token) {
 // =========================
 // AVATAR DEL USUARIO
 // Sincroniza la foto de perfil real en todos los avatares de la app
+// (sidebar, menú de usuario de la landing, botón de perfil). Es una
+// sola identidad: misma foto o mismo placeholder en todas partes.
 // =========================
+
+// Placeholder genérico (mismo archivo que usa perfil.html). La ruta es
+// relativa porque las páginas viven en dos niveles: app/ y raíz.
+function urlAvatarPlaceholder() {
+    return window.location.pathname.includes('/app/')
+        ? '../assets/images/default-avatar.png'
+        : 'assets/images/default-avatar.png';
+}
 
 function crearAvatarImg(container) {
     const img = document.createElement('img');
     img.alt = 'Foto de perfil';
     img.className = 'avatar-img avatar-img-hidden';
     img.onerror = function() {
+        // Foto real rota → placeholder; si el placeholder tampoco existe,
+        // el avatar queda vacío (sin imagen ni ícono).
+        if (!img.src.endsWith('default-avatar.png')) {
+            img.src = urlAvatarPlaceholder();
+            return;
+        }
         img.classList.add('avatar-img-hidden');
-        const icon = container.querySelector('i');
-        if (icon) icon.style.display = '';
     };
     img.onload = function() {
         img.classList.remove('avatar-img-hidden');
-        const icon = container.querySelector('i');
-        if (icon) icon.style.display = 'none';
     };
     container.appendChild(img);
     return img;
@@ -923,9 +935,9 @@ async function actualizarAvatares() {
         return;
     }
 
-    if (!fotoPerfil) return;
-
-    const url = urlArchivo(fotoPerfil);
+    // Sin foto propia se muestra el placeholder genérico (o el círculo
+    // vacío si el archivo aún no está en el servidor).
+    const url = fotoPerfil ? urlArchivo(fotoPerfil) : urlAvatarPlaceholder();
     const avatares = document.querySelectorAll('.sidebar-profile-avatar, .nav-user-avatar, .profile-avatar');
     avatares.forEach(container => {
         let img = container.querySelector('img.avatar-img');

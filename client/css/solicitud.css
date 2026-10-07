@@ -44,15 +44,10 @@
     flex-shrink: 0;
 }
 
-.solicitud-encabezado-marca .marca-logo {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-input);
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.solicitud-encabezado-marca .marca-logo-img {
+    height: 80px;
+    width: 80px;
+    object-fit: contain;
 }
 
 .solicitud-encabezado-datos {

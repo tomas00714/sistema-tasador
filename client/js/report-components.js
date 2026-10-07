@@ -621,9 +621,19 @@ function ReportReference({ selector, reportInfo, config }) {
     // cuando el dato está vacío.
     const claseSiVacio = (v) => isEmptyEditable(v) ? ' report-preview-only' : '';
 
+    // Valores de identificación del inmueble que determinan si el cuadro
+    // tiene datos reales. "Tipo" es metadata estructural (siempre existe)
+    // y NO cuenta: un cuadro con solo "Tipo: Casa" se considera vacío.
+    const valoresInmueble = [
+        ubicacion.direccion,
+        ubicacion.localidad,
+        ubicacion.provincia,
+    ];
+
     if (selector.tipo === 'lote') {
         const tipoLote = selector.getTipoLote();
         const superficie = selector.getSuperficieTotal();
+        valoresInmueble.push(tipoLote, superficie);
         caracteristicasInmueble = `
             <div class="report-reference-item${claseSiVacio(tipoLote)}">
                 <span class="report-reference-label">Tipo de lote:</span>
@@ -639,6 +649,7 @@ function ReportReference({ selector, reportInfo, config }) {
         const superficie = selector.getSuperficieCubierta();
         const superficieTerreno = selector.tipo === 'casa' ? selector.getSuperficieTerreno() : null;
         const antiguedad = selector.getAntiguedad();
+        valoresInmueble.push(ambientes, superficie, superficieTerreno, antiguedad);
         caracteristicasInmueble = `
             <div class="report-reference-item${claseSiVacio(ambientes)}">
                 <span class="report-reference-label">Ambientes:</span>
@@ -687,6 +698,14 @@ function ReportReference({ selector, reportInfo, config }) {
     const clienteDni = config?.clienteDni ?? '';
     const clienteTelefono = config?.clienteTelefono ?? '';
 
+    // Un cuadro del Índice de Referencia solo se imprime si tiene al menos
+    // un dato real. En pantalla se conserva (permite editar los campos
+    // vacíos); en impresión/PDF se elimina del DOM (data-report-empty).
+    valoresInmueble.push(nomenclaturaCatastral);
+    const inmuebleVacio = !valoresInmueble.some(v => !isEmptyEditable(v));
+    const solicitanteVacio = ![clienteNombre, clienteDni, clienteTelefono].some(v => !isEmptyEditable(v));
+    const gridVacio = inmuebleVacio && solicitanteVacio;
+
     let camposAdicionales = `
         <div class="report-reference-item${isEmptyEditable(clienteNombre) ? ' report-preview-only' : ''}">
             <span class="report-reference-label">Nombre:</span>
@@ -705,8 +724,8 @@ function ReportReference({ selector, reportInfo, config }) {
     return `
         <section class="report-section">
             <h2 class="report-section-title">Índice de Referencia de la Tasación</h2>
-            <div class="report-reference-grid">
-                <div class="report-reference-column">
+            <div class="report-reference-grid"${gridVacio ? ' data-report-empty="1"' : ''}>
+                <div class="report-reference-column"${inmuebleVacio ? ' data-report-empty="1"' : ''}>
                     <h3 class="report-reference-subtitle">Identificación del Inmueble</h3>
                     <div class="report-reference-item">
                         <span class="report-reference-label">Tipo:</span>
@@ -731,7 +750,7 @@ function ReportReference({ selector, reportInfo, config }) {
                     ${caracteristicasInmueble}
                 </div>
                 
-                <div class="report-reference-column">
+                <div class="report-reference-column"${solicitanteVacio ? ' data-report-empty="1"' : ''}>
                     <h3 class="report-reference-subtitle">Datos del Solicitante</h3>
                     ${camposAdicionales}
                 </div>

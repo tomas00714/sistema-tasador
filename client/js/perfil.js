@@ -13,6 +13,10 @@ let snapshotLogoBlob = null;
 const card = () => document.getElementById('perfilCard');
 
 function inicializarPerfil() {
+    // Mostrar los placeholders de inmediato; cargarDatosProfesionales
+    // los reemplaza si el usuario tiene foto/logo propios.
+    actualizarAvatar(null);
+    actualizarLogo(null);
     cargarDatosUsuario();
     cargarDatosProfesionales();
     inicializarEventos();
@@ -70,6 +74,12 @@ function cargarDatosUsuario() {
     }
 }
 
+// Imágenes genéricas usadas cuando el usuario no cargó una foto/logo propio.
+// Los archivos NO forman parte del código: deben crearse manualmente en
+// client/assets/images/ (ver documentación de la feature).
+const DEFAULT_AVATAR_URL = '../assets/images/default-avatar.png';
+const DEFAULT_LOGO_URL = '../assets/images/default-logo.png';
+
 function actualizarAvatar(fotoPerfil) {
     const avatar = document.getElementById('perfilAvatar');
     const img = document.getElementById('perfilAvatarImg');
@@ -77,37 +87,36 @@ function actualizarAvatar(fotoPerfil) {
     if (!avatar || !img) return;
 
     img.onerror = () => {
+        // Si falla la foto real, cae al placeholder; si el placeholder
+        // tampoco existe, el avatar queda vacío (sin imagen ni ícono).
+        if (!img.src.endsWith('default-avatar.png')) {
+            img.src = DEFAULT_AVATAR_URL;
+            return;
+        }
         img.removeAttribute('src');
         avatar.classList.remove('con-foto');
     };
 
-    if (fotoPerfil) {
-        img.src = urlArchivo(fotoPerfil);
-        avatar.classList.add('con-foto');
-    } else {
-        img.removeAttribute('src');
-        avatar.classList.remove('con-foto');
-    }
+    // Sin foto propia se muestra la imagen genérica (o el círculo vacío
+    // si el archivo de placeholder no está en el servidor).
+    img.src = fotoPerfil ? urlArchivo(fotoPerfil) : DEFAULT_AVATAR_URL;
+    avatar.classList.add('con-foto');
 }
 
 function actualizarLogo(logoInmobiliaria) {
     const img = document.getElementById('logoInmobiliariaImg');
-    const icon = document.getElementById('logoInmobiliariaIcon');
 
     img.onerror = () => {
+        // Logo real roto → placeholder; placeholder inexistente → vacío.
+        if (!img.src.endsWith('default-logo.png')) {
+            img.src = DEFAULT_LOGO_URL;
+            return;
+        }
         img.style.display = 'none';
-        if (icon) icon.style.display = 'block';
     };
 
-    if (logoInmobiliaria) {
-        img.src = urlArchivo(logoInmobiliaria);
-        img.style.display = 'block';
-        if (icon) icon.style.display = 'none';
-    } else {
-        img.src = '';
-        img.style.display = 'none';
-        if (icon) icon.style.display = 'block';
-    }
+    img.src = logoInmobiliaria ? urlArchivo(logoInmobiliaria) : DEFAULT_LOGO_URL;
+    img.style.display = 'block';
 }
 
 function actualizarEstadoGoogle(googleVinculado) {
@@ -160,11 +169,10 @@ async function cargarDatosProfesionales() {
     }
 }
 
-function mostrarVistaPrevia(file, imgId, iconId) {
+function mostrarVistaPrevia(file, imgId) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = document.getElementById(imgId);
-        const icon = document.getElementById(iconId);
         if (img) {
             img.src = e.target.result;
             img.style.display = 'block';
@@ -173,7 +181,6 @@ function mostrarVistaPrevia(file, imgId, iconId) {
             const avatar = img.closest('.perfil-avatar');
             if (avatar) avatar.classList.add('con-foto');
         }
-        if (icon) icon.style.display = 'none';
     };
     reader.readAsDataURL(file);
 }
@@ -221,8 +228,12 @@ function togglePopoverFoto() {
     const logoPopover = document.getElementById('logoPopover');
     if (logoPopover) logoPopover.classList.remove('abierto');
 
-    // "Eliminar" solo tiene sentido si hay una foto visible (guardada o preview)
-    const tieneFoto = document.getElementById('perfilAvatar').classList.contains('con-foto');
+    // "Eliminar" solo tiene sentido si hay una foto real (guardada o
+    // preview de archivo nuevo); el placeholder no cuenta como foto.
+    const img = document.getElementById('perfilAvatarImg');
+    const src = img && img.getAttribute('src');
+    const tieneFoto = document.getElementById('perfilAvatar').classList.contains('con-foto')
+        && src && !src.endsWith('default-avatar.png');
     document.getElementById('btnEliminarFoto').style.display = tieneFoto ? 'flex' : 'none';
 
     popover.classList.toggle('abierto');
@@ -236,7 +247,9 @@ function togglePopoverLogo() {
     if (avatarPopover) avatarPopover.classList.remove('abierto');
 
     const img = document.getElementById('logoInmobiliariaImg');
-    const tieneLogo = img && img.style.display !== 'none' && img.getAttribute('src');
+    const src = img && img.getAttribute('src');
+    const tieneLogo = img && img.style.display !== 'none' && src
+        && !src.endsWith('default-logo.png');
     document.getElementById('btnEliminarLogo').style.display = tieneLogo ? 'flex' : 'none';
 
     popover.classList.toggle('abierto');
@@ -457,7 +470,7 @@ function inicializarEventos() {
                 titulo: 'Recortar foto de perfil'
             });
             if (!blob) return;
-            mostrarVistaPrevia(blob, 'perfilAvatarImg', 'perfilAvatarIcon');
+            mostrarVistaPrevia(blob, 'perfilAvatarImg');
             try {
                 await subirFotoPerfilAPI(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }));
             } catch (err) {
@@ -480,7 +493,7 @@ function inicializarEventos() {
                 titulo: 'Recortar logo'
             });
             if (!blob) return;
-            mostrarVistaPrevia(blob, 'logoInmobiliariaImg', 'logoInmobiliariaIcon');
+            mostrarVistaPrevia(blob, 'logoInmobiliariaImg');
             try {
                 await subirLogoInmobiliariaAPI(new File([blob], nombreArchivoRecortado(file, blob), { type: blob.type }));
             } catch (err) {

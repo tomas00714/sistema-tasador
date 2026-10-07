@@ -59,9 +59,7 @@ function inyectarNavbar(paginaActual) {
                     class="profile-btn"
                     aria-label="Perfil de usuario"
                     title="Perfil">
-                    <span class="profile-avatar" aria-hidden="true">
-                        <i class="fa-solid fa-user"></i>
-                    </span>
+                    <span class="profile-avatar" aria-hidden="true"></span>
                 </button>
             </div>
         </nav>

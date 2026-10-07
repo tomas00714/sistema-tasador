@@ -1166,11 +1166,58 @@ function printReport() {
     const reportViewer = document.getElementById('reportViewer');
     if (!reportViewer) return;
 
+    // Los cuadros del Índice de Referencia sin datos (data-report-empty)
+    // no se imprimen: se retiran del DOM antes de generar el documento
+    // (no es una ocultación visual por CSS) y se restauran después para
+    // que la Vista Previa conserve los campos editables.
+    const removidos = [];
+    reportViewer.querySelectorAll('[data-report-empty="1"]').forEach(el => {
+        // Si un ancestro marcado ya fue removido, este nodo viajó con él:
+        // no hace falta (ni se debe) desconectarlo de su padre.
+        if (!el.isConnected) return;
+        removidos.push({ el, padre: el.parentNode, siguiente: el.nextSibling });
+        el.remove();
+    });
+
+    // Si sobrevive una sola columna del Índice de Referencia, el grid
+    // de 2 columnas dejaría la mitad derecha vacía: se colapsa a 1fr
+    // durante la impresión y se restaura después.
+    const gridsAjustados = [];
+    reportViewer.querySelectorAll('.report-reference-grid').forEach(grid => {
+        const columnas = grid.querySelectorAll('.report-reference-column');
+        if (columnas.length === 1) {
+            gridsAjustados.push({ grid, anterior: grid.style.gridTemplateColumns });
+            grid.style.gridTemplateColumns = '1fr';
+        }
+    });
+
+    const restaurar = () => {
+        removidos.forEach(({ el, padre, siguiente }) => {
+            if (padre && padre.isConnected) {
+                padre.insertBefore(el, siguiente && siguiente.isConnected ? siguiente : null);
+            }
+        });
+        removidos.length = 0;
+        gridsAjustados.forEach(({ grid, anterior }) => {
+            grid.style.gridTemplateColumns = anterior;
+        });
+        gridsAjustados.length = 0;
+    };
+
     // Imprimir en la misma ventana: el PDF usa exactamente el mismo DOM,
     // los mismos .report-page del paginador y las mismas hojas de estilo
     // (fuentes, variables CSS, tarjetas, tablas) que la Vista Previa.
     // Las reglas @media print ocultan solo la interfaz de edición.
+    if (removidos.length || gridsAjustados.length) {
+        window.addEventListener('afterprint', restaurar, { once: true });
+    }
     window.print();
+    // Fallback: algunos navegadores no disparan afterprint de forma
+    // confiable; window.print() es bloqueante, así que restaurar al
+    // volver garantiza que el preview nunca quede sin los cuadros.
+    if (removidos.length || gridsAjustados.length) {
+        setTimeout(restaurar, 0);
+    }
 }
 
 function updateReportConfig(newConfig) {
@@ -1229,4 +1276,37 @@ function getReportConfig() {
     return { ...reportConfig };
 }
 
-document.addEventListener('DOMContentLoaded', initVistaPreviaInforme);
+// Config panel drawer móvil
+function initConfigPanelMobile() {
+    const configPanel = document.querySelector('.config-panel');
+    const configPanelCloseBtn = document.getElementById('configPanelCloseBtn');
+    const configToggleBtn = document.getElementById('configToggleBtn');
+    
+    if (!configPanel) return;
+    
+    // Mostrar botón de toggle en móvil
+    if (window.innerWidth < 768) {
+        if (configToggleBtn) {
+            configToggleBtn.style.display = 'flex';
+        }
+    }
+    
+    // Cerrar config panel
+    if (configPanelCloseBtn) {
+        configPanelCloseBtn.addEventListener('click', () => {
+            configPanel.classList.remove('open');
+        });
+    }
+    
+    // Abrir config panel
+    if (configToggleBtn) {
+        configToggleBtn.addEventListener('click', () => {
+            configPanel.classList.add('open');
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initVistaPreviaInforme();
+    initConfigPanelMobile();
+});

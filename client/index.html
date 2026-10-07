@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasador - Sistema de Tasaciones Inmobiliarias</title>
-    <meta name="description" content="Sistema profesional de tasaciones inmobiliarias mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida y confiable.">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <title>ACM studio - Sistema de Tasaciones Inmobiliarias</title>
+    <meta name="description" content="ACM studio - Sistema profesional de tasaciones inmobiliarias mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida y confiable.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +23,7 @@
     <nav class="nav">
         <div class="nav-container">
             <a href="#" class="nav-logo">
-                <div class="nav-logo-icon">
-                    <i class="fa-solid fa-home"></i>
-                </div>
-                <span class="nav-logo-text">Tasador</span>
+                <img src="assets/images/logo-compacto.svg" alt="ACM studio" class="nav-logo-img">
             </a>
             <div class="nav-menu">
                 <a href="#features" class="nav-link">Características</a>
@@ -56,8 +54,29 @@
                     </div>
                 </div>
             </div>
+            <!-- Hamburger button para móvil -->
+            <button type="button" class="nav-hamburger" id="navHamburger" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
         </div>
     </nav>
+    
+    <!-- Nav drawer para móvil -->
+    <div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+    <div class="nav-drawer" id="navDrawer">
+        <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Cerrar menú">
+            <i class="fa-solid fa-times"></i>
+        </button>
+        <div class="nav-drawer-content">
+            <a href="#features" class="nav-drawer-link">Características</a>
+            <a href="#how-it-works" class="nav-drawer-link">Cómo funciona</a>
+            <a href="#pricing" class="nav-drawer-link">Precios</a>
+            <a href="#faq" class="nav-drawer-link">Preguntas</a>
+            <div class="nav-drawer-divider"></div>
+            <a href="login.html" class="nav-drawer-link nav-drawer-link-primary">Iniciar sesión</a>
+            <a href="registro.html" class="nav-drawer-link nav-drawer-link-primary">Suscribirme</a>
+        </div>
+    </div>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -186,13 +205,13 @@
     <section class="comparison">
         <div class="section-container">
             <div class="section-header">
-                <h2>¿Por qué elegir Tasador?</h2>
+                <h2>¿Por qué elegir ACM studio?</h2>
                 <p>Compará el método tradicional con nuestra solución moderna</p>
             </div>
             <div class="comparison-table">
                 <div class="comparison-row header">
                     <div class="comparison-cell">Método tradicional</div>
-                    <div class="comparison-cell">Tasador</div>
+                    <div class="comparison-cell">ACM studio</div>
                 </div>
                 <div class="comparison-row">
                     <div class="comparison-cell"><i class="fa-solid fa-xmark icon"></i> Cálculos manuales en Excel</div>
@@ -287,8 +306,8 @@
                         ¿Mis datos están seguros?
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
-                    <div class="faq-answer">
-                        Sí. Las contraseñas nunca se guardan en texto plano, la conexión se realiza por HTTPS y los pagos los procesa Mercado Pago directamente, sin que los datos de tu tarjeta pasen por nuestros servidores.
+                    <div class="faq-answer">Sí. Protegemos tus datos y tomamos medidas para mantener tu información segura y privada.
+                        
                     </div>
                 </div>
                 <div class="faq-item">
@@ -334,7 +353,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            © 2026 Tasador. Todos los derechos reservados.
+            © 2026 ACM studio. Todos los derechos reservados.
         </div>
     </footer>
 
@@ -461,6 +480,42 @@
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
                 window.location.href = 'index.html';
+            });
+        }
+
+        // Nav drawer móvil - landing page
+        const navHamburger = document.getElementById('navHamburger');
+        const navDrawer = document.getElementById('navDrawer');
+        const navDrawerBackdrop = document.getElementById('navDrawerBackdrop');
+        const navDrawerClose = document.getElementById('navDrawerClose');
+        const navDrawerLinks = document.querySelectorAll('.nav-drawer-link');
+
+        if (navHamburger && navDrawer && navDrawerBackdrop) {
+            navHamburger.addEventListener('click', () => {
+                navDrawer.classList.add('open');
+                navDrawerBackdrop.classList.add('visible');
+                document.body.classList.add('modal-open');
+            });
+
+            navDrawerClose.addEventListener('click', () => {
+                navDrawer.classList.remove('open');
+                navDrawerBackdrop.classList.remove('visible');
+                document.body.classList.remove('modal-open');
+            });
+
+            navDrawerBackdrop.addEventListener('click', () => {
+                navDrawer.classList.remove('open');
+                navDrawerBackdrop.classList.remove('visible');
+                document.body.classList.remove('modal-open');
+            });
+
+            // Cerrar drawer al hacer click en un link
+            navDrawerLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navDrawer.classList.remove('open');
+                    navDrawerBackdrop.classList.remove('visible');
+                    document.body.classList.remove('modal-open');
+                });
             });
         }
 

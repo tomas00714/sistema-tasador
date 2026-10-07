@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Tasaciones</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <title>ACM studio</title>
 
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/shell.css">
@@ -25,10 +26,7 @@
 <body data-vista="inicio">
     <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
         <div class="sidebar-logo">
-            <div class="sidebar-logo-img">
-                <i class="fa-solid fa-home"></i>
-            </div>
-            <span class="sidebar-logo-text">Tasador</span>
+            <img src="../assets/images/logo-compacto.svg" alt="ACM studio" class="sidebar-logo-img">
         </div>
 
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Minimizar/expandir menú">
@@ -75,14 +73,40 @@
         </button>
 
         <button type="button" class="sidebar-profile" data-page="perfil" aria-label="Perfil de usuario">
-            <div class="sidebar-profile-avatar">
-                <i class="fa-solid fa-user"></i>
-            </div>
+            <div class="sidebar-profile-avatar"></div>
             <div class="sidebar-profile-info">
                 <span class="sidebar-profile-name">Usuario</span>
             </div>
         </button>
     </aside>
+    
+    <!-- Barra inferior de navegación móvil -->
+    <nav class="mobile-bottom-nav">
+        <a href="index.html" class="mobile-nav-item active" data-page="inicio">
+            <i class="fa-solid fa-house"></i>
+            <span>Inicio</span>
+        </a>
+        <a href="historial.html" class="mobile-nav-item" data-page="historial">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Base</span>
+        </a>
+        <a href="solicitudes.html" class="mobile-nav-item" data-page="solicitudes">
+            <i class="fa-solid fa-file-lines"></i>
+            <span>Solicitudes</span>
+        </a>
+        <a href="tasacion.html" class="mobile-nav-item" data-page="tasacion">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nueva</span>
+        </a>
+        <button type="button" class="mobile-nav-item" id="mobileAppearanceBtn">
+            <i class="fa-solid fa-palette"></i>
+            <span>Apariencia</span>
+        </button>
+        <button type="button" class="mobile-nav-item" data-page="perfil">
+            <i class="fa-solid fa-user"></i>
+            <span>Perfil</span>
+        </button>
+    </nav>
 
     <div class="main-layout" id="mainLayout">
         <div class="main-content" id="mainContent">

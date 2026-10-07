@@ -385,4 +385,24 @@
     .admin-filter-button {
         width: 100%;
     }
+    
+    /* Tabla con scroll horizontal en móvil */
+    .admin-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .admin-table {
+        min-width: 600px;
+    }
+    
+    .admin-section {
+        padding: 1rem;
+    }
+    
+    .admin-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
 }

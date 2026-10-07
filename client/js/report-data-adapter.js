@@ -601,6 +601,40 @@ function mapearMetodologia(tasacion) {
     };
 }
 
+// =========================
+// SANITIZACIÓN PARA RENDERIZADO HTML
+// =========================
+// Los componentes del informe interpolan los valores directamente en
+// strings de HTML que terminan en innerHTML. Sin escape, un texto con
+// markup (p. ej. un comparable aportado por un tercero anónimo desde una
+// solicitud pública, o una tasación compartida) produce XSS almacenado
+// en la sesión del usuario que visualiza el informe.
+// En lugar de escapar cada interpolación, se escapan los DATOS: esta
+// función devuelve una copia profunda del objeto con todos los strings
+// escapados (& < > " '). El original no se toca, así que lo persistido
+// sigue siendo texto plano y no hay doble-escape entre renders.
+function escapeInformeHtml(valor) {
+    return String(valor)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escaparDatosInforme(valor) {
+    if (typeof valor === 'string') return escapeInformeHtml(valor);
+    if (Array.isArray(valor)) return valor.map(escaparDatosInforme);
+    if (valor && typeof valor === 'object' && valor.constructor === Object) {
+        const copia = {};
+        for (const [k, v] of Object.entries(valor)) {
+            copia[k] = escaparDatosInforme(v);
+        }
+        return copia;
+    }
+    return valor;
+}
+
 async function tasacionToReportData(tasacion, opciones = {}) {
     const comparablesRaw = opciones.comparablesResueltos || await resolverComparablesDeTasacion(tasacion);
     const comparablesIds = opciones.selectedComparableIds;
@@ -648,7 +682,10 @@ async function tasacionToReportData(tasacion, opciones = {}) {
         adjustments: mapearMetodologia(tasacion).adjustments
     };
 
-    return {
+    // Los strings de todo el árbol se escapan (copia, sin tocar el
+    // original) para que el render por innerHTML sea seguro ante XSS
+    // almacenado. Ver escaparDatosInforme.
+    return escaparDatosInforme({
         reportInfo,
         property: mapearPropiedad(tasacion),
         characteristics: mapearCaracteristicas(tasacion),
@@ -696,5 +733,5 @@ async function tasacionToReportData(tasacion, opciones = {}) {
         fodaOportunidades: config.fodaOportunidades || '',
         fodaDebilidades: config.fodaDebilidades || '',
         fodaAmenazas: config.fodaAmenazas || ''
-    };
+    });
 }
