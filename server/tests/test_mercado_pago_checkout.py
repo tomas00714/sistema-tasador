@@ -340,5 +340,31 @@ class TestIdempotenciaWebhook(unittest.TestCase):
         # y no intentamos crear otro pago
 
 
+class TestPlanIdNullable(unittest.TestCase):
+    """Tests para verificar que plan_id puede ser NULL en suscripciones."""
+
+    def test_suscripcion_pendiente_no_incluye_plan_id_en_create(self):
+        """Test que crear_suscripcion_pendiente no incluye plan_id en los datos de create."""
+        # Test unitario simple: verificar que el código no incluye plan_id
+        
+        # Leer el código actual de crear_suscripcion_pendiente
+        from services.suscripcion_service import SuscripcionService
+        import inspect
+        
+        # Obtener el código fuente del método
+        source = inspect.getsource(SuscripcionService.crear_suscripcion_pendiente)
+        
+        # Verificar que plan_id no está en el código
+        self.assertNotIn('plan_id', source, 
+                        "crear_suscripcion_pendiente no debería incluir plan_id")
+        
+        # Verificar que se usan los campos correctos
+        self.assertIn('usuario_id', source)
+        self.assertIn('monto', source)
+        self.assertIn('moneda', source)
+        self.assertIn('frecuencia', source)
+        self.assertIn('frecuencia_tipo', source)
+
+
 if __name__ == '__main__':
     unittest.main()
