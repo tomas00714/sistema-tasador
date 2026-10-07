@@ -1337,8 +1337,40 @@ html.sidebar-collapsed-initial .main-layout {
     display: none;
 }
 
-/* Barra inferior de navegación móvil - oculta por defecto */
-.mobile-bottom-nav {
+/* Header móvil - oculto en desktop */
+.sidebar-mobile-header {
+    display: none;
+}
+
+/* Hamburguesa móvil - oculto en desktop */
+.sidebar-hamburger {
+    display: none;
+}
+
+/* Perfil del header móvil - oculto en desktop */
+.sidebar-mobile-profile {
+    display: none;
+}
+
+/* Elementos desktop-only - ocultos en móvil */
+.desktop-only {
+    display: block;
+}
+
+/* Barra inferior de navegación móvil - ELIMINADA */
+.mobile-bottom-nav,
+.mobile-nav-item,
+#mobileAppearanceBtn {
+    display: none !important;
+}
+
+/* Elementos mobile - ocultos en desktop */
+.mobile-header,
+.mobile-hamburger,
+.mobile-logo,
+.mobile-profile,
+.mobile-drawer,
+.mobile-backdrop {
     display: none;
 }
 
@@ -1359,108 +1391,146 @@ html.sidebar-collapsed-initial .main-layout {
 
 /* Mobile (< 768px) */
 @media (max-width: 767px) {
-    /* Sidebar - reestructurado como top bar + bottom bar en móvil */
+    /* Sidebar desktop - oculto en móvil */
     .sidebar {
+        display: none;
+    }
+    
+    /* Header móvil */
+    .mobile-header {
+        display: flex;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        bottom: auto;
-        width: 100%;
-        height: auto;
-        max-height: none;
-        padding: 12px 16px;
-        flex-direction: row;
+        height: 64px;
         align-items: center;
         justify-content: space-between;
-        border-right: none;
+        padding: 0 16px;
+        background: var(--color-white);
         border-bottom: 1px solid var(--color-border);
         z-index: 1000;
-        margin-top: 0;
-        overflow: visible;
     }
     
-    .sidebar-logo {
-        margin: 0;
+    .mobile-hamburger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--color-text-primary);
+        font-size: 20px;
         flex-shrink: 0;
     }
     
-    .sidebar-logo-img {
+    .mobile-hamburger:hover {
+        background: var(--color-bg-light);
+    }
+    
+    .mobile-logo {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .mobile-logo-img {
         height: 40px;
+        width: auto;
+        aspect-ratio: 2048 / 1250;
+        object-fit: contain;
     }
     
-    .sidebar-close-btn {
-        display: none;
-    }
-    
-    /* Ocultar toggle en móvil */
-    .sidebar-toggle {
-        display: none;
-    }
-    
-    /* Ocultar divider en móvil */
-    .sidebar-divider {
-        display: none;
-    }
-    
-    /* Ocultar nav del sidebar en móvil */
-    .sidebar-nav {
-        display: none;
-    }
-    
-    /* Ocultar botón de apariencia en móvil */
-    #appearanceBtn {
-        display: none;
-    }
-    
-    /* Barra inferior de navegación móvil */
-    .mobile-bottom-nav {
+    .mobile-profile {
         display: flex;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--color-white);
-        border-top: 1px solid var(--color-border);
-        padding: 10px 0;
-        padding-bottom: env(safe-area-inset-bottom, 10px);
-        z-index: 999;
-        justify-content: space-around;
         align-items: center;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
     }
     
-    .mobile-nav-item {
+    .mobile-profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    /* Drawer móvil */
+    .mobile-drawer {
+        display: block;
+        position: fixed;
+        top: 64px;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        background: var(--color-white);
+        border-right: 1px solid var(--color-border);
+        z-index: 999;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 16px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .mobile-drawer.open {
+        transform: translateX(0);
+    }
+    
+    .mobile-drawer .sidebar-logo {
+        margin-bottom: 20px;
+    }
+    
+    .mobile-drawer .sidebar-logo-img {
+        height: 50px;
+    }
+    
+    .mobile-drawer-nav {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 14px;
-        text-decoration: none;
-        color: var(--color-text-secondary);
-        font-size: 11px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        min-width: 0;
-        min-height: auto;
-        flex-shrink: 0;
+        gap: 4px;
     }
     
-    .mobile-nav-item.active {
-        color: var(--color-primary);
+    .mobile-drawer-nav .sidebar-nav-item {
+        padding: 14px 16px;
     }
     
-    .mobile-nav-item i {
-        font-size: 22px;
+    /* Backdrop móvil */
+    .mobile-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
     }
     
-    /* Ajustes al main layout cuando sidebar está oculto */
+    .mobile-backdrop.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    /* Ajustes al main layout en móvil */
     .main-layout {
         margin-left: 0 !important;
         padding-top: 64px;
-        padding-bottom: 75px;
+        padding-bottom: 0;
         min-height: 100vh;
         box-sizing: border-box;
     }
@@ -1468,59 +1538,14 @@ html.sidebar-collapsed-initial .main-layout {
     body.sidebar-collapsed-initial .main-layout {
         margin-left: 0 !important;
         padding-top: 64px;
-        padding-bottom: 75px;
+        padding-bottom: 0;
         min-height: 100vh;
         box-sizing: border-box;
     }
     
-    /* Ocultar sidebar backdrop y hamburger en móvil */
-    .sidebar-backdrop {
-        display: none !important;
-    }
-    
-    .hamburger-btn {
-        display: none !important;
-    }
-    
-    /* Sidebar profile en móvil - solo mostrar avatar */
-    .sidebar-profile {
-        padding: 0;
-        min-width: auto;
-    }
-    
-    .sidebar-profile-avatar {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .sidebar-profile-info {
-        display: none;
-    }
-    
-    /* Modales full width en móvil */
-    .modal-overlay {
-        padding: 16px;
-    }
-    
-    .modal-confirmacion-salir,
-    .modal-tasacion,
-    .modal-confirmacion-salir,
-    .modal-compartir {
-        max-width: 100%;
-        max-height: 90vh;
-        margin: 0;
-        border-radius: var(--radius-card);
-    }
-    
-    /* Evitar scroll del body cuando modal está abierto */
+    /* Evitar scroll del body cuando drawer está abierto */
     body.modal-open {
         overflow: hidden;
-    }
-    
-    /* Cards width 100% en móvil */
-    .card-minimizada {
-        min-width: 0;
-        width: 100%;
     }
     
     /* Inputs full width en móvil */
@@ -1556,18 +1581,14 @@ html.sidebar-collapsed-initial .main-layout {
     .admin-tab,
     .btn-preview-action,
     .cerrar-modal,
-    .config-toggle-expand-btn,
-    .sidebar-toggle,
-    .sidebar-profile {
+    .config-toggle-expand-btn {
         min-height: 44px;
         min-width: 44px;
     }
     
     /* Excepciones para botones pequeños conocidos */
     .config-theme-dot,
-    .config-logo-opt,
-    .config-toggle-expand-btn,
-    .mobile-nav-item {
+    .config-logo-opt {
         min-height: auto;
         min-width: auto;
     }

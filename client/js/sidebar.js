@@ -53,23 +53,26 @@ function inicializarSidebarToggle() {
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebarToggle');
     const mainLayout = document.getElementById('mainLayout');
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const mobileHamburger = document.getElementById('mobileHamburger');
+    const mobileProfile = document.getElementById('mobileProfile');
+    const mobileDrawer = document.getElementById('mobileDrawer');
+    const mobileBackdrop = document.getElementById('mobileBackdrop');
 
-    if (!sidebar || !toggle || !mainLayout) {
+    if (!sidebar || !mainLayout) {
         return;
     }
 
     // Toggle desktop (colapsar/expandir)
-    toggle.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-        mainLayout.classList.toggle('with-sidebar-collapsed');
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainLayout.classList.toggle('with-sidebar-collapsed');
 
-        // Guardar estado en localStorage
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        localStorage.setItem('sidebarCollapsed', isCollapsed);
-    });
+            // Guardar estado en localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        });
+    }
 
     // Restaurar estado desde localStorage
     const savedState = localStorage.getItem('sidebarCollapsed');
@@ -81,66 +84,102 @@ function inicializarSidebarToggle() {
     // Limpiar la clase inicial después de cargar
     document.documentElement.classList.remove('sidebar-collapsed-initial');
 
-    // Funcionalidad móvil - hamburger button (ya no se usa con top/bottom bar)
-    if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', () => {
-            sidebar.classList.add('open');
-            if (sidebarBackdrop) {
-                sidebarBackdrop.classList.add('visible');
-            }
+    // Funcionalidad móvil - generar drawer dinámicamente
+    generarMobileDrawer();
+
+    // Funcionalidad móvil - hamburguesa
+    if (mobileHamburger) {
+        mobileHamburger.addEventListener('click', () => {
+            mobileDrawer.classList.add('open');
+            mobileBackdrop.classList.add('visible');
             document.body.classList.add('modal-open');
         });
     }
 
-    // Funcionalidad móvil - botón de cierre (ya no se usa con top/bottom bar)
-    if (sidebarCloseBtn) {
-        sidebarCloseBtn.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            if (sidebarBackdrop) {
-                sidebarBackdrop.classList.remove('visible');
-            }
-            document.body.classList.remove('modal-open');
+    // Funcionalidad móvil - perfil
+    if (mobileProfile) {
+        mobileProfile.addEventListener('click', () => {
+            window.location.href = 'perfil.html';
         });
     }
 
-    // Funcionalidad móvil - backdrop (ya no se usa con top/bottom bar)
-    if (sidebarBackdrop) {
-        sidebarBackdrop.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            sidebarBackdrop.classList.remove('visible');
+    // Funcionalidad móvil - backdrop
+    if (mobileBackdrop) {
+        mobileBackdrop.addEventListener('click', () => {
+            mobileDrawer.classList.remove('open');
+            mobileBackdrop.classList.remove('visible');
             document.body.classList.remove('modal-open');
         });
     }
-    
-    // Navegación móvil - barra inferior
-    const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
-    const mobileAppearanceBtn = document.getElementById('mobileAppearanceBtn');
-    
-    mobileNavItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            // Actualizar estado activo
-            mobileNavItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            
-            // Si es un botón, navegar programáticamente
-            if (item.tagName === 'BUTTON') {
-                const page = item.getAttribute('data-page');
-                if (page === 'perfil') {
-                    window.location.href = 'perfil.html';
-                }
-            }
-        });
+}
+
+function generarMobileDrawer() {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    const mobileDrawerNav = document.getElementById('mobileDrawerNav');
+    const appearanceBtn = document.getElementById('appearanceBtn');
+    const mobileProfileAvatar = document.querySelector('.mobile-profile-avatar');
+
+    if (!sidebarNav || !mobileDrawerNav) {
+        return;
+    }
+
+    // Clonar todos los items de navegación del sidebar
+    const navItems = sidebarNav.querySelectorAll('.sidebar-nav-item');
+    navItems.forEach(item => {
+        const clone = item.cloneNode(true);
+        // Mantener la misma clase y atributos
+        clone.classList.remove('active');
+        mobileDrawerNav.appendChild(clone);
     });
-    
-    // Botón de apariencia móvil
-    if (mobileAppearanceBtn) {
-        mobileAppearanceBtn.addEventListener('click', () => {
-            // Llamar a la misma función que el botón de apariencia del sidebar
-            const appearanceBtn = document.getElementById('appearanceBtn');
+
+    // Agregar botón de apariencia si existe
+    if (appearanceBtn) {
+        const appearanceClone = appearanceBtn.cloneNode(true);
+        appearanceClone.id = 'appearanceBtnMobile';
+        mobileDrawerNav.appendChild(appearanceClone);
+        
+        // Agregar listener para el botón de apariencia móvil
+        appearanceClone.addEventListener('click', () => {
             if (appearanceBtn) {
                 appearanceBtn.click();
             }
         });
+    }
+
+    // Actualizar estado activo del drawer móvil
+    const path = window.location.pathname;
+    let paginaActual = 'inicio';
+
+    if (path.includes('app/historial.html')) {
+        paginaActual = 'historial';
+    } else if (path.includes('app/solicitudes.html')) {
+        paginaActual = 'solicitudes';
+    } else if (path.includes('app/tasacion.html')) {
+        paginaActual = 'tasacion';
+    } else if (path.includes('app/perfil.html')) {
+        paginaActual = 'perfil';
+    } else if (path.includes('app/admin.html')) {
+        paginaActual = 'admin';
+    }
+
+    const mobileNavItems = mobileDrawerNav.querySelectorAll('.sidebar-nav-item');
+    mobileNavItems.forEach(item => {
+        const page = item.getAttribute('data-page');
+        if (page === paginaActual) {
+            item.classList.add('active');
+        }
+    });
+
+    // Copiar la imagen del avatar del sidebar al header móvil
+    const sidebarAvatar = document.querySelector('.sidebar-profile-avatar');
+    if (sidebarAvatar && mobileProfileAvatar) {
+        // Copiar el background-image si está usando URL
+        const bgImage = window.getComputedStyle(sidebarAvatar).backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            mobileProfileAvatar.style.backgroundImage = bgImage;
+            mobileProfileAvatar.style.backgroundSize = 'cover';
+            mobileProfileAvatar.style.backgroundPosition = 'center';
+        }
     }
 }
 

@@ -77,34 +77,29 @@
             </div>
         </button>
     </aside>
-    
-    <!-- Barra inferior de navegación móvil -->
-    <nav class="mobile-bottom-nav">
-        <a href="index.html" class="mobile-nav-item" data-page="inicio">
-            <i class="fa-solid fa-house"></i>
-            <span>Inicio</span>
-        </a>
-        <a href="historial.html" class="mobile-nav-item" data-page="historial">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Base</span>
-        </a>
-        <a href="solicitudes.html" class="mobile-nav-item" data-page="solicitudes">
-            <i class="fa-solid fa-file-lines"></i>
-            <span>Solicitudes</span>
-        </a>
-        <a href="tasacion.html" class="mobile-nav-item" data-page="tasacion">
-            <i class="fa-solid fa-plus"></i>
-            <span>Nueva</span>
-        </a>
-        <button type="button" class="mobile-nav-item" id="mobileAppearanceBtn">
-            <i class="fa-solid fa-palette"></i>
-            <span>Apariencia</span>
+
+    <!-- Header móvil (solo visible en móvil) -->
+    <header class="mobile-header">
+        <button type="button" class="mobile-hamburger" id="mobileHamburger" aria-label="Abrir menú">
+            <i class="fa-solid fa-bars"></i>
         </button>
-        <button type="button" class="mobile-nav-item active" data-page="perfil">
-            <i class="fa-solid fa-user"></i>
-            <span>Perfil</span>
+        <div class="mobile-logo">
+            <img src="../assets/images/logo-compacto.svg" alt="ACM studio" class="mobile-logo-img">
+        </div>
+        <button type="button" class="mobile-profile" id="mobileProfile" aria-label="Perfil de usuario">
+            <div class="mobile-profile-avatar"></div>
         </button>
-    </nav>
+    </header>
+
+    <!-- Drawer móvil (solo visible en móvil) -->
+    <aside class="mobile-drawer" id="mobileDrawer" aria-label="Menú móvil">
+        <nav class="mobile-drawer-nav" id="mobileDrawerNav">
+            <!-- Se llena dinámicamente desde sidebar-nav -->
+        </nav>
+    </aside>
+
+    <!-- Backdrop para drawer móvil -->
+    <div class="mobile-backdrop" id="mobileBackdrop"></div>
 
     <div class="main-layout" id="mainLayout">
         <div class="main-content" id="mainContent">
