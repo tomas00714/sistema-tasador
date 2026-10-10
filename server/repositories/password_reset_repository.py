@@ -158,6 +158,10 @@ class PasswordResetRepository(BaseRepository):
                 # Token no encontrado, ya utilizado, expirado, o consumido por otra transacción
                 return None
 
+            # Convertir tupla a diccionario (cursor.fetchone() devuelve tupla, no dict)
+            columns = [desc[0] for desc in cursor.description]
+            token_record_dict = dict(zip(columns, token_record))
+
             # Marcar como utilizado atómicamente
             update_query = """
                 UPDATE password_reset_tokens
@@ -166,14 +170,14 @@ class PasswordResetRepository(BaseRepository):
                 AND utilizado = false
             """
 
-            cursor.execute(update_query, (token_record['id'],))
+            cursor.execute(update_query, (token_record_dict['id'],))
 
             # Verificar que se actualizó exactamente 1 fila
             # Si es 0, significa que otra transacción lo consumió antes
             if cursor.rowcount == 0:
                 return None
 
-            return token_record
+            return token_record_dict
 
         except Exception as e:
             logger.error(f"Error al consumir token: {e}")

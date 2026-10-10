@@ -446,6 +446,58 @@ class TestTokenHashDeterministic(unittest.TestCase):
         self.assertNotEqual(hash1, hash2, "hash_token debe generar hashes diferentes")
 
 
+class TestConsumeTokenWithRealCursor(unittest.TestCase):
+    """Tests para verificar que consume_token maneja correctamente tuplas de cursor."""
+
+    def test_consume_token_converts_tuple_to_dict(self):
+        """Test que consume_token convierte correctamente la tupla de cursor.fetchone() a diccionario."""
+        from repositories.password_reset_repository import PasswordResetRepository, hash_token
+        from database import get_connection
+        from unittest.mock import MagicMock, Mock
+
+        repo = PasswordResetRepository()
+        token = "test_token_123"
+        token_hash = hash_token(token)
+
+        # Mock de conexión y cursor que devuelve tupla real
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+
+        # Simular cursor.description (nombres de columnas)
+        mock_cursor.description = [
+            ('id',),
+            ('usuario_id',),
+            ('token_hash',),
+            ('expiracion',),
+            ('utilizado',),
+            ('fecha_utilizacion',),
+            ('fecha_creacion',)
+        ]
+
+        # Simular cursor.fetchone() devolviendo tupla (como psycopg2 real)
+        mock_cursor.fetchone.return_value = (1, 100, token_hash, datetime.utcnow() + timedelta(minutes=30), False, None, datetime.utcnow())
+        mock_cursor.rowcount = 1
+
+        mock_conn.cursor.return_value = mock_cursor
+
+        # Ejecutar consume_token
+        result = repo.consume_token(token, mock_conn)
+
+        # Verificar que devolvió un diccionario (no tupla)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, dict, "consume_token debe devolver un diccionario")
+        self.assertEqual(result['id'], 1)
+        self.assertEqual(result['usuario_id'], 100)
+        self.assertEqual(result['token_hash'], token_hash)
+        self.assertEqual(result['utilizado'], False)
+
+        # Verificar que se ejecutó el UPDATE
+        self.assertTrue(mock_cursor.execute.called)
+        # Primer execute: SELECT FOR UPDATE
+        # Segundo execute: UPDATE
+        self.assertEqual(mock_cursor.execute.call_count, 2)
+
+
 if __name__ == '__main__':
     unittest.main()
 
