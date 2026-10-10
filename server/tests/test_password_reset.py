@@ -414,3 +414,30 @@ class TestForgotPasswordButtonBehavior(unittest.TestCase):
             self.assertIn('forgotPasswordBtn.disabled = !email', content)
         else:
             self.skipTest("Archivo auth.js no encontrado")
+
+
+class TestPasswordResetRepositoryDatabaseAccess(unittest.TestCase):
+    """Tests para verificar que PasswordResetRepository usa el patrón correcto de acceso a DB."""
+
+    def test_repository_uses_get_connection_from_database_module(self):
+        """Test que PasswordResetRepository usa get_connection del módulo database."""
+        from repositories.password_reset_repository import PasswordResetRepository
+        import inspect
+
+        repo = PasswordResetRepository()
+        source = inspect.getsource(repo.invalidate_user_tokens)
+
+        # Verificar que usa get_connection (no self.get_connection)
+        self.assertIn('get_connection()', source)
+        self.assertNotIn('self.get_connection', source)
+
+    def test_repository_uses_release_connection(self):
+        """Test que PasswordResetRepository usa release_connection correctamente."""
+        from repositories.password_reset_repository import PasswordResetRepository
+        import inspect
+
+        source = inspect.getsource(PasswordResetRepository.invalidate_user_tokens)
+
+        # Verificar que libera la conexión en finally
+        self.assertIn('release_connection', source)
+        self.assertIn('finally:', source)

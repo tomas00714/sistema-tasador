@@ -5,6 +5,7 @@ Repositorio para tokens de recuperación de contraseña.
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from repositories.base_repository import BaseRepository
+from database import get_connection, release_connection
 import auth
 import logging
 
@@ -190,14 +191,16 @@ class PasswordResetRepository(BaseRepository):
         """
 
         try:
-            with self.get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(query, (usuario_id,))
-                    conn.commit()
-                    return True
+            conn = get_connection()
+            with conn.cursor() as cur:
+                cur.execute(query, (usuario_id,))
+                conn.commit()
+                return True
         except Exception as e:
             logger.error(f"Error al invalidar tokens del usuario {usuario_id}: {e}")
             return False
+        finally:
+            release_connection(conn)
 
     def cleanup_expired_tokens(self, days: int = 7) -> int:
         """
@@ -215,13 +218,15 @@ class PasswordResetRepository(BaseRepository):
         """
 
         try:
-            with self.get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(query, (days,))
-                    deleted = cur.rowcount
-                    conn.commit()
-                    logger.info(f"Limpiados {deleted} tokens expirados")
-                    return deleted
+            conn = get_connection()
+            with conn.cursor() as cur:
+                cur.execute(query, (days,))
+                deleted = cur.rowcount
+                conn.commit()
+                logger.info(f"Limpiados {deleted} tokens expirados")
+                return deleted
         except Exception as e:
             logger.error(f"Error al limpiar tokens expirados: {e}")
             return 0
+        finally:
+            release_connection(conn)
