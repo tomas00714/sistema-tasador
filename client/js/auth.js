@@ -480,11 +480,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const confirmPasswordInput = document.getElementById('confirmPassword');
         const resetPasswordBtn = document.getElementById('resetPasswordBtn');
 
-        // Enable button when both passwords are filled
+        // Enable button when both passwords are filled and valid
         const validateForm = () => {
             const newPass = newPasswordInput.value;
             const confirmPass = confirmPasswordInput.value;
-            resetPasswordBtn.disabled = !(newPass && confirmPass && newPass.length >= 8);
+            const passwordError = validatePassword(newPass);
+            resetPasswordBtn.disabled = !(newPass && confirmPass && !passwordError && newPass === confirmPass);
         };
 
         newPasswordInput.addEventListener('input', validateForm);
@@ -509,9 +510,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validar longitud mínima
-            if (newPassword.length < 8) {
-                showError('authError', 'La contraseña debe tener al menos 8 caracteres');
+            // Validar requisitos de contraseña (igual que registro)
+            const passwordError = validatePassword(newPassword);
+            if (passwordError) {
+                showError('authError', passwordError);
                 resetPasswordBtn.disabled = false;
                 resetPasswordBtn.textContent = 'Restablecer Contraseña';
                 return;

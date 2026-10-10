@@ -6,10 +6,28 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from repositories.base_repository import BaseRepository
 from database import get_connection, release_connection
-import auth
+import hashlib
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def hash_token(token: str) -> str:
+    """
+    Genera hash SHA-256 de un token de recuperación.
+
+    SHA-256 es determinista (mismo input = mismo hash), lo que permite
+    buscar tokens en la base de datos. El token de 32 bytes generado por
+    secrets.token_urlsafe(32) ya es criptográficamente seguro, por lo que
+    no necesita la protección adicional de bcrypt.
+
+    Args:
+        token: Token en texto plano.
+
+    Returns:
+        Hash SHA-256 del token.
+    """
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
 
 class PasswordResetRepository(BaseRepository):
@@ -43,8 +61,8 @@ class PasswordResetRepository(BaseRepository):
         # Calcular expiración
         expiracion = datetime.utcnow() + timedelta(minutes=expiracion_minutos)
 
-        # Guardar solo el hash del token
-        token_hash = auth.hash_password(token)
+        # Guardar solo el hash del token (SHA-256, determinista)
+        token_hash = hash_token(token)
 
         data = {
             "usuario_id": usuario_id,
@@ -73,21 +91,23 @@ class PasswordResetRepository(BaseRepository):
         NOTA: Este método NO es seguro para concurrencia. Para consumo atómico,
         usa consume_token() dentro de una transacción.
         """
-        # Buscar todos los tokens no utilizados y no expirados
+        # Calcular hash del token (SHA-256, determinista)
+        token_hash = hash_token(token)
+
+        # Buscar por hash directamente (más eficiente que iterar)
         query = """
             SELECT * FROM password_reset_tokens
-            WHERE utilizado = false
+            WHERE token_hash = %s
+            AND utilizado = false
             AND expiracion > CURRENT_TIMESTAMP
             ORDER BY fecha_creacion DESC
+            LIMIT 1
         """
 
-        tokens = self.execute_query(query)
+        tokens = self.execute_query(query, (token_hash,))
 
-        # Verificar cada token hasta encontrar uno que coincida
-        for token_record in tokens:
-            if auth.verify_password(token, token_record["token_hash"]):
-                return token_record
-
+        if tokens:
+            return tokens[0]
         return None
 
     def consume_token(self, token: str, conn) -> Optional[Dict[str, Any]]:
@@ -128,8 +148,8 @@ class PasswordResetRepository(BaseRepository):
                 FOR UPDATE
             """
 
-            # Calcular hash del token
-            token_hash = auth.hash_password(token)
+            # Calcular hash del token (SHA-256, determinista)
+            token_hash = hash_token(token)
 
             cursor.execute(query, (token_hash,))
             token_record = cursor.fetchone()

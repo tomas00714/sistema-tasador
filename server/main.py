@@ -2310,11 +2310,16 @@ def reset_password(request: ResetPasswordRequest):
     logger.info("Intento de restablecer contraseña con token")
 
     try:
-        # Validar requisitos de contraseña (mínimo 8 caracteres) - antes de DB
+        # Validar requisitos de contraseña (mínimo 8 caracteres, al menos una mayúscula)
         if len(request.new_password) < 8:
             raise HTTPException(
                 status_code=400,
                 detail="La contraseña debe tener al menos 8 caracteres"
+            )
+        if not any(c.isupper() for c in request.new_password):
+            raise HTTPException(
+                status_code=400,
+                detail="La contraseña debe tener al menos una mayúscula"
             )
 
         # Actualizar contraseña dentro de una transacción atómica

@@ -30,7 +30,7 @@ from fastapi import HTTPException
 from datetime import datetime, timedelta
 import auth
 from repositories.usuario_repository import UsuarioRepository
-from repositories.password_reset_repository import PasswordResetRepository
+from repositories.password_reset_repository import PasswordResetRepository, hash_token
 from models import ForgotPasswordRequest, ResetPasswordRequest
 
 
@@ -58,7 +58,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
             'password_hash': auth.hash_password('oldpassword')
         }
         mock_has_password.return_value = True
-        mock_create_token.return_value = {'id': 1, 'token_hash': 'hash123'}
+        mock_create_token.return_value = {'id': 1, 'token_hash': hash_token('token123')}
 
         request = ForgotPasswordRequest(email='test@example.com')
         response = asyncio.run(forgot_password(request))
@@ -133,7 +133,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
             'password_hash': auth.hash_password('oldpassword')
         }
         mock_has_password.return_value = True
-        mock_create_token.return_value = {'id': 1, 'token_hash': 'hash123'}
+        mock_create_token.return_value = {'id': 1, 'token_hash': hash_token('token123')}
 
         # Mock: email service no configurado
         mock_email_instance = Mock()
@@ -157,7 +157,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
         mock_consume_token.return_value = {
             'id': 1,
             'usuario_id': 1,
-            'token_hash': auth.hash_password('validtoken'),
+            'token_hash': hash_token('validtoken'),
             'utilizado': False,
             'expiracion': datetime.utcnow() + timedelta(minutes=30)
         }
@@ -177,7 +177,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
         mock_get_conn.return_value.__enter__ = Mock(return_value=mock_conn)
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
 
-        request = ResetPasswordRequest(token='validtoken', new_password='newpassword123')
+        request = ResetPasswordRequest(token='validtoken', new_password='NewPassword123')
         response = reset_password(request)
 
         # Verificar respuesta exitosa
@@ -284,7 +284,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
         mock_find_token.return_value = {
             'id': 1,
             'usuario_id': 1,
-            'token_hash': auth.hash_password('validtoken'),
+            'token_hash': hash_token('validtoken'),
             'utilizado': False,
             'expiracion': datetime.utcnow() + timedelta(minutes=30)
         }
@@ -296,6 +296,36 @@ class TestPasswordResetEndpoints(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 400)
         self.assertIn('8', context.exception.detail)
+
+    @patch('repositories.password_reset_repository.PasswordResetRepository.consume_token')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    def test_reset_password_password_sin_mayuscula(self, mock_find_user, mock_consume_token):
+        """Test que contraseña sin mayúscula es rechazada."""
+        from main import reset_password
+
+        # Mock: consumo exitoso
+        mock_consume_token.return_value = {
+            'id': 1,
+            'usuario_id': 1,
+            'token_hash': hash_token('validtoken'),
+            'utilizado': False,
+            'expiracion': datetime.utcnow() + timedelta(minutes=30)
+        }
+
+        # Mock: usuario existe
+        mock_find_user.return_value = {
+            'id': 1,
+            'email': 'test@example.com',
+            'password_hash': auth.hash_password('oldpassword')
+        }
+
+        request = ResetPasswordRequest(token='validtoken', new_password='alllowercase123')
+
+        with self.assertRaises(HTTPException) as context:
+            reset_password(request)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn('mayúscula', context.exception.detail)
 
 
 class TestPasswordResetRepository(unittest.TestCase):
@@ -388,8 +418,32 @@ class TestPasswordSecurity(unittest.TestCase):
         import inspect
 
         source = inspect.getsource(PasswordResetRepository.create_token)
-        self.assertIn('hash_password', source)
+        self.assertIn('hash_token', source)
         self.assertIn('token_hash', source)
+
+
+class TestTokenHashDeterministic(unittest.TestCase):
+    """Tests para verificar que el hash de token es determinista (SHA-256)."""
+
+    def test_hash_token_is_deterministic(self):
+        """Test que hash_token genera el mismo hash para el mismo input."""
+        from repositories.password_reset_repository import hash_token
+
+        token = "test_token_12345"
+        hash1 = hash_token(token)
+        hash2 = hash_token(token)
+
+        self.assertEqual(hash1, hash2, "hash_token debe ser determinista")
+        self.assertEqual(len(hash1), 64, "SHA-256 genera 64 caracteres hexadecimales")
+
+    def test_hash_token_different_for_different_inputs(self):
+        """Test que hash_token genera hashes diferentes para inputs diferentes."""
+        from repositories.password_reset_repository import hash_token
+
+        hash1 = hash_token("token1")
+        hash2 = hash_token("token2")
+
+        self.assertNotEqual(hash1, hash2, "hash_token debe generar hashes diferentes")
 
 
 if __name__ == '__main__':
