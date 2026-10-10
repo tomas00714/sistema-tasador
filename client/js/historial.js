@@ -1112,12 +1112,38 @@ window.abrirPerfilTasacion = async function(id) {
     // Crear informe button event listener
     document
         .getElementById("btnCrearInformePerfil")
-        ?.addEventListener("click", () => generarInformeDesdeHistorial(id));
+        ?.addEventListener("click", async () => {
+            // Verificar acceso premium antes de generar informe
+            if (window.PremiumGuard) {
+                const hasAccess = await PremiumGuard.executeIfPremium(() => {
+                    generarInformeDesdeHistorial(id);
+                });
+                if (!hasAccess) {
+                    return; // No tiene acceso, ya fue redirigido
+                }
+            } else {
+                // Fallback si PremiumGuard no está cargado
+                generarInformeDesdeHistorial(id);
+            }
+        });
 
     // Edit button event listener
     document
         .getElementById("btnEditarPerfil")
-        ?.addEventListener("click", () => editarTasacion(id));
+        ?.addEventListener("click", async () => {
+            // Verificar acceso premium antes de editar
+            if (window.PremiumGuard) {
+                const hasAccess = await PremiumGuard.executeIfPremium(() => {
+                    editarTasacion(id);
+                });
+                if (!hasAccess) {
+                    return; // No tiene acceso, ya fue redirigido
+                }
+            } else {
+                // Fallback si PremiumGuard no está cargado
+                editarTasacion(id);
+            }
+        });
 
     // Delete button event listener
     document

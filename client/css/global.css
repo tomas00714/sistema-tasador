@@ -1593,3 +1593,135 @@ html.sidebar-collapsed-initial .main-layout {
         min-width: auto;
     }
 }
+
+/* =========================
+   PREMIUM RESTRICTED SCREEN
+   Pantalla de acceso restringido para funcionalidades premium
+========================= */
+
+.premium-restricted-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg-primary);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.premium-restricted-container {
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    padding: 48px 32px;
+    background: var(--color-white);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.premium-restricted-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background: var(--color-bg-tertiary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: var(--color-primary);
+}
+
+.premium-restricted-title {
+    margin: 0 0 16px;
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-heading);
+    color: var(--color-text-primary);
+}
+
+.premium-restricted-message {
+    margin: 0 0 32px;
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.premium-restricted-features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+    text-align: left;
+}
+
+.premium-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--font-size-small);
+    color: var(--color-text-primary);
+}
+
+.premium-feature i {
+    color: var(--color-success);
+    font-size: 16px;
+}
+
+.premium-restricted-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-premium-cta {
+    justify-content: center;
+}
+
+/* =========================
+   PREMIUM LOADING SCREEN
+   Pantalla de carga mientras se verifica acceso premium
+========================= */
+
+.premium-loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg-primary);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.premium-loading-container {
+    text-align: center;
+}
+
+.premium-loading-spinner {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    border: 3px solid var(--color-bg-tertiary);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: premium-spin 0.8s linear infinite;
+}
+
+@keyframes premium-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.premium-loading-container p {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+}

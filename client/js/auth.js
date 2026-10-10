@@ -96,6 +96,47 @@ function isAuthenticated() {
     return !!getToken();
 }
 
+/**
+ * Verifica si el usuario tiene acceso premium (suscripción activa o es admin).
+ * @returns {Promise<{hasAccess: boolean, isAuth: boolean, tiene_acceso_pro: boolean, is_admin: boolean}>}
+ */
+async function checkPremiumAccess() {
+    const token = getToken();
+    if (!token) {
+        return { hasAccess: false, isAuth: false, tiene_acceso_pro: false, is_admin: false };
+    }
+
+    try {
+        const response = await fetch(`${getApiUrl()}/api/suscripcion`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                return { hasAccess: false, isAuth: false, tiene_acceso_pro: false, is_admin: false };
+            }
+            throw new Error('Error al verificar acceso premium');
+        }
+
+        const data = await response.json();
+        const tiene_acceso_pro = data.tiene_acceso_pro || false;
+        const is_admin = data.is_admin || false;
+        
+        return {
+            hasAccess: tiene_acceso_pro || is_admin,
+            isAuth: true,
+            tiene_acceso_pro,
+            is_admin
+        };
+    } catch (error) {
+        console.error('[Auth] Error verificando acceso premium:', error);
+        return { hasAccess: false, isAuth: true, tiene_acceso_pro: false, is_admin: false };
+    }
+}
+
 function validatePassword(password) {
     if (password.length < 8) {
         return 'La contraseña debe tener al menos 8 caracteres';
