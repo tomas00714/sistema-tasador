@@ -21,7 +21,7 @@ from models import (
     SolicitudComparableAceptacionResponse, SolicitudComparableDecisionRequest,
     TasacionCompartirRequest, TasacionCompartirResponse, VistaPreviaTasacionResponse,
     RevocarTasacionCompartidaResponse,
-    LoginRequest, RegisterRequest, TokenResponse, ForgotPasswordRequest,
+    LoginRequest, RegisterRequest, TokenResponse, ForgotPasswordRequest, ResetPasswordRequest,
     GoogleAuthUrlResponse,
     EstadoSuscripcionResponse, CrearSuscripcionRequest, MercadoPagoWebhookRequest,
     ProfesionalResponse, ProfesionalUpdateRequest, ProfesionalMeResponse,
@@ -30,6 +30,7 @@ from models import (
 from services.compartir_service import CompartirService
 from services.suscripcion_service import SuscripcionService
 from services.mercado_pago_service import MercadoPagoService
+from services.email_service import get_email_service
 from tasador_lotes import tasar_lote
 from tasador_departamentos import tasar_departamento
 from tasador_casas import tasar_casa
@@ -38,6 +39,7 @@ from migrations.migration_runner import MigrationRunner
 from repositories.tasacion_repository import TasacionRepository
 from repositories.comparable_repository import ComparableRepository
 from repositories.solicitud_repository import SolicitudRepository
+from repositories.password_reset_repository import PasswordResetRepository
 from repositories.solicitud_comparable_aceptacion_repository import SolicitudComparableAceptacionRepository
 from repositories.usuario_repository import UsuarioRepository
 from repositories.profesional_repository import ProfesionalRepository
@@ -2231,28 +2233,151 @@ def logout():
 
 
 @app.post("/api/auth/forgot-password")
-def forgot_password(request: ForgotPasswordRequest):
-    """Envía un email para recuperación de contraseña (preparado)."""
+async def forgot_password(request: ForgotPasswordRequest):
+    """
+    Envía un email con enlace para recuperación de contraseña.
+
+    - Genera un token seguro de un solo uso.
+    - Almacena solo el hash del token (no el token en texto plano).
+    - Envía el email mediante Resend.
+    - Respuesta uniforme para evitar enumeración de usuarios.
+    """
     logger.info(f"Solicitud de recuperación de contraseña: {request.email}")
-    
-    # Respuesta uniforme: no revelar si el email existe o no en el
-    # sistema (evita enumeración de cuentas registradas).
-    mensaje_generico = {"mensaje": "Si el email existe, se enviará un enlace de recuperación"}
+
+    # Respuesta uniforme: no revelar si el email existe o no
+    mensaje_generico = {
+        "mensaje": "Si existe una cuenta compatible con ese correo, recibirás un enlace para restablecer tu contraseña"
+    }
 
     try:
         repo = UsuarioRepository()
         usuario = repo.find_by_email(request.email)
 
         if usuario:
-            # Preparado para implementación futura:
-            # generar token de un solo uso y enviar email.
-            pass
+            # Verificar si el usuario tiene contraseña local
+            # Si es una cuenta de Google-only (sin contraseña), no permitimos recuperación
+            if not repo.has_password(usuario['id']):
+                logger.info(f"Cuenta de Google-only para {request.email}, no permite recuperación")
+                return mensaje_generico
+
+            # Generar token seguro
+            import secrets
+            token = secrets.token_urlsafe(32)
+
+            # Guardar token (se guarda el hash internamente)
+            reset_repo = PasswordResetRepository()
+            reset_repo.create_token(usuario['id'], token, expiracion_minutos=30)
+
+            # Enviar email
+            email_service = get_email_service()
+            if email_service.is_configured():
+                try:
+                    await email_service.send_password_reset_email(
+                        to_email=request.email,
+                        token=token,
+                        user_name=usuario.get('nombre')
+                    )
+                except Exception as email_error:
+                    logger.error(f"Error al enviar email de recuperación: {email_error}")
+                    # Si falla el envío, informamos al usuario sin revelar detalles
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Error al enviar el email. Por favor, intenta nuevamente más tarde."
+                    )
+            else:
+                logger.warning("EmailService no configurado, no se envió email de recuperación")
 
         return mensaje_generico
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error en forgot-password: {e}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+
+@app.post("/api/auth/reset-password")
+def reset_password(request: ResetPasswordRequest):
+    """
+    Restablece la contraseña usando un token de recuperación.
+
+    - Verifica que el token sea válido, no expirado y no utilizado.
+    - Valida la nueva contraseña.
+    - Actualiza la contraseña en una transacción.
+    - Marca el token como utilizado de forma atómica.
+    - Invalida otros tokens del usuario.
+    """
+    logger.info("Intento de restablecer contraseña con token")
+
+    try:
+        # Validar requisitos de contraseña (mínimo 8 caracteres) - antes de DB
+        if len(request.new_password) < 8:
+            raise HTTPException(
+                status_code=400,
+                detail="La contraseña debe tener al menos 8 caracteres"
+            )
+
+        # Actualizar contraseña dentro de una transacción atómica
+        try:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    # 1. Consumir token de forma atómica (verifica + marca como utilizado)
+                    reset_repo = PasswordResetRepository()
+                    token_record = reset_repo.consume_token(request.token, conn)
+
+                    if not token_record:
+                        logger.warning("Token de recuperación inválido, expirado, ya utilizado o consumido concurrentemente")
+                        raise HTTPException(
+                            status_code=400,
+                            detail="El enlace de recuperación es inválido o ha expirado. Solicita un nuevo enlace."
+                        )
+
+                    # 2. Obtener usuario
+                    usuario_repo = UsuarioRepository()
+                    usuario = usuario_repo.find_by_id(token_record['usuario_id'])
+
+                    if not usuario:
+                        logger.error(f"Usuario no encontrado para token {token_record['id']}")
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Cuenta no encontrada. Solicita un nuevo enlace."
+                        )
+
+                    # 3. Invalidar otros tokens del usuario
+                    cur.execute(
+                        """
+                        UPDATE password_reset_tokens
+                        SET utilizado = true, fecha_utilizacion = CURRENT_TIMESTAMP
+                        WHERE usuario_id = %s AND id != %s AND utilizado = false
+                        """,
+                        (usuario['id'], token_record['id'])
+                    )
+
+                    # 4. Actualizar contraseña
+                    nuevo_hash = auth.hash_password(request.new_password)
+                    cur.execute(
+                        "UPDATE usuarios SET password_hash = %s, fecha_modificacion = CURRENT_TIMESTAMP WHERE id = %s",
+                        (nuevo_hash, usuario['id'])
+                    )
+
+                    conn.commit()
+
+            logger.info(f"Contraseña restablecida exitosamente para usuario {usuario['id']}")
+            return {"mensaje": "Contraseña restablecida exitosamente"}
+
+        except HTTPException:
+            raise
+        except Exception as tx_error:
+            logger.error(f"Error en transacción de restablecimiento: {tx_error}")
+            raise HTTPException(
+                status_code=500,
+                detail="Error al restablecer la contraseña. Por favor, intenta nuevamente."
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en reset-password: {e}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 

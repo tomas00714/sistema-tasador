@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <title>Restablecer Contraseña - ACM studio</title>
+
+    <link rel="stylesheet" href="css/global.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="assets/images/logo-compacto.svg" alt="ACM studio" class="auth-logo-img">
+                <p class="auth-subtitle">Restablecer Contraseña</p>
+            </div>
+
+            <form class="auth-form" id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="newPassword">Nueva Contraseña</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="newPassword"
+                            name="newPassword"
+                            required
+                            minlength="8"
+                            placeholder="••••••••"
+                            autocomplete="new-password">
+                        <button type="button" class="password-toggle" data-target="newPassword" aria-label="Mostrar contraseña">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <small class="form-hint">Mínimo 8 caracteres</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar Contraseña</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            required
+                            minlength="8"
+                            placeholder="••••••••"
+                            autocomplete="new-password">
+                        <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Mostrar contraseña">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="resetPasswordBtn" disabled>
+                    Restablecer Contraseña
+                </button>
+
+                <div class="auth-footer">
+                    <p><a href="login.html" class="auth-link">Volver a iniciar sesión</a></p>
+                </div>
+            </form>
+
+            <div class="auth-error" id="authError" style="display: none;"></div>
+            <div class="auth-success" id="authSuccess" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>

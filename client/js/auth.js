@@ -421,6 +421,98 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Reset Password Form
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (resetPasswordForm) {
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+
+        // Enable button when both passwords are filled
+        const validateForm = () => {
+            const newPass = newPasswordInput.value;
+            const confirmPass = confirmPasswordInput.value;
+            resetPasswordBtn.disabled = !(newPass && confirmPass && newPass.length >= 8);
+        };
+
+        newPasswordInput.addEventListener('input', validateForm);
+        confirmPasswordInput.addEventListener('input', validateForm);
+
+        resetPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            hideError('authError');
+            hideSuccess('authSuccess');
+            resetPasswordBtn.disabled = true;
+            resetPasswordBtn.textContent = 'Restableciendo...';
+
+            // Validar que las contraseñas coincidan
+            if (newPassword !== confirmPassword) {
+                showError('authError', 'Las contraseñas no coinciden');
+                resetPasswordBtn.disabled = false;
+                resetPasswordBtn.textContent = 'Restablecer Contraseña';
+                return;
+            }
+
+            // Validar longitud mínima
+            if (newPassword.length < 8) {
+                showError('authError', 'La contraseña debe tener al menos 8 caracteres');
+                resetPasswordBtn.disabled = false;
+                resetPasswordBtn.textContent = 'Restablecer Contraseña';
+                return;
+            }
+
+            // Obtener token de la URL
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+
+            if (!token) {
+                showError('authError', 'No se encontró el token de recuperación. Solicita un nuevo enlace.');
+                resetPasswordBtn.disabled = false;
+                resetPasswordBtn.textContent = 'Restablecer Contraseña';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/auth/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        new_password: newPassword
+                    }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Error al restablecer contraseña');
+                }
+
+                showSuccess('authSuccess', 'Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.');
+                resetPasswordForm.reset();
+
+                // Limpiar el token de la URL
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                // Redirigir al login después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+
+            } catch (error) {
+                showError('authError', error.message);
+                resetPasswordBtn.disabled = false;
+                resetPasswordBtn.textContent = 'Restablecer Contraseña';
+            }
+        });
+    }
+
     if (isAuthenticated() && (loginForm || registerForm)) {
         window.location.href = getAuthRedirect();
     }
