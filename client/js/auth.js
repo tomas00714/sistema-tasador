@@ -478,18 +478,65 @@ document.addEventListener('DOMContentLoaded', function() {
     if (resetPasswordForm) {
         const newPasswordInput = document.getElementById('newPassword');
         const confirmPasswordInput = document.getElementById('confirmPassword');
+        const newPasswordHint = document.getElementById('newPasswordHint');
+        const confirmPasswordHint = document.getElementById('confirmPasswordHint');
         const resetPasswordBtn = document.getElementById('resetPasswordBtn');
 
-        // Enable button when both passwords are filled and valid
-        const validateForm = () => {
+        // Validación en tiempo real de contraseña (igual que registro)
+        newPasswordInput.addEventListener('input', function() {
+            const password = this.value;
+            const error = validatePassword(password);
+
+            if (error) {
+                this.classList.add('error');
+                newPasswordHint.classList.add('error');
+                newPasswordHint.classList.remove('success');
+                newPasswordHint.textContent = error;
+            } else {
+                this.classList.remove('error');
+                newPasswordHint.classList.remove('error');
+                newPasswordHint.classList.add('success');
+                newPasswordHint.textContent = 'Contraseña válida';
+            }
+
+            // Re-validar confirmación si ya tiene valor
+            if (confirmPasswordInput.value) {
+                confirmPasswordInput.dispatchEvent(new Event('input'));
+            }
+
+            // Actualizar estado del botón
+            validateResetForm();
+        });
+
+        // Validación en tiempo real de confirmación de contraseña
+        confirmPasswordInput.addEventListener('input', function() {
+            const password = newPasswordInput.value;
+            const confirmPassword = this.value;
+
+            if (confirmPassword && confirmPassword !== password) {
+                this.classList.add('error');
+                confirmPasswordHint.classList.add('error');
+                confirmPasswordHint.textContent = 'Las contraseñas no coinciden';
+            } else {
+                this.classList.remove('error');
+                confirmPasswordHint.classList.remove('error');
+                if (confirmPassword && confirmPassword === password) {
+                    confirmPasswordHint.textContent = 'Las contraseñas coinciden';
+                } else {
+                    confirmPasswordHint.textContent = '';
+                }
+            }
+
+            // Actualizar estado del botón
+            validateResetForm();
+        });
+
+        const validateResetForm = () => {
             const newPass = newPasswordInput.value;
             const confirmPass = confirmPasswordInput.value;
             const passwordError = validatePassword(newPass);
             resetPasswordBtn.disabled = !(newPass && confirmPass && !passwordError && newPass === confirmPass);
         };
-
-        newPasswordInput.addEventListener('input', validateForm);
-        confirmPasswordInput.addEventListener('input', validateForm);
 
         resetPasswordForm.addEventListener('submit', async function(e) {
             e.preventDefault();

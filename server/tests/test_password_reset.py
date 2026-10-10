@@ -92,8 +92,9 @@ class TestPasswordResetEndpoints(unittest.TestCase):
 
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_email')
     @patch('repositories.usuario_repository.UsuarioRepository.has_password')
-    def test_forgot_password_google_only_sin_password(self, mock_has_password, mock_find):
-        """Test que cuenta de Google-only sin contraseña no permite recuperación."""
+    @patch('repositories.password_reset_repository.PasswordResetRepository.create_token')
+    def test_forgot_password_google_only_sin_password(self, mock_create_token, mock_has_password, mock_find):
+        """Test que cuenta de Google-only sin contraseña SÍ permite recuperación para establecer primera contraseña."""
         from main import forgot_password
         import asyncio
 
@@ -106,6 +107,7 @@ class TestPasswordResetEndpoints(unittest.TestCase):
             'password_hash': None
         }
         mock_has_password.return_value = False
+        mock_create_token.return_value = {'id': 1, 'token_hash': hash_token('token123')}
 
         request = ForgotPasswordRequest(email='google@example.com')
         response = asyncio.run(forgot_password(request))
@@ -113,8 +115,8 @@ class TestPasswordResetEndpoints(unittest.TestCase):
         # Verificar respuesta genérica
         self.assertIn('mensaje', response)
 
-        # Verificar que NO se generó token (usuario no tiene contraseña local)
-        # Se asume que el log se registra pero no se genera token
+        # Verificar que SÍ se generó token (ahora Google-only pueden establecer contraseña)
+        mock_create_token.assert_called_once()
 
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_email')
     @patch('repositories.usuario_repository.UsuarioRepository.has_password')

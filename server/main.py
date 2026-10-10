@@ -2254,11 +2254,9 @@ async def forgot_password(request: ForgotPasswordRequest):
         usuario = repo.find_by_email(request.email)
 
         if usuario:
-            # Verificar si el usuario tiene contraseña local
-            # Si es una cuenta de Google-only (sin contraseña), no permitimos recuperación
-            if not repo.has_password(usuario['id']):
-                logger.info(f"Cuenta de Google-only para {request.email}, no permite recuperación")
-                return mensaje_generico
+            # Permitir recuperación tanto para usuarios con contraseña local como para Google-only
+            # Google-only pueden establecer su primera contraseña mediante este flujo
+            logger.info(f"Usuario encontrado para {request.email}, permitiendo recuperación")
 
             # Generar token seguro
             import secrets
@@ -2419,6 +2417,10 @@ def _google_callback_html(data: Dict[str, Any]) -> HTMLResponse:
         json.dumps(data, ensure_ascii=False).encode("utf-8")
     ).decode("utf-8")
     target_origin = json.dumps(_google_post_message_origin())
+
+    # Mensaje de error específico según el tipo de error
+    error_message = data.get('message', 'Error de configuración del servidor. Cerrá esta ventana e intentá de nuevo.')
+
     html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><title>Autenticación con Google</title></head>
@@ -2432,11 +2434,16 @@ def _google_callback_html(data: Dict[str, Any]) -> HTMLResponse:
                 window.opener.postMessage(data, targetOrigin);
                 setTimeout(() => window.close(), 500);
             }} else {{
-                document.getElementById("estado").textContent =
-                    "Error de configuración del servidor. Cerrá esta ventana e intentá de nuevo.";
+                const errorMsg = targetOrigin
+                    ? "La ventana emergente no puede comunicarse con la ventana principal. Verificá que no tengas bloqueadores de popups."
+                    : "Error de configuración del servidor (PUBLIC_APP_URL). Contactá al soporte técnico.";
+                document.getElementById("estado").textContent = errorMsg;
+                document.getElementById("estado").style.color = "red";
             }}
         }} catch (e) {{
             console.error("Error procesando respuesta de Google:", e);
+            document.getElementById("estado").textContent = "Error al procesar la respuesta. Contactá al soporte técnico.";
+            document.getElementById("estado").style.color = "red";
         }}
     </script>
 </body>
