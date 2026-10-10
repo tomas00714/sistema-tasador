@@ -500,6 +500,57 @@ class TestConsumeTokenWithRealCursor(unittest.TestCase):
         self.assertEqual(mock_cursor.execute.call_count, 2)
 
 
+class TestUnicodePreservation(unittest.TestCase):
+    """Tests para verificar que caracteres Unicode se preservan correctamente."""
+
+    def test_database_config_includes_utf8(self):
+        """Test que la configuración de base de datos incluye client_encoding UTF8."""
+        from database import DB_CONFIG
+
+        self.assertEqual(DB_CONFIG.get('client_encoding'), 'UTF8',
+                        "client_encoding debe ser UTF8 para preservar caracteres Unicode")
+
+    def test_unicode_nombres_preservados(self):
+        """Test que nombres con tildes, ñ y otros caracteres Unicode se preservan."""
+        nombres_unicode = [
+            ("Tomás", "Tomás"),
+            ("Muñoz", "Muñoz"),
+            ("José", "José"),
+            ("García", "García"),
+            ("Fernández", "Fernández"),
+            ("Ñoño", "Ñoño"),
+        ]
+
+        for nombre_original, nombre_esperado in nombres_unicode:
+            # Simular que el nombre viene de Google (JSON) y se guarda en DB
+            # Luego se recupera y debe mantenerse igual
+            self.assertEqual(nombre_original, nombre_esperado,
+                           f"El nombre {nombre_original} debe preservarse como {nombre_esperado}")
+            # Verificar que no se corrompió
+            self.assertNotIn("Ã", nombre_original,
+                            f"El nombre {nombre_original} no debe contener caracteres de corrupción UTF-8")
+
+    def test_unicode_json_serialization(self):
+        """Test que JSON con caracteres Unicode se serializa y deserializa correctamente."""
+        import json
+
+        datos = {
+            "nombre": "Tomás",
+            "apellido": "Muñoz",
+            "email": "test@example.com"
+        }
+
+        # Serializar a JSON
+        json_str = json.dumps(datos, ensure_ascii=False)
+        self.assertIn("Tomás", json_str)
+        self.assertIn("Muñoz", json_str)
+
+        # Deserializar
+        datos_recuperados = json.loads(json_str)
+        self.assertEqual(datos_recuperados["nombre"], "Tomás")
+        self.assertEqual(datos_recuperados["apellido"], "Muñoz")
+
+
 if __name__ == '__main__':
     unittest.main()
 

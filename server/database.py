@@ -58,6 +58,9 @@ def _build_db_config():
             for key, value in _KEEPALIVE_PARAMS.items():
                 config.setdefault(key, value)
 
+            # Forzar UTF-8 para evitar corrupción de caracteres Unicode
+            config.setdefault('client_encoding', 'UTF8')
+
             logger.info(
                 f"Conexión configurada desde DATABASE_URL: host={config.get('host')}, "
                 f"database={config.get('database')}, user={config.get('user')}, "
@@ -80,6 +83,9 @@ def _build_db_config():
 
     for key, value in _KEEPALIVE_PARAMS.items():
         config.setdefault(key, value)
+
+    # Forzar UTF-8 para evitar corrupción de caracteres Unicode
+    config.setdefault('client_encoding', 'UTF8')
 
     logger.info(
         f"Conexión configurada desde variables DB_*: host={config['host']}, "
