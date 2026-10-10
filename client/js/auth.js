@@ -426,12 +426,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (forgotPasswordForm) {
+        const emailInput = document.getElementById('email');
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+
+        // Enable button when email is not empty
+        const validateEmail = () => {
+            const email = emailInput.value;
+            forgotPasswordBtn.disabled = !email || email.trim() === '';
+        };
+
+        emailInput.addEventListener('input', validateEmail);
+
         forgotPasswordForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const email = document.getElementById('email').value;
-            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
-            
+
             hideError('authError');
             hideSuccess('authSuccess');
             forgotPasswordBtn.disabled = true;
@@ -453,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 showSuccess('authSuccess', 'Se ha enviado un enlace a tu email para restablecer tu contraseña.');
                 forgotPasswordForm.reset();
+                validateEmail(); // Re-enable button after reset
             } catch (error) {
                 showError('authError', error.message);
             } finally {

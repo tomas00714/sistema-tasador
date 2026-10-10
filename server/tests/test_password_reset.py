@@ -394,3 +394,23 @@ class TestPasswordSecurity(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestForgotPasswordButtonBehavior(unittest.TestCase):
+    """Tests para verificar que el botón de forgot-password se habilite correctamente."""
+
+    def test_forgot_password_button_enable_logic(self):
+        """Test que la lógica de habilitación del botón de forgot-password existe en auth.js."""
+        import os
+
+        auth_js_path = '../client/js/auth.js'
+        if os.path.exists(auth_js_path):
+            with open(auth_js_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Verificar que existe la función validateEmail para forgotPasswordForm
+            self.assertIn('validateEmail', content)
+            self.assertIn('emailInput.addEventListener', content)
+            self.assertIn('forgotPasswordBtn.disabled = !email', content)
+        else:
+            self.skipTest("Archivo auth.js no encontrado")
