@@ -54,32 +54,35 @@ def require_admin(usuario_id: int = Depends(get_current_user_id)) -> int:
 
 
 def require_premium_or_admin(usuario_id: int = Depends(get_current_user_id)) -> int:
-    """Dependency que requiere acceso premium (suscripción activa) o ser administrador.
-    
+    """Dependency que requiere acceso premium (suscripción, trial o ser administrador).
+
     Los administradores tienen acceso premium sin suscripción.
-    Los usuarios normales requieren suscripción activa (activa, en_gracia o cancelada con período vigente).
-    
+    Los usuarios normales requieren:
+    - Suscripción activa (activa, en_gracia o cancelada con período vigente), O
+    - Trial vigente (15 días)
+
     Diseñado para ser extensible: en el futuro se podrán agregar otras fuentes de acceso premium
-    (trial, período gratuito, etc.) sin modificar los endpoints que usan esta dependency.
+    (cortesías, etc.) sin modificar los endpoints que usan esta dependency.
     """
     # Verificar si es administrador
     repo = UsuarioRepository()
     usuario = repo.find_by_id(usuario_id)
-    
+
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
+
     if is_admin(usuario['email']):
         return usuario_id  # Admin tiene acceso premium sin suscripción
-    
-    # Si no es admin, verificar suscripción
+
+    # Si no es admin, verificar acceso extendido (suscripción o trial)
     from services.suscripcion_service import SuscripcionService
     suscripcion_service = SuscripcionService()
-    
-    if not suscripcion_service.tiene_acceso_pro(usuario_id):
+
+    if not suscripcion_service.tiene_acceso_pro_extendido(usuario_id):
         raise HTTPException(
-            status_code=403, 
-            detail="Se requiere una suscripción activa para acceder a esta funcionalidad premium"
+            status_code=403,
+            detail="no_premium",
+            headers={"X-Access-Error": "no_premium"}
         )
-    
+
     return usuario_id

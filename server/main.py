@@ -506,7 +506,7 @@ def endpoint_tasar(request: TasacionRequest, usuario_id: int = Depends(middlewar
 # =========================
 
 @app.post("/api/tasaciones", response_model=TasacionResponse)
-def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middleware.get_current_user_id)):
+def crear_tasacion(tasacion: TasacionCreate, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Crea una nueva tasación."""
     logger.info(f"Creando tasación de tipo: {tasacion.tipo}")
     
@@ -701,7 +701,7 @@ def listar_tasaciones(
 
 
 @app.put("/api/tasaciones/{tasacion_id}", response_model=TasacionResponse)
-def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: int = Depends(middleware.get_current_user_id)):
+def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Actualiza una tasación por código público."""
     logger.info(f"[BACKEND PUT] TasacionUpdate recibido: {tasacion}")
     logger.info(f"Actualizando tasación: {tasacion_id}")
@@ -926,7 +926,7 @@ def actualizar_tasacion(tasacion_id: str, tasacion: TasacionUpdate, usuario_id: 
 
 
 @app.delete("/api/tasaciones/{tasacion_id}")
-def eliminar_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+def eliminar_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Elimina una tasación por código público."""
     logger.info(f"Eliminando tasación: {tasacion_id}")
     
@@ -1073,7 +1073,7 @@ def revocar_compartir_tasacion(token: str, usuario_id: int = Depends(middleware.
 # =========================
 
 @app.post("/api/comparables", response_model=ComparableResponse)
-def crear_comparable(comparable: ComparableCreate, usuario_id: int = Depends(middleware.get_current_user_id)):
+def crear_comparable(comparable: ComparableCreate, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Crea un nuevo comparable."""
     logger.info(f"Creando comparable de tipo: {comparable.tipo_inmueble}")
 
@@ -1238,7 +1238,7 @@ def listar_comparables(
 
 
 @app.put("/api/comparables/{comparable_id}", response_model=ComparableResponse)
-def actualizar_comparable(comparable_id: str, comparable: ComparableUpdate, usuario_id: int = Depends(middleware.get_current_user_id)):
+def actualizar_comparable(comparable_id: str, comparable: ComparableUpdate, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Actualiza un comparable por código público."""
     logger.info(f"Actualizando comparable: {comparable_id}")
     
@@ -1295,10 +1295,10 @@ def actualizar_snapshot_comparable_tasacion(
     tasacion_id: str,
     comparable_id: str,
     snapshot: Dict[str, Any],
-    usuario_id: int = Depends(middleware.get_current_user_id)
+    usuario_id: int = Depends(middleware.require_premium_or_admin)
 ):
     """Actualiza el snapshot de un comparable dentro de una tasación.
-    
+
     Este endpoint modifica SOLO el snapshot de la relación tasacion_comparable,
     NO modifica la entidad en la tabla comparables.
     """
@@ -1353,7 +1353,7 @@ def actualizar_snapshot_comparable_tasacion(
 
 
 @app.delete("/api/comparables/{comparable_id}")
-def eliminar_comparable(comparable_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+def eliminar_comparable(comparable_id: str, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Elimina un comparable por código público."""
     logger.info(f"Eliminando comparable: {comparable_id}")
     
@@ -3237,12 +3237,15 @@ def obtener_config_suscripcion():
         raise HTTPException(status_code=500, detail="Error al obtener configuración")
 
 
-@app.get("/api/suscripcion", response_model=EstadoSuscripcionResponse)
+@app.get("/api/suscripcion")
 def obtener_estado_suscripcion(usuario_id: int = Depends(middleware.get_current_user_id)):
-    """Obtiene el estado de suscripción del usuario actual."""
+    """Obtiene el estado de suscripción del usuario actual.
+
+    Incluye información sobre suscripción Pro, trial y si es administrador.
+    """
     try:
         suscripcion_service = SuscripcionService()
-        estado = suscripcion_service.obtener_estado(usuario_id)
+        estado = suscripcion_service.obtener_estado_extendido(usuario_id)
         return estado
     except HTTPException:
         raise
@@ -3431,6 +3434,28 @@ def crear_suscripcion(
     except Exception as e:
         logger.error(f"Error al crear suscripción: {e}")
         raise HTTPException(status_code=500, detail="Error al crear suscripción")
+
+
+@app.post("/api/suscripcion/activar-trial")
+def activar_trial(usuario_id: int = Depends(middleware.get_current_user_id)):
+    """Activa la prueba gratuita de 15 días para el usuario.
+
+    La prueba se activa solo cuando el usuario confirma explícitamente,
+    no automáticamente al registrarse. Cada cuenta puede usarla una sola vez.
+    """
+    try:
+        suscripcion_service = SuscripcionService()
+        resultado = suscripcion_service.activar_trial(usuario_id)
+        return {
+            "mensaje": "Prueba gratuita activada correctamente",
+            "trial_inicio": resultado['trial_inicio'],
+            "trial_fin": resultado['trial_fin']
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error al activar trial: {e}")
+        raise HTTPException(status_code=500, detail="Error al activar prueba gratuita")
 
 
 @app.post("/api/webhooks/mercado-pago")

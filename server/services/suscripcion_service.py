@@ -8,6 +8,7 @@ from repositories.suscripcion_repository import SuscripcionRepository
 from repositories.pago_repository import PagoRepository
 from repositories.usuario_repository import UsuarioRepository
 from services.mercado_pago_service import MercadoPagoService
+import auth
 
 logger = logging.getLogger(__name__)
 
@@ -408,3 +409,162 @@ class SuscripcionService:
         logger.info(f"Suscripción MP vinculada: id={suscripcion['id']}, preapproval_id={mp_preapproval_id}")
 
         return actualizada
+
+    def _obtener_info_trial(self, usuario_id: int) -> Optional[Dict[str, Any]]:
+        """Obtiene información del trial de un usuario.
+
+        Returns:
+            Dict con trial_inicio, trial_fin, trial_usado o None si no tiene trial.
+        """
+        usuario = self.usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            return None
+
+        if not usuario.get('trial_usado'):
+            return None
+
+        return {
+            'trial_inicio': usuario.get('trial_inicio'),
+            'trial_fin': usuario.get('trial_fin'),
+            'trial_usado': usuario.get('trial_usado', False)
+        }
+
+    def trial_esta_vigente(self, usuario_id: int) -> bool:
+        """Verifica si el trial de un usuario está vigente."""
+        trial_info = self._obtener_info_trial(usuario_id)
+        if not trial_info:
+            return False
+
+        trial_fin = trial_info.get('trial_fin')
+        if not trial_fin:
+            return False
+
+        return self._now() < trial_fin
+
+    def activar_trial(self, usuario_id: int) -> Dict[str, Any]:
+        """Activa el trial de 15 días para un usuario.
+
+        La activación es atómica: si el usuario ya usó el trial, lanza excepción.
+        Se activa solo cuando el usuario confirma explícitamente, no al registrarse.
+
+        Args:
+            usuario_id: ID del usuario
+
+        Returns:
+            Dict con trial_inicio y trial_fin
+
+        Raises:
+            HTTPException: Si el usuario ya usó su trial
+        """
+        usuario = self.usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        if usuario.get('trial_usado'):
+            raise HTTPException(
+                status_code=409,
+                detail="El usuario ya utilizó su prueba gratuita"
+            )
+
+        ahora = self._now()
+        fin = ahora + timedelta(days=15)
+
+        # Actualizar de forma atómica
+        actualizado = self.usuario_repo.update(usuario_id, {
+            'trial_inicio': ahora,
+            'trial_fin': fin,
+            'trial_usado': True
+        })
+
+        if not actualizado:
+            raise HTTPException(
+                status_code=500,
+                detail="Error al activar la prueba gratuita"
+            )
+
+        logger.info(f"Trial activado para usuario_id={usuario_id}, período={ahora} a {fin}")
+
+        return {
+            'trial_inicio': ahora,
+            'trial_fin': fin
+        }
+
+    def tiene_acceso_pro_extendido(self, usuario_id: int) -> bool:
+        """Verifica si un usuario tiene acceso Pro considerando múltiples fuentes.
+
+        Fuentes de acceso (en orden de prioridad):
+        1. Administrador (por email en variables de entorno)
+        2. Suscripción Pro vigente (activa, en_gracia o cancelada con período vigente)
+        3. Trial vigente
+
+        Args:
+            usuario_id: ID del usuario
+
+        Returns:
+            True si tiene acceso Pro, False en caso contrario
+        """
+        # 1. Verificar si es administrador
+        usuario = self.usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            return False
+
+        if auth.is_admin(usuario['email']):
+            return True
+
+        # 2. Verificar suscripción Pro vigente
+        if self.tiene_acceso_pro(usuario_id):
+            return True
+
+        # 3. Verificar trial vigente
+        if self.trial_esta_vigente(usuario_id):
+            return True
+
+        return False
+
+    def obtener_estado_extendido(self, usuario_id: int) -> Dict[str, Any]:
+        """Devuelve el estado completo de acceso de un usuario.
+
+        Incluye información sobre suscripción, trial y si es admin.
+
+        Args:
+            usuario_id: ID del usuario
+
+        Returns:
+            Dict con tiene_acceso_pro, plan, estado, trial_info, is_admin
+        """
+        usuario = self.usuario_repo.find_by_id(usuario_id)
+        if not usuario:
+            return {
+                'tiene_acceso_pro': False,
+                'plan': 'Free',
+                'estado': 'free',
+                'trial_info': None,
+                'is_admin': False
+            }
+
+        is_admin = auth.is_admin(usuario['email'])
+        tiene_acceso_pro = self.tiene_acceso_pro_extendido(usuario_id)
+
+        # Obtener estado de suscripción
+        estado_suscripcion = self.obtener_estado(usuario_id)
+
+        # Obtener info de trial
+        trial_info = self._obtener_info_trial(usuario_id)
+        if trial_info:
+            trial_info['esta_vigente'] = self.trial_esta_vigente(usuario_id)
+
+        # Determinar plan actual
+        if is_admin:
+            plan = 'Admin'
+        elif tiene_acceso_pro:
+            plan = 'Pro'
+        else:
+            plan = 'Free'
+
+        return {
+            'tiene_acceso_pro': tiene_acceso_pro,
+            'plan': plan,
+            'estado_suscripcion': estado_suscripcion.get('estado', 'free'),
+            'trial_info': trial_info,
+            'is_admin': is_admin
+        }
