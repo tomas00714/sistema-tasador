@@ -259,6 +259,14 @@ def home():
     return {"mensaje": "Servidor funcionando"}
 
 
+@app.get("/ping")
+def ping():
+    """Endpoint público de ping para monitoreo externo (cron-job.org).
+    No requiere autenticación, no accede a DB ni servicios externos.
+    Devuelve HTTP 200 con JSON de estado simple."""
+    return {"status": "ok"}
+
+
 @app.post("/api/migrations/run")
 def endpoint_run_migrations(usuario_id: int = Depends(middleware.require_admin)):
     """Ejecuta las migraciones pendientes de la base de datos."""
