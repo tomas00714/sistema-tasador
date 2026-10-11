@@ -18,8 +18,8 @@ class TestTrialActivation(unittest.TestCase):
 
     @patch('services.suscripcion_service.SuscripcionService._now')
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
-    @patch('repositories.usuario_repository.UsuarioRepository.update')
-    def test_activar_trial_usuario_sin_trial_previo(self, mock_update, mock_find, mock_now):
+    @patch('repositories.usuario_repository.UsuarioRepository.activar_trial_atomico')
+    def test_activar_trial_usuario_sin_trial_previo(self, mock_atomico, mock_find, mock_now):
         """Test que un usuario sin trial previo puede activar su trial."""
         # Configurar mocks
         mock_now.return_value = datetime(2026, 10, 11, 12, 0, 0)
@@ -30,7 +30,7 @@ class TestTrialActivation(unittest.TestCase):
             'trial_inicio': None,
             'trial_fin': None
         }
-        mock_update.return_value = {'id': 1}
+        mock_atomico.return_value = True  # UPDATE exitoso
 
         # Ejecutar
         resultado = self.suscripcion_service.activar_trial(1)
@@ -40,19 +40,62 @@ class TestTrialActivation(unittest.TestCase):
         self.assertIn('trial_inicio', resultado)
         self.assertIn('trial_fin', resultado)
 
-        # Verificar que se llamó a update con los parámetros correctos
-        mock_update.assert_called_once()
-        call_args = mock_update.call_args
-        self.assertEqual(call_args[0][0], 1)
-        self.assertEqual(call_args[0][1]['trial_usado'], True)
-        self.assertIsNotNone(call_args[0][1]['trial_inicio'])
-        self.assertIsNotNone(call_args[0][1]['trial_fin'])
+        # Verificar que se llamó a activar_trial_atomico
+        mock_atomico.assert_called_once()
+        call_args = mock_atomico.call_args
+        self.assertEqual(call_args[0][0], 1)  # usuario_id
+        self.assertIsNotNone(call_args[0][1])  # trial_inicio
+        self.assertIsNotNone(call_args[0][2])  # trial_fin
 
-        # Verificar que el período es de 15 días
-        inicio = call_args[0][1]['trial_inicio']
-        fin = call_args[0][1]['trial_fin']
-        diferencia = fin - inicio
-        self.assertEqual(diferencia.days, 15)
+    @patch('services.suscripcion_service.SuscripcionService._now')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('repositories.usuario_repository.UsuarioRepository.activar_trial_atomico')
+    def test_activar_trial_usa_update_condicional(self, mock_atomico, mock_find, mock_now):
+        """Test que activar_trial usa UPDATE condicional atómico."""
+        # Configurar mocks
+        mock_now.return_value = datetime(2026, 10, 11, 12, 0, 0)
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'test@example.com',
+            'trial_usado': False,
+            'trial_inicio': None,
+            'trial_fin': None
+        }
+        mock_atomico.return_value = True  # UPDATE exitoso
+
+        # Ejecutar
+        resultado = self.suscripcion_service.activar_trial(1)
+
+        # Verificar que se llamó a activar_trial_atomico
+        mock_atomico.assert_called_once()
+        call_args = mock_atomico.call_args
+        self.assertEqual(call_args[0][0], 1)  # usuario_id
+        self.assertIsNotNone(call_args[0][1])  # trial_inicio
+        self.assertIsNotNone(call_args[0][2])  # trial_fin
+
+    @patch('services.suscripcion_service.SuscripcionService._now')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('repositories.usuario_repository.UsuarioRepository.activar_trial_atomico')
+    def test_activar_trial_race_condition_falla_atomico(self, mock_atomico, mock_find, mock_now):
+        """Test que si UPDATE condicional falla (race condition), se rechaza."""
+        # Configurar mocks
+        mock_now.return_value = datetime(2026, 10, 11, 12, 0, 0)
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'test@example.com',
+            'trial_usado': False,  # Verificación inicial pasa
+            'trial_inicio': None,
+            'trial_fin': None
+        }
+        mock_atomico.return_value = False  # UPDATE condicional falló (ya estaba usado)
+
+        # Ejecutar y verificar que lanza excepción
+        from fastapi import HTTPException
+        with self.assertRaises(HTTPException) as context:
+            self.suscripcion_service.activar_trial(1)
+
+        self.assertEqual(context.exception.status_code, 409)
+        self.assertIn('ya utilizó', context.exception.detail)
 
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
     def test_activar_trial_usuario_con_trial_previo_falla(self, mock_find):
@@ -279,6 +322,48 @@ class TestEstadoExtendido(unittest.TestCase):
         self.assertEqual(resultado['plan'], 'Pro')
         self.assertIsNotNone(resultado['trial_info'])
         self.assertIn('esta_vigente', resultado['trial_info'])
+
+
+class TestUsuarioRepositoryTrial(unittest.TestCase):
+    """Tests para el método activar_trial_atomico en UsuarioRepository."""
+
+    def setUp(self):
+        """Configuración inicial de las pruebas."""
+        self.usuario_repo = UsuarioRepository()
+
+    @patch('repositories.usuario_repository.UsuarioRepository.execute_query')
+    def test_activar_trial_atomico_devuelve_true_si_actualiza(self, mock_execute):
+        """Test que activar_trial_atomico devuelve True si el UPDATE afectó filas."""
+        # Configurar mock
+        mock_execute.return_value = 1  # rowcount = 1
+
+        # Ejecutar
+        resultado = self.usuario_repo.activar_trial_atomico(
+            1,
+            datetime(2026, 10, 11, 12, 0, 0),
+            datetime(2026, 10, 26, 12, 0, 0)
+        )
+
+        # Verificar
+        self.assertTrue(resultado)
+        mock_execute.assert_called_once()
+
+    @patch('repositories.usuario_repository.UsuarioRepository.execute_query')
+    def test_activar_trial_atomico_devuelve_false_si_no_actualiza(self, mock_execute):
+        """Test que activar_trial_atomico devuelve False si el UPDATE no afectó filas."""
+        # Configurar mock
+        mock_execute.return_value = 0  # rowcount = 0 (ya estaba usado)
+
+        # Ejecutar
+        resultado = self.usuario_repo.activar_trial_atomico(
+            1,
+            datetime(2026, 10, 11, 12, 0, 0),
+            datetime(2026, 10, 26, 12, 0, 0)
+        )
+
+        # Verificar
+        self.assertFalse(resultado)
+        mock_execute.assert_called_once()
 
 
 if __name__ == '__main__':

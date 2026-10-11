@@ -62,3 +62,30 @@ class UsuarioRepository(BaseRepository):
         """Busca un usuario por ID."""
         return super().find_by_id(usuario_id)
 
+    def activar_trial_atomico(self, usuario_id: int, trial_inicio, trial_fin) -> bool:
+        """Activa el trial de forma atómica usando UPDATE condicional.
+
+        Solo actualiza si trial_usado = false. Garantiza que dos solicitudes
+        simultáneas no puedan activar el trial dos veces.
+
+        Args:
+            usuario_id: ID del usuario
+            trial_inicio: Fecha de inicio del trial
+            trial_fin: Fecha de fin del trial
+
+        Returns:
+            True si se activó, False si ya estaba usado
+        """
+        query = """
+            UPDATE usuarios
+            SET trial_inicio = %s,
+                trial_fin = %s,
+                trial_usado = true
+            WHERE id = %s
+              AND trial_usado = false
+        """
+        params = (trial_inicio, trial_fin, usuario_id)
+
+        rowcount = self.execute_query(query, params, fetch=False)
+        return rowcount > 0
+

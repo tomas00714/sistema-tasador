@@ -967,7 +967,7 @@ def eliminar_tasacion(tasacion_id: str, usuario_id: int = Depends(middleware.req
 def crear_compartir_tasacion(
     tasacion_id: str,
     request: TasacionCompartirRequest,
-    usuario_id: int = Depends(middleware.get_current_user_id)
+    usuario_id: int = Depends(middleware.require_premium_or_admin)
 ):
     """Crea un enlace público para compartir una tasación."""
     logger.info(f"Creando enlace para compartir tasación: {tasacion_id}")
@@ -2015,7 +2015,7 @@ def obtener_comparables_de_solicitud_por_id(solicitud_id: str, usuario_id: int =
 
 
 @app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/aceptar", response_model=SolicitudComparableAceptacionResponse)
-def aceptar_comparable_solicitud(solicitud_id: str, comparable_id: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+def aceptar_comparable_solicitud(solicitud_id: str, comparable_id: str, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Acepta un comparable recibido mediante una solicitud."""
     logger.info(f"Aceptando comparable {comparable_id} de solicitud {solicitud_id} por usuario {usuario_id}")
     
@@ -2076,7 +2076,7 @@ def aceptar_comparable_solicitud(solicitud_id: str, comparable_id: str, usuario_
 
 
 @app.post("/api/solicitudes/{solicitud_id}/comparables/{comparable_id}/rechazar", response_model=SolicitudComparableAceptacionResponse)
-def rechazar_comparable_solicitud(solicitud_id: str, comparable_id: str, decision: SolicitudComparableDecisionRequest, usuario_id: int = Depends(middleware.get_current_user_id)):
+def rechazar_comparable_solicitud(solicitud_id: str, comparable_id: str, decision: SolicitudComparableDecisionRequest, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Rechaza un comparable recibido mediante una solicitud."""
     logger.info(f"Rechazando comparable {comparable_id} de solicitud {solicitud_id} por usuario {usuario_id}")
     

@@ -444,7 +444,8 @@ class SuscripcionService:
     def activar_trial(self, usuario_id: int) -> Dict[str, Any]:
         """Activa el trial de 15 días para un usuario.
 
-        La activación es atómica: si el usuario ya usó el trial, lanza excepción.
+        La activación es atómica: usa UPDATE condicional para garantizar que
+        dos solicitudes simultáneas no puedan activar el trial dos veces.
         Se activa solo cuando el usuario confirma explícitamente, no al registrarse.
 
         Args:
@@ -454,12 +455,14 @@ class SuscripcionService:
             Dict con trial_inicio y trial_fin
 
         Raises:
-            HTTPException: Si el usuario ya usó su trial
+            HTTPException: Si el usuario ya usó su trial o no existe
         """
+        # Verificar que el usuario existe
         usuario = self.usuario_repo.find_by_id(usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
+        # Si ya tiene trial usado, rechazar inmediatamente (optimización)
         if usuario.get('trial_usado'):
             raise HTTPException(
                 status_code=409,
@@ -469,17 +472,15 @@ class SuscripcionService:
         ahora = self._now()
         fin = ahora + timedelta(days=15)
 
-        # Actualizar de forma atómica
-        actualizado = self.usuario_repo.update(usuario_id, {
-            'trial_inicio': ahora,
-            'trial_fin': fin,
-            'trial_usado': True
-        })
+        # Actualizar de forma atómica usando UPDATE condicional
+        activado = self.usuario_repo.activar_trial_atomico(usuario_id, ahora, fin)
 
-        if not actualizado:
+        if not activado:
+            # El UPDATE condicional falló porque trial_usado ya era true
+            # (race condition: otra solicitud activó el trial antes que esta)
             raise HTTPException(
-                status_code=500,
-                detail="Error al activar la prueba gratuita"
+                status_code=409,
+                detail="El usuario ya utilizó su prueba gratuita"
             )
 
         logger.info(f"Trial activado para usuario_id={usuario_id}, período={ahora} a {fin}")
