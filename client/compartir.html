@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <!-- Favicon principal (compatibilidad y Google) -->
     <link rel="icon" href="assets/images/favicon.ico">
     
-    <!-- Variante SVG para tema claro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" media="(prefers-color-scheme: light)">
+    <!-- Favicon SVG dinámico (actualizado por theme.js según tema del usuario) -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" id="dynamicFavicon">
     
-    <!-- Variante SVG para tema oscuro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-light.svg" media="(prefers-color-scheme: dark)">
     <title>Tasación compartida - ACM studio</title>
 
     <link rel="stylesheet" href="css/global.css">
@@ -21,6 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+    <script src="js/favicon-theme.js"></script>
 </head>
 <body class="compartir-publico">
     <main class="compartir-card" id="compartirPublico">

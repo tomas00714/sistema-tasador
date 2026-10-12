@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <!-- Favicon principal (compatibilidad y Google) -->
     <link rel="icon" href="assets/images/favicon.ico">
     
-    <!-- Variante SVG para tema claro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" media="(prefers-color-scheme: light)">
+    <!-- Favicon SVG dinámico (actualizado por theme.js según tema del usuario) -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" id="dynamicFavicon">
     
-    <!-- Variante SVG para tema oscuro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-light.svg" media="(prefers-color-scheme: dark)">
     <title>Limpiar Datos de Prueba</title>
     <style>
         body {
@@ -58,6 +57,7 @@
             border: 1px solid #c3e6cb;
         }
     </style>
+    <script src="js/favicon-theme.js"></script>
 </head>
 <body>
     <div class="container">

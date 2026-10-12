@@ -7,11 +7,8 @@
     <!-- Favicon principal (compatibilidad y Google) -->
     <link rel="icon" href="assets/images/favicon.ico">
     
-    <!-- Variante SVG para tema claro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" media="(prefers-color-scheme: light)">
-    
-    <!-- Variante SVG para tema oscuro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-light.svg" media="(prefers-color-scheme: dark)">
+    <!-- Favicon SVG dinámico (actualizado por theme.js según tema del usuario) -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" id="dynamicFavicon">
     
     <title>ACM studio - Sistema de Tasaciones Inmobiliarias</title>
     <meta name="description" content="ACM studio - Sistema profesional de tasaciones inmobiliarias mediante homogeneización de comparables. Calcula el valor de mercado de forma rápida y confiable.">
@@ -369,6 +366,7 @@
     <script src="js/auth.js"></script>
     <script src="js/api-client.js"></script>
     <script src="js/mercado-pago.js"></script>
+    <script src="js/favicon-theme.js"></script>
     <script>
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {

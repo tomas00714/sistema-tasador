@@ -25,11 +25,11 @@ function updateFavicon(theme) {
         ? basePath + 'favicon-light.svg' 
         : basePath + 'favicon-dark.svg';
     
-    // Buscar y actualizar las referencias de favicon SVG
-    const svgFavicons = document.querySelectorAll('link[rel="icon"][type="image/svg+xml"]');
-    svgFavicons.forEach(link => {
-        link.href = faviconPath;
-    });
+    // Actualizar el favicon dinámico por ID
+    const dynamicFavicon = document.getElementById('dynamicFavicon');
+    if (dynamicFavicon) {
+        dynamicFavicon.href = faviconPath;
+    }
 }
 
 function applyTheme(theme) {

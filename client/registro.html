@@ -7,11 +7,8 @@
     <!-- Favicon principal (compatibilidad y Google) -->
     <link rel="icon" href="assets/images/favicon.ico">
     
-    <!-- Variante SVG para tema claro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" media="(prefers-color-scheme: light)">
-    
-    <!-- Variante SVG para tema oscuro del sistema -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-light.svg" media="(prefers-color-scheme: dark)">
+    <!-- Favicon SVG dinámico (actualizado por theme.js según tema del usuario) -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" id="dynamicFavicon">
     
     <title>Registro - ACM studio</title>
 
@@ -22,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script src="https://kit.fontawesome.com/d853729d1d.js" crossorigin="anonymous"></script>
+    <script src="js/favicon-theme.js"></script>
 </head>
 <body>
     <div class="auth-container">
