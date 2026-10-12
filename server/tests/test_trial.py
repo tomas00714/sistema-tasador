@@ -311,7 +311,8 @@ class TestEstadoExtendido(unittest.TestCase):
         mock_trial_info.return_value = {
             'trial_inicio': datetime(2026, 10, 1),
             'trial_fin': datetime(2026, 10, 16),
-            'trial_usado': True
+            'trial_usado': True,
+            'disponible': False
         }
 
         # Ejecutar
@@ -322,6 +323,7 @@ class TestEstadoExtendido(unittest.TestCase):
         self.assertEqual(resultado['plan'], 'Pro')
         self.assertIsNotNone(resultado['trial_info'])
         self.assertIn('esta_vigente', resultado['trial_info'])
+        self.assertIn('disponible', resultado['trial_info'])
 
 
 class TestUsuarioRepositoryTrial(unittest.TestCase):

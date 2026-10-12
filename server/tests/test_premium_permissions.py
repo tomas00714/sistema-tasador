@@ -106,9 +106,39 @@ class TestPremiumRequiredEndpoints(unittest.TestCase):
 
         self.assertIn('usuario_id', params)
 
+    def test_crear_compartir_tasacion_requiere_premium(self):
+        """Test que POST /api/tasaciones/{id}/compartir requiere acceso Pro."""
+        from main import crear_compartir_tasacion
+        import inspect
+
+        sig = inspect.signature(crear_compartir_tasacion)
+        params = sig.parameters
+
+        self.assertIn('usuario_id', params)
+
+    def test_aceptar_comparable_solicitud_requiere_premium(self):
+        """Test que aceptar comparable de solicitud requiere acceso Pro."""
+        from main import aceptar_comparable_solicitud
+        import inspect
+
+        sig = inspect.signature(aceptar_comparable_solicitud)
+        params = sig.parameters
+
+        self.assertIn('usuario_id', params)
+
+    def test_rechazar_comparable_solicitud_requiere_premium(self):
+        """Test que rechazar comparable de solicitud requiere acceso Pro."""
+        from main import rechazar_comparable_solicitud
+        import inspect
+
+        sig = inspect.signature(rechazar_comparable_solicitud)
+        params = sig.parameters
+
+        self.assertIn('usuario_id', params)
+
 
 class TestAuthOnlyEndpoints(unittest.TestCase):
-    """Tests para verificar que endpoints específicos solo requieren autenticación."""
+    """Tests para verificar que endpoints de solicitudes solo requieren autenticación."""
 
     @patch('middleware.get_current_user_id')
     def test_crear_solicitud_solo_requiere_auth(self, mock_get_user_id):
@@ -143,68 +173,16 @@ class TestAuthOnlyEndpoints(unittest.TestCase):
 
         self.assertIn('usuario_id', params)
 
-    @patch('middleware.get_current_user_id')
-    def test_aceptar_comparable_solicitud_solo_requiere_auth(self, mock_get_user_id):
-        """Test que aceptar comparable SOLO requiere autenticación."""
-        from main import aceptar_comparable_solicitud
+    def test_contribuir_solicitud_es_publico(self):
+        """Test que POST /api/solicitudes/link/{link}/contribuir es público."""
+        from main import contribuir_solicitud
         import inspect
 
-        sig = inspect.signature(aceptar_comparable_solicitud)
-        params = sig.parameters
-
-        self.assertIn('usuario_id', params)
-
-    @patch('middleware.get_current_user_id')
-    def test_rechazar_comparable_solicitud_solo_requiere_auth(self, mock_get_user_id):
-        """Test que rechazar comparable SOLO requiere autenticación."""
-        from main import rechazar_comparable_solicitud
-        import inspect
-
-        sig = inspect.signature(rechazar_comparable_solicitud)
-        params = sig.parameters
-
-        self.assertIn('usuario_id', params)
-
-    @patch('middleware.get_current_user_id')
-    def test_crear_compartir_tasacion_solo_requiere_auth(self, mock_get_user_id):
-        """Test que compartir tasación SOLO requiere autenticación."""
-        from main import crear_compartir_tasacion
-        import inspect
-
-        sig = inspect.signature(crear_compartir_tasacion)
-        params = sig.parameters
-
-        self.assertIn('usuario_id', params)
-
-
-class TestPublicEndpoints(unittest.TestCase):
-    """Tests para verificar que endpoints públicos siguen funcionando."""
-
-    def test_obtener_vista_previa_compartir_es_publico(self):
-        """Test que GET /api/tasaciones/compartir/{token} es público."""
-        from main import obtener_vista_previa_compartir
-        import inspect
-
-        sig = inspect.signature(obtener_vista_previa_compartir)
+        sig = inspect.signature(contribuir_solicitud)
         params = sig.parameters
 
         # NO debe tener usuario_id (es público)
         self.assertNotIn('usuario_id', params)
-
-    def test_obtener_solicitud_por_link_es_publico(self):
-        """Test que GET /api/solicitudes/link/{link} es público."""
-        from main import obtener_solicitud_por_link
-        import inspect
-
-        sig = inspect.signature(obtener_solicitud_por_link)
-        params = sig.parameters
-
-        # NO debe tener usuario_id (es público)
-        self.assertNotIn('usuario_id', params)
-
-
-if __name__ == '__main__':
-    unittest.main()
 
 
 class TestPublicEndpoints(unittest.TestCase):

@@ -1021,7 +1021,7 @@ def obtener_vista_previa_compartir(token: str):
 
 
 @app.post("/api/tasaciones/compartir/{token}/guardar", response_model=TasacionResponse)
-def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware.get_current_user_id)):
+def guardar_tasacion_compartida(token: str, usuario_id: int = Depends(middleware.require_premium_or_admin)):
     """Guarda una copia de la tasación compartida en la cuenta del usuario autenticado."""
     logger.info(f"Guardando tasación compartida: {token}")
 

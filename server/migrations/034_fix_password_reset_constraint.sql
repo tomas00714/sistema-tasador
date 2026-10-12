@@ -84,7 +84,10 @@ WHERE id IN (
 );
 
 -- 5. Recrear índice compuesto para consultas de tokens válidos (mejorado)
+-- NOTA: No usamos expiracion > CURRENT_TIMESTAMP en el predicado porque PostgreSQL
+-- no permite expresiones no inmutables en índices parciales. La expiración se valida
+-- en las consultas del repositorio, no en el índice.
 DROP INDEX IF EXISTS idx_password_reset_tokens_validos;
 CREATE INDEX idx_password_reset_tokens_validos
 ON password_reset_tokens(usuario_id, utilizado, expiracion)
-WHERE utilizado = false AND expiracion > CURRENT_TIMESTAMP;
+WHERE utilizado = false;

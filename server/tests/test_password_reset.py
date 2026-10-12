@@ -500,6 +500,35 @@ class TestConsumeTokenWithRealCursor(unittest.TestCase):
         self.assertEqual(mock_cursor.execute.call_count, 2)
 
 
+class TestMigrationIndexCompatibility(unittest.TestCase):
+    """Tests para verificar que los índices de migración son válidos en PostgreSQL."""
+
+    def test_index_predicado_no_usa_current_timestamp(self):
+        """Test que los índices parciales de migración no usan CURRENT_TIMESTAMP (inválido en PostgreSQL)."""
+        # Leer archivos de migración
+        import os
+        migrations_dir = os.path.join(os.path.dirname(__file__), '..', 'migrations')
+        
+        with open(os.path.join(migrations_dir, '033_create_password_reset_tokens.sql'), 'r', encoding='utf-8') as f:
+            migration_033 = f.read()
+        
+        with open(os.path.join(migrations_dir, '034_fix_password_reset_constraint.sql'), 'r', encoding='utf-8') as f:
+            migration_034 = f.read()
+        
+        # Verificar que NO usen CURRENT_TIMESTAMP en predicados de índice
+        # PostgreSQL no permite expresiones no inmutables en índices parciales
+        self.assertNotIn('WHERE utilizado = false AND expiracion > CURRENT_TIMESTAMP', migration_033,
+                        "Migración 033 no debe usar CURRENT_TIMESTAMP en predicado de índice")
+        self.assertNotIn('WHERE utilizado = false AND expiracion > CURRENT_TIMESTAMP', migration_034,
+                        "Migración 034 no debe usar CURRENT_TIMESTAMP en predicado de índice")
+        
+        # Verificar que el índice existe con el predicado correcto
+        self.assertIn('WHERE utilizado = false', migration_033,
+                      "Migración 033 debe tener índice parcial con WHERE utilizado = false")
+        self.assertIn('WHERE utilizado = false', migration_034,
+                      "Migración 034 debe tener índice parcial con WHERE utilizado = false")
+
+
 class TestUnicodePreservation(unittest.TestCase):
     """Tests para verificar que caracteres Unicode se preservan correctamente."""
 

@@ -27,9 +27,12 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expiracion ON password_rese
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_utilizado ON password_reset_tokens(utilizado);
 
 -- Índice compuesto para consultas de tokens válidos
+-- NOTA: No usamos expiracion > CURRENT_TIMESTAMP en el predicado porque PostgreSQL
+-- no permite expresiones no inmutables en índices parciales. La expiración se valida
+-- en las consultas del repositorio, no en el índice.
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_validos
     ON password_reset_tokens(usuario_id, utilizado, expiracion)
-    WHERE utilizado = false AND expiracion > CURRENT_TIMESTAMP;
+    WHERE utilizado = false;
 
 -- Trigger para limpiar tokens expirados automáticamente
 CREATE OR REPLACE FUNCTION limpiar_tokens_expirados()

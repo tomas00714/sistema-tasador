@@ -414,19 +414,19 @@ class SuscripcionService:
         """Obtiene información del trial de un usuario.
 
         Returns:
-            Dict con trial_inicio, trial_fin, trial_usado o None si no tiene trial.
+            Dict con trial_inicio, trial_fin, trial_usado, disponible o None si no existe el usuario.
         """
         usuario = self.usuario_repo.find_by_id(usuario_id)
         if not usuario:
             return None
 
-        if not usuario.get('trial_usado'):
-            return None
+        trial_usado = usuario.get('trial_usado', False)
 
         return {
             'trial_inicio': usuario.get('trial_inicio'),
             'trial_fin': usuario.get('trial_fin'),
-            'trial_usado': usuario.get('trial_usado', False)
+            'trial_usado': trial_usado,
+            'disponible': not trial_usado  # True si aún puede activar el trial
         }
 
     def trial_esta_vigente(self, usuario_id: int) -> bool:
