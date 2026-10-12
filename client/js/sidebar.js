@@ -129,6 +129,13 @@ function generarMobileDrawer() {
         const clone = item.cloneNode(true);
         // Mantener la misma clase y atributos
         clone.classList.remove('active');
+        
+        // Si es un botón (Nueva tasación), mantener el handler
+        if (item.tagName === 'BUTTON' && item.id === 'btnNuevaTasacion') {
+            clone.id = 'btnNuevaTasacionMobile';
+            // El handler se agregará después en un listener global
+        }
+        
         mobileDrawerNav.appendChild(clone);
     });
 
@@ -281,4 +288,43 @@ document.addEventListener('DOMContentLoaded', () => {
     inyectarSidebar(paginaActual);
     inicializarLogout();
     actualizarNombreUsuario();
+    
+    // Handler global para botones "Nueva tasación" (escritorio y móvil)
+    const btnNuevaTasacion = document.getElementById('btnNuevaTasacion');
+    const btnNuevaTasacionMobile = document.getElementById('btnNuevaTasacionMobile');
+    
+    const handlerNuevaTasacion = async function(e) {
+        e.preventDefault();
+        
+        // Verificar autenticación
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+            window.location.href = '../login.html?redirect=app/tasacion.html';
+            return;
+        }
+        
+        // Verificar acceso premium
+        try {
+            const access = await window.checkPremiumAccess();
+            if (!access.hasAccess) {
+                // No tiene acceso - abrir pricing para suscribirse
+                window.location.href = '../index.html#pricing';
+                return;
+            }
+            
+            // Tiene acceso - navegar a tasación
+            window.location.href = 'tasacion.html';
+        } catch (error) {
+            console.error('[Sidebar] Error verificando acceso premium:', error);
+            // En caso de error, ir a pricing por seguridad
+            window.location.href = '../index.html#pricing';
+        }
+    };
+    
+    if (btnNuevaTasacion) {
+        btnNuevaTasacion.addEventListener('click', handlerNuevaTasacion);
+    }
+    
+    if (btnNuevaTasacionMobile) {
+        btnNuevaTasacionMobile.addEventListener('click', handlerNuevaTasacion);
+    }
 });

@@ -268,6 +268,10 @@
                     Suscribirme
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
+                <button class="btn btn-secondary trial-cta" id="trialCtaButton" style="width: 100%; justify-content: center; display: none;">
+                    Activar prueba gratuita de 15 días
+                </button>
+                <div id="trialMessage" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
             </div>
         </div>
     </section>
@@ -462,6 +466,143 @@
             pricingCtaButton.removeAttribute('onclick');
         }
 
+        // Handler para botón de trial
+        function setupTrialCtaHandler() {
+            const trialCtaButton = document.getElementById('trialCtaButton');
+            const trialMessage = document.getElementById('trialMessage');
+            if (!trialCtaButton) return;
+
+            // Verificar elegibilidad para trial al cargar
+            checkTrialEligibility();
+
+            trialCtaButton.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                // Evitar doble clic
+                if (trialCtaButton.disabled) return;
+                
+                trialCtaButton.disabled = true;
+                trialCtaButton.textContent = 'Activando...';
+                
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    if (!token) {
+                        showTrialMessage('Debes iniciar sesión para activar el trial', 'error');
+                        trialCtaButton.disabled = false;
+                        trialCtaButton.textContent = 'Activar prueba gratuita de 15 días';
+                        return;
+                    }
+                    
+                    const apiUrl = window.getApiUrl ? window.getApiUrl() : 'http://127.0.0.1:8000';
+                    
+                    const response = await fetch(`${apiUrl}/api/suscripcion/activar-trial`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: 'Error al activar trial' }));
+                        showTrialMessage(errorData.detail || 'No eres elegible para el trial o ya lo has utilizado', 'error');
+                        trialCtaButton.disabled = false;
+                        trialCtaButton.textContent = 'Activar prueba gratuita de 15 días';
+                        return;
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Éxito
+                    const vencimiento = new Date(result.trial_fin);
+                    const vencimientoStr = vencimiento.toLocaleDateString('es-AR', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    });
+                    
+                    showTrialMessage(`¡Trial activado con éxito! Vence el ${vencimientoStr}`, 'success');
+                    trialCtaButton.style.display = 'none';
+                    
+                    // Recargar página para actualizar estado
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('[Trial] Error al activar trial:', error);
+                    showTrialMessage('Error de conexión. Intenta nuevamente.', 'error');
+                    trialCtaButton.disabled = false;
+                    trialCtaButton.textContent = 'Activar prueba gratuita de 15 días';
+                }
+            });
+        }
+
+        async function checkTrialEligibility() {
+            const trialCtaButton = document.getElementById('trialCtaButton');
+            if (!trialCtaButton) return;
+            
+            // Solo verificar si está autenticado
+            if (!window.isAuthenticated || !window.isAuthenticated()) {
+                trialCtaButton.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    trialCtaButton.style.display = 'none';
+                    return;
+                }
+                
+                const apiUrl = window.getApiUrl ? window.getApiUrl() : 'http://127.0.0.1:8000';
+                
+                const response = await fetch(`${apiUrl}/api/suscripcion`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    trialCtaButton.style.display = 'none';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // Mostrar botón de trial solo si:
+                // - No tiene acceso Pro
+                // - Trial no está activo
+                // - Trial no ha sido usado
+                if (!data.tiene_acceso_pro && !data.is_admin && 
+                    (!data.trial_info || !data.trial_info.esta_vigente) && 
+                    (!data.trial_info || !data.trial_info.usado)) {
+                    trialCtaButton.style.display = 'block';
+                } else {
+                    trialCtaButton.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('[Trial] Error verificando elegibilidad:', error);
+                trialCtaButton.style.display = 'none';
+            }
+        }
+
+        function showTrialMessage(message, type) {
+            const trialMessage = document.getElementById('trialMessage');
+            if (!trialMessage) return;
+            
+            trialMessage.textContent = message;
+            trialMessage.style.display = 'block';
+            
+            if (type === 'success') {
+                trialMessage.style.backgroundColor = '#d4edda';
+                trialMessage.style.color = '#155724';
+            } else if (type === 'error') {
+                trialMessage.style.backgroundColor = '#f8d7da';
+                trialMessage.style.color = '#721c24';
+            }
+        }
+
         // User dropdown toggle
         const navUserTrigger = document.getElementById('navUserTrigger');
         const navUserMenu = document.getElementById('navUserMenu');
@@ -530,6 +671,7 @@
             updateUIForAuthState();
             setupHeroCtaHandler();
             setupPricingCtaHandler();
+            setupTrialCtaHandler();
         });
     </script>
 </body>

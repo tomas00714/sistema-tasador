@@ -48,6 +48,31 @@ function handleAuthError(response) {
     return false;
 }
 
+/**
+ * Maneja errores de acceso premium (403 con código no_premium).
+ * Redirige a pricing en lugar de mostrar error técnico.
+ */
+async function handlePremiumError(response) {
+    if (response.status === 403) {
+        try {
+            const errorData = await response.json();
+            if (errorData.detail === 'no_premium') {
+                // Redirigir a pricing
+                const currentPath = window.location.pathname;
+                if (currentPath.includes('/app/')) {
+                    window.location.href = '../index.html#pricing';
+                } else {
+                    window.location.href = 'index.html#pricing';
+                }
+                return true;
+            }
+        } catch (e) {
+            // Si no puede parsear JSON, manejar como error genérico
+        }
+    }
+    return false;
+}
+
 // =========================
 //   TASACIONES
 // =========================
@@ -62,6 +87,10 @@ async function crearTasacionAPI(tasacion) {
         
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para crear tasaciones');
         }
         
         if (!response.ok) {
@@ -143,6 +172,10 @@ async function actualizarTasacionAPI(tasacionId, datosActualizacion) {
             throw new Error('Sesión expirada');
         }
         
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para actualizar tasaciones');
+        }
+        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('[DEBUG api-client] actualizarTasacionAPI - Response NOT OK:', response.status, response.statusText);
@@ -166,6 +199,10 @@ async function eliminarTasacionAPI(tasacionId) {
         
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para eliminar tasaciones');
         }
         
         if (!response.ok) {
@@ -193,6 +230,10 @@ async function crearComparableAPI(comparable) {
         
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para crear comparables');
         }
         
         if (!response.ok) {
@@ -272,6 +313,10 @@ async function actualizarComparableAPI(comparableId, datosActualizacion) {
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
         }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para actualizar comparables');
+        }
 
         if (!response.ok) {
             throw new Error(`Error al actualizar comparable: ${response.status}`);
@@ -295,6 +340,10 @@ async function actualizarSnapshotComparableTasacion(tasacionId, comparableId, sn
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
         }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para actualizar comparables');
+        }
 
         if (!response.ok) {
             throw new Error(`Error al actualizar snapshot: ${response.status}`);
@@ -316,6 +365,10 @@ async function eliminarComparableAPI(comparableId) {
         
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para eliminar comparables');
         }
         
         if (!response.ok) {
@@ -570,6 +623,10 @@ async function aceptarComparableSolicitudAPI(solicitudId, comparableId) {
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
         }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para aceptar comparables');
+        }
 
         if (!response.ok) {
             const error = await response.json();
@@ -598,6 +655,10 @@ async function rechazarComparableSolicitudAPI(solicitudId, comparableId, observa
 
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para rechazar comparables');
         }
 
         if (!response.ok) {
@@ -653,6 +714,10 @@ async function compartirTasacionAPI(tasacionId, opciones = {}) {
 
         if (handleAuthError(response)) {
             throw new Error('Sesión expirada');
+        }
+        
+        if (await handlePremiumError(response)) {
+            throw new Error('Se requiere suscripción Pro para compartir tasaciones');
         }
 
         if (!response.ok) {

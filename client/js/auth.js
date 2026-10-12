@@ -118,6 +118,10 @@ async function checkPremiumAccess() {
             if (response.status === 401) {
                 return { hasAccess: false, isAuth: false, tiene_acceso_pro: false, is_admin: false };
             }
+            if (response.status === 403) {
+                // 403 específico de no_premium - tratar como sin acceso
+                return { hasAccess: false, isAuth: true, tiene_acceso_pro: false, is_admin: false };
+            }
             throw new Error('Error al verificar acceso premium');
         }
 
@@ -133,6 +137,7 @@ async function checkPremiumAccess() {
         };
     } catch (error) {
         console.error('[Auth] Error verificando acceso premium:', error);
+        // En caso de error, NO conceder acceso por defecto
         return { hasAccess: false, isAuth: true, tiene_acceso_pro: false, is_admin: false };
     }
 }

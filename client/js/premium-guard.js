@@ -1,78 +1,36 @@
 /**
  * Guard de acceso premium para páginas restringidas.
- * Protege páginas que requieren suscripción activa.
+ * Protege páginas que requieren suscripción activa o permisos de administrador.
  */
+
+/**
+ * Redirige a la página de pricing para suscribirse.
+ */
+function redirectToPricing() {
+    window.location.href = '../index.html#pricing';
+}
+
+/**
+ * Redirige a la página de inicio si no es administrador.
+ */
+function redirectToHome() {
+    window.location.href = 'index.html';
+}
 
 /**
  * Muestra la pantalla de acceso restringido/premium.
  */
 function showPremiumRestricted() {
-    // Ocultar contenido principal
-    const mainContent = document.querySelector('.main-content, main, .home-stage, .tasacion-stage, .solicitudes-stage');
-    if (mainContent) {
-        mainContent.style.display = 'none';
-    }
+    // Redirigir a pricing en lugar de mostrar pantalla estática
+    redirectToPricing();
+}
 
-    // Ocultar sidebar
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.style.display = 'none';
-    }
-
-    // Ocultar header móvil
-    const mobileHeader = document.querySelector('.mobile-header');
-    if (mobileHeader) {
-        mobileHeader.style.display = 'none';
-    }
-
-    // Crear o mostrar pantalla de acceso restringido
-    let restrictedScreen = document.getElementById('premiumRestrictedScreen');
-    if (!restrictedScreen) {
-        restrictedScreen = document.createElement('div');
-        restrictedScreen.id = 'premiumRestrictedScreen';
-        restrictedScreen.className = 'premium-restricted-screen';
-        restrictedScreen.innerHTML = `
-            <div class="premium-restricted-container">
-                <div class="premium-restricted-icon">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <h1 class="premium-restricted-title">Funcionalidad Premium</h1>
-                <p class="premium-restricted-message">
-                    Esta funcionalidad requiere una suscripción activa para acceder.
-                </p>
-                <div class="premium-restricted-features">
-                    <div class="premium-feature">
-                        <i class="fa-solid fa-check"></i>
-                        <span>Tasaciones ilimitadas</span>
-                    </div>
-                    <div class="premium-feature">
-                        <i class="fa-solid fa-check"></i>
-                        <span>Base de datos de comparables</span>
-                    </div>
-                    <div class="premium-feature">
-                        <i class="fa-solid fa-check"></i>
-                        <span>Informes PDF personalizados</span>
-                    </div>
-                    <div class="premium-feature">
-                        <i class="fa-solid fa-check"></i>
-                        <span>Colaboración en tiempo real</span>
-                    </div>
-                </div>
-                <div class="premium-restricted-actions">
-                    <a href="../index.html#pricing" class="btn btn-primary btn-premium-cta">
-                        Suscribirme
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </a>
-                    <a href="index.html" class="btn btn-secondary">
-                        Volver al inicio
-                    </a>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(restrictedScreen);
-    }
-
-    restrictedScreen.style.display = 'flex';
+/**
+ * Muestra la pantalla de acceso restringido para administradores.
+ */
+function showAdminRestricted() {
+    // Redirigir a inicio
+    redirectToHome();
 }
 
 /**
@@ -208,9 +166,48 @@ async function executeIfPremium(action, showErrorModal = true) {
     return true;
 }
 
+/**
+ * Guard para páginas de administrador.
+ * Verifica autenticación y permisos de administrador antes de mostrar el contenido.
+ */
+async function requireAdminAccess() {
+    // Verificar autenticación
+    if (!isAuthenticated()) {
+        // Redirigir a login con parámetro redirect
+        const currentPath = window.location.pathname;
+        const relativePath = currentPath.replace('/client/', '');
+        window.location.href = `../login.html?redirect=${encodeURIComponent(relativePath)}`;
+        return false;
+    }
+
+    // Mostrar carga mientras se verifica acceso
+    showPremiumLoading();
+
+    // Verificar permisos de administrador
+    const userData = localStorage.getItem('auth_user');
+    if (!userData) {
+        hidePremiumLoading();
+        showAdminRestricted();
+        return false;
+    }
+
+    const user = JSON.parse(userData);
+    if (!user.is_admin) {
+        hidePremiumLoading();
+        showAdminRestricted();
+        return false;
+    }
+
+    // Es administrador - mostrar contenido normal
+    hidePremiumLoading();
+    hidePremiumRestricted();
+    return true;
+}
+
 // Exponer funciones globalmente
 window.PremiumGuard = {
     requirePremiumAccess,
+    requireAdminAccess,
     executeIfPremium,
     showPremiumRestricted,
     hidePremiumRestricted

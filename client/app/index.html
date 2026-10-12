@@ -59,12 +59,12 @@
                 <span class="sidebar-nav-item-text">Solicitudes</span>
             </a>
 
-            <a href="tasacion.html" class="sidebar-nav-item" data-page="tasacion">
+            <button type="button" class="sidebar-nav-item" data-page="tasacion" id="btnNuevaTasacion">
                 <span class="sidebar-nav-item-icon">
                     <i class="fa-solid fa-plus"></i>
                 </span>
                 <span class="sidebar-nav-item-text">Nueva tasación</span>
-            </a>
+            </button>
         </nav>
 
         <div class="sidebar-divider"></div>
@@ -342,6 +342,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script src="../js/route-guard.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/premium-guard.js"></script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/format-utils.js"></script>
@@ -407,6 +409,41 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Handler para botón "Nueva tasación" - verifica acceso premium antes de navegar
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnNuevaTasacion = document.getElementById('btnNuevaTasacion');
+            if (btnNuevaTasacion) {
+                btnNuevaTasacion.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    // Verificar autenticación
+                    if (!window.isAuthenticated || !window.isAuthenticated()) {
+                        window.location.href = '../login.html?redirect=app/tasacion.html';
+                        return;
+                    }
+                    
+                    // Verificar acceso premium
+                    try {
+                        const access = await window.checkPremiumAccess();
+                        if (!access.hasAccess) {
+                            // No tiene acceso - abrir pricing para suscribirse
+                            window.location.href = '../index.html#pricing';
+                            return;
+                        }
+                        
+                        // Tiene acceso - navegar a tasación
+                        window.location.href = 'tasacion.html';
+                    } catch (error) {
+                        console.error('[Index] Error verificando acceso premium:', error);
+                        // En caso de error, ir a pricing por seguridad
+                        window.location.href = '../index.html#pricing';
+                    }
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>

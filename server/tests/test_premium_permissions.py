@@ -211,5 +211,160 @@ class TestPublicEndpoints(unittest.TestCase):
         self.assertNotIn('usuario_id', params)
 
 
+class TestAccessControlLogic(unittest.TestCase):
+    """Tests para verificar la lógica de control de acceso por tipo de usuario."""
+
+    def setUp(self):
+        """Configuración inicial de las pruebas."""
+        self.suscripcion_service = SuscripcionService()
+
+    @patch('auth.is_admin')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('services.suscripcion_service.SuscripcionService.tiene_acceso_pro')
+    @patch('services.suscripcion_service.SuscripcionService.trial_esta_vigente')
+    def test_usuario_free_sin_trial_no_acceso(self, mock_trial, mock_tiene_acceso, mock_find, mock_is_admin):
+        """Test que un usuario Free sin trial no tiene acceso Pro."""
+        # Configurar mocks
+        mock_is_admin.return_value = False
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'free@example.com'
+        }
+        mock_tiene_acceso.return_value = False
+        mock_trial.return_value = False
+
+        # Ejecutar
+        resultado = self.suscripcion_service.tiene_acceso_pro_extendido(1)
+
+        # Verificar
+        self.assertFalse(resultado)
+
+    @patch('auth.is_admin')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('services.suscripcion_service.SuscripcionService.tiene_acceso_pro')
+    @patch('services.suscripcion_service.SuscripcionService.trial_esta_vigente')
+    def test_usuario_free_con_trial_vigente_tiene_acceso(self, mock_trial, mock_tiene_acceso, mock_find, mock_is_admin):
+        """Test que un usuario Free con trial vigente tiene acceso Pro."""
+        # Configurar mocks
+        mock_is_admin.return_value = False
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'trial@example.com'
+        }
+        mock_tiene_acceso.return_value = False
+        mock_trial.return_value = True
+
+        # Ejecutar
+        resultado = self.suscripcion_service.tiene_acceso_pro_extendido(1)
+
+        # Verificar
+        self.assertTrue(resultado)
+
+    @patch('auth.is_admin')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('services.suscripcion_service.SuscripcionService.tiene_acceso_pro')
+    @patch('services.suscripcion_service.SuscripcionService.trial_esta_vigente')
+    def test_usuario_free_con_trial_vencido_no_acceso(self, mock_trial, mock_tiene_acceso, mock_find, mock_is_admin):
+        """Test que un usuario Free con trial vencido no tiene acceso Pro."""
+        # Configurar mocks
+        mock_is_admin.return_value = False
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'trial_expired@example.com'
+        }
+        mock_tiene_acceso.return_value = False
+        mock_trial.return_value = False
+
+        # Ejecutar
+        resultado = self.suscripcion_service.tiene_acceso_pro_extendido(1)
+
+        # Verificar
+        self.assertFalse(resultado)
+
+    @patch('auth.is_admin')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    @patch('services.suscripcion_service.SuscripcionService.tiene_acceso_pro')
+    def test_usuario_con_pro_tiene_acceso(self, mock_tiene_acceso, mock_find, mock_is_admin):
+        """Test que un usuario con suscripción Pro tiene acceso."""
+        # Configurar mocks
+        mock_is_admin.return_value = False
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'pro@example.com'
+        }
+        mock_tiene_acceso.return_value = True
+
+        # Ejecutar
+        resultado = self.suscripcion_service.tiene_acceso_pro_extendido(1)
+
+        # Verificar
+        self.assertTrue(resultado)
+
+    @patch('auth.is_admin')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    def test_admin_sin_suscripcion_tiene_acceso(self, mock_find, mock_is_admin):
+        """Test que un admin tiene acceso Pro sin suscripción."""
+        # Configurar mocks
+        mock_is_admin.return_value = True
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'admin@example.com'
+        }
+
+        # Ejecutar
+        resultado = self.suscripcion_service.tiene_acceso_pro_extendido(1)
+
+        # Verificar
+        self.assertTrue(resultado)
+
+    @patch('services.suscripcion_service.SuscripcionService._now')
+    @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
+    def test_cuenta_antigua_sin_plan_no_acceso(self, mock_find, mock_now):
+        """Test que una cuenta antigua sin plan no recibe acceso por defecto."""
+        # Configurar mocks
+        mock_now.return_value = __import__('datetime').datetime(2026, 10, 12)
+        mock_find.return_value = {
+            'id': 1,
+            'email': 'old@example.com',
+            'trial_usado': False,
+            'trial_inicio': None,
+            'trial_fin': None
+        }
+
+        # Simular usuario sin suscripción
+        with patch.object(self.suscripcion_service.suscripcion_repo, 'find_by_usuario', return_value=[]):
+            estado = self.suscripcion_service.obtener_estado(1)
+
+        # Verificar
+        self.assertFalse(estado['tiene_acceso_pro'])
+        self.assertEqual(estado['plan'], 'Free')
+        self.assertEqual(estado['estado'], 'free')
+
+
+class TestFrontendErrorHandling(unittest.TestCase):
+    """Tests para verificar el manejo de errores 403 no_premium en el frontend."""
+
+    def test_error_403_no_premium_es_reconocido(self):
+        """Test que el frontend reconoce el error 403 con código no_premium."""
+        # Este test verifica que el código del frontend tiene lógica para
+        # detectar el error específico no_premium
+        # La implementación está en api-client.js handlePremiumError()
+        import importlib.util
+        import os
+        
+        # Leer el archivo api-client.js
+        api_client_path = os.path.join(os.path.dirname(__file__), '..', '..', 'client', 'js', 'api-client.js')
+        if os.path.exists(api_client_path):
+            with open(api_client_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Verificar que existe la función handlePremiumError
+            self.assertIn('handlePremiumError', content)
+            # Verificar que maneja el código no_premium
+            self.assertIn('no_premium', content)
+            # Verificar que redirige a pricing
+            self.assertIn('pricing', content)
+
+
 if __name__ == '__main__':
     unittest.main()
