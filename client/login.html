@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    
+    <!-- Favicon principal (compatibilidad y Google) -->
+    <link rel="icon" href="assets/images/favicon.ico">
+    
+    <!-- Variante SVG para tema claro del sistema -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-dark.svg" media="(prefers-color-scheme: light)">
+    
+    <!-- Variante SVG para tema oscuro del sistema -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon-light.svg" media="(prefers-color-scheme: dark)">
+    
     <title>Iniciar Sesión - ACM studio</title>
 
     <link rel="stylesheet" href="css/global.css">

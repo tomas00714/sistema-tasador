@@ -9,6 +9,27 @@ function getTheme() {
 function setTheme(theme) {
     localStorage.setItem(THEME_KEY, theme);
     applyTheme(theme);
+    updateFavicon(theme);
+}
+
+function updateFavicon(theme) {
+    // Determinar qué favicon usar según el tema seleccionado
+    // Tema claro del usuario = usar favicon-dark.svg (para pestaña clara)
+    // Tema oscuro del usuario = usar favicon-light.svg (para pestaña oscura)
+    
+    // Detectar si estamos en app/ o en client/ raíz
+    const isApp = window.location.pathname.includes('/app/');
+    const basePath = isApp ? '../assets/images/' : 'assets/images/';
+    
+    const faviconPath = theme === 'dark' 
+        ? basePath + 'favicon-light.svg' 
+        : basePath + 'favicon-dark.svg';
+    
+    // Buscar y actualizar las referencias de favicon SVG
+    const svgFavicons = document.querySelectorAll('link[rel="icon"][type="image/svg+xml"]');
+    svgFavicons.forEach(link => {
+        link.href = faviconPath;
+    });
 }
 
 function applyTheme(theme) {
@@ -112,6 +133,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Aplicar tema guardado
     const savedTheme = getTheme();
     applyTheme(savedTheme);
+    
+    // Actualizar favicon según el tema guardado
+    updateFavicon(savedTheme);
     
     // Botón de apariencia en sidebar
     const appearanceBtn = document.getElementById('appearanceBtn');
