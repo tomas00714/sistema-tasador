@@ -271,6 +271,7 @@
     <script src="../js/route-guard.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/premium-guard.js"></script>
+    <script src="../js/subscription-manager.js"></script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/entidades.js"></script>
@@ -280,36 +281,15 @@
     <script src="../js/solicitudes.js"></script>
 
     <script>
-        // Handler para botón "Nueva tasación" - verifica acceso premium antes de navegar
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnNuevaTasacion = document.getElementById('btnNuevaTasacion');
-            if (btnNuevaTasacion) {
-                btnNuevaTasacion.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    
-                    // Verificar autenticación
-                    if (!window.isAuthenticated || !window.isAuthenticated()) {
-                        window.location.href = '../login.html?redirect=app/tasacion.html';
-                        return;
-                    }
-                    
-                    // Verificar acceso premium
-                    try {
-                        const access = await window.checkPremiumAccess();
-                        if (!access.hasAccess) {
-                            // No tiene acceso - abrir pricing para suscribirse
-                            window.location.href = '../index.html#pricing';
-                            return;
-                        }
-                        
-                        // Tiene acceso - navegar a tasación
-                        window.location.href = 'tasacion.html';
-                    } catch (error) {
-                        console.error('[Solicitudes] Error verificando acceso premium:', error);
-                        // En caso de error, ir a pricing por seguridad
-                        window.location.href = '../index.html#pricing';
-                    }
-                });
+        // Verificar acceso premium al cargar la página
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Usar requirePremiumAccess para redirigir a pricing si no tiene acceso (acceso directo por URL)
+            if (window.PremiumGuard && window.PremiumGuard.requirePremiumAccess) {
+                const hasAccess = await window.PremiumGuard.requirePremiumAccess();
+                if (!hasAccess) {
+                    // Ya fue redirigido a pricing
+                    return;
+                }
             }
         });
     </script>

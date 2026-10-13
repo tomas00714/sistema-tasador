@@ -3278,6 +3278,87 @@ input:checked + .slider:before {
 }
 
 /* =========================
+   SUBSCRIPTION MODAL
+========================= */
+
+.subscription-modal-content {
+    padding: 30px;
+    max-width: 900px;
+    width: 100%;
+}
+
+.subscription-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+}
+
+.subscription-modal-content > p {
+    color: var(--color-text-secondary);
+    margin-bottom: 30px;
+}
+
+.subscription-modal-plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.subscription-modal-plans .pricing-card {
+    margin: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+}
+
+.subscription-modal-plans .pricing-card h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: var(--color-text-primary);
+}
+
+.subscription-modal-plans .pricing-price {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 24px;
+}
+
+.subscription-modal-plans .pricing-price span {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--color-text-secondary);
+}
+
+.subscription-modal-plans .pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+    text-align: left;
+}
+
+.subscription-modal-plans .pricing-features li {
+    padding: 8px 0;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.subscription-modal-plans .pricing-features li i {
+    color: var(--color-success);
+}
+
+/* Make subscription modal wider to accommodate pricing cards */
+#subscriptionModal {
+    width: min(900px, calc(100vw - 40px));
+    max-width: min(900px, calc(100vw - 40px));
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+/* =========================
    PANEL CARD CONTAINER
    Contenedor principal reutilizable
 ========================= */

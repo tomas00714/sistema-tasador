@@ -292,39 +292,79 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handler global para botones "Nueva tasación" (escritorio y móvil)
     const btnNuevaTasacion = document.getElementById('btnNuevaTasacion');
     const btnNuevaTasacionMobile = document.getElementById('btnNuevaTasacionMobile');
+    const btnSolicitudes = document.getElementById('btnSolicitudes');
     
     const handlerNuevaTasacion = async function(e) {
         e.preventDefault();
-        
+
         // Verificar autenticación
         if (!window.isAuthenticated || !window.isAuthenticated()) {
             window.location.href = '../login.html?redirect=app/tasacion.html';
             return;
         }
-        
-        // Verificar acceso premium
+
+        // Verificar acceso premium usando SubscriptionManager compartido
+        if (!window.SubscriptionManager) {
+            console.error('[Sidebar] SubscriptionManager no disponible - no se puede verificar acceso');
+            // Fail-closed: no hacer nada si SubscriptionManager no está disponible
+            return;
+        }
+
         try {
-            const access = await window.checkPremiumAccess();
-            if (!access.hasAccess) {
-                // No tiene acceso - abrir pricing para suscribirse
-                window.location.href = '../index.html#pricing';
-                return;
-            }
-            
-            // Tiene acceso - navegar a tasación
-            window.location.href = 'tasacion.html';
+            const success = await window.SubscriptionManager.ejecutarSiPro(() => {
+                window.location.href = 'tasacion.html';
+            });
+            // Si success es false, el modal ya se mostró
         } catch (error) {
             console.error('[Sidebar] Error verificando acceso premium:', error);
-            // En caso de error, ir a pricing por seguridad
-            window.location.href = '../index.html#pricing';
+            // En caso de error, abrir modal de suscripciones por seguridad
+            if (window.SubscriptionManager && window.SubscriptionManager.mostrarModalSuscripcion) {
+                window.SubscriptionManager.mostrarModalSuscripcion();
+            }
+        }
+    };
+    
+    // Handler para botón de Solicitudes
+    const handlerSolicitudes = async function(e) {
+        e.preventDefault();
+
+        // Verificar autenticación
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+            window.location.href = '../login.html?redirect=app/solicitudes.html';
+            return;
+        }
+
+        // Verificar acceso premium usando SubscriptionManager compartido
+        if (!window.SubscriptionManager) {
+            console.error('[Sidebar] SubscriptionManager no disponible - no se puede verificar acceso');
+            // Fail-closed: no hacer nada si SubscriptionManager no está disponible
+            return;
+        }
+
+        try {
+            const success = await window.SubscriptionManager.ejecutarSiPro(() => {
+                window.location.href = 'solicitudes.html';
+            });
+            // Si success es false, el modal ya se mostró
+        } catch (error) {
+            console.error('[Sidebar] Error verificando acceso premium:', error);
+            // En caso de error, abrir modal de suscripciones por seguridad
+            if (window.SubscriptionManager && window.SubscriptionManager.mostrarModalSuscripcion) {
+                window.SubscriptionManager.mostrarModalSuscripcion();
+            }
         }
     };
     
     if (btnNuevaTasacion) {
         btnNuevaTasacion.addEventListener('click', handlerNuevaTasacion);
     }
-    
+
     if (btnNuevaTasacionMobile) {
         btnNuevaTasacionMobile.addEventListener('click', handlerNuevaTasacion);
+    }
+
+    // Agregar handler para botón de Solicitudes
+    if (btnSolicitudes) {
+        btnSolicitudes.addEventListener('click', handlerSolicitudes);
     }
 });

@@ -362,8 +362,8 @@ class TestFrontendErrorHandling(unittest.TestCase):
             self.assertIn('handlePremiumError', content)
             # Verificar que maneja el código no_premium
             self.assertIn('no_premium', content)
-            # Verificar que redirige a pricing
-            self.assertIn('pricing', content)
+            # Verificar que abre el modal de suscripciones
+            self.assertIn('showSubscriptionModal', content)
 
 
 if __name__ == '__main__':

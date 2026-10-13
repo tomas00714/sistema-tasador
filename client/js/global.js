@@ -10,6 +10,34 @@ function escapeHtml(value) {
         .replace(/'/g, "&#39;");
 }
 
+// Handler global para botón "Nueva tasación" de la home card
+document.addEventListener('DOMContentLoaded', function() {
+    const btnNuevaTasacionHome = document.querySelector('.btn-nueva-tasacion-home-card');
+    if (btnNuevaTasacionHome) {
+        btnNuevaTasacionHome.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Verificar autenticación
+            if (!window.isAuthenticated || !window.isAuthenticated()) {
+                window.location.href = '../login.html?redirect=app/tasacion.html';
+                return;
+            }
+
+            // Verificar acceso premium usando SubscriptionManager compartido
+            try {
+                const success = await window.SubscriptionManager.ejecutarSiPro(() => {
+                    window.location.href = 'tasacion.html';
+                });
+                // Si success es false, el modal ya se mostró
+            } catch (error) {
+                console.error('[Global] Error verificando acceso premium:', error);
+                // En caso de error, abrir modal de suscripciones por seguridad
+                window.SubscriptionManager.mostrarModalSuscripcion();
+            }
+        });
+    }
+});
+
 function construirCardMinimizada({
     item = {},
     precio = "—",

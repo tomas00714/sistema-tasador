@@ -50,19 +50,16 @@ function handleAuthError(response) {
 
 /**
  * Maneja errores de acceso premium (403 con código no_premium).
- * Redirige a pricing en lugar de mostrar error técnico.
+ * Abre el modal de suscripciones en lugar de redirigir.
  */
 async function handlePremiumError(response) {
     if (response.status === 403) {
         try {
             const errorData = await response.json();
             if (errorData.detail === 'no_premium') {
-                // Redirigir a pricing
-                const currentPath = window.location.pathname;
-                if (currentPath.includes('/app/')) {
-                    window.location.href = '../index.html#pricing';
-                } else {
-                    window.location.href = 'index.html#pricing';
+                // Abrir modal de suscripciones usando SubscriptionManager compartido
+                if (window.SubscriptionManager && window.SubscriptionManager.mostrarModalSuscripcion) {
+                    window.SubscriptionManager.mostrarModalSuscripcion();
                 }
                 return true;
             }

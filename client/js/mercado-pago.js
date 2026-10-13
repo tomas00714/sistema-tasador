@@ -40,53 +40,14 @@ async function getSubscriptionStatus() {
 
 /**
  * Inicia el checkout de suscripción via Mercado Pago
+ * DEPRECADO: Usar SubscriptionManager.iniciarFlujoSuscripcion en su lugar
  */
 async function iniciarCheckout() {
-    try {
-        if (isProcessing) {
-            console.warn('[MercadoPago] Ya hay un proceso de checkout en curso');
-            return;
-        }
-        
-        isProcessing = true;
-        
-        const token = getToken();
-        if (!token) {
-            // Redirigir a login
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
-            return;
-        }
-        
-        const apiUrl = getApiUrl();
-        
-        // Llamar al backend para iniciar el checkout
-        const response = await fetch(`${apiUrl}/api/suscripcion/iniciar-checkout`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Error al iniciar checkout' }));
-            throw new Error(errorData.detail || 'Error al iniciar checkout');
-        }
-        
-        const result = await response.json();
-        
-        // Redirigir al usuario al init_point de Mercado Pago
-        if (result.init_point) {
-            window.location.href = result.init_point;
-        } else {
-            throw new Error('No se recibió init_point de Mercado Pago');
-        }
-        
-    } catch (error) {
-        console.error('[MercadoPago] Error iniciando checkout:', error);
-        alert('Error al iniciar el checkout: ' + error.message);
-    } finally {
-        isProcessing = false;
+    // Delegar a SubscriptionManager compartido
+    if (window.SubscriptionManager && window.SubscriptionManager.iniciarFlujoSuscripcion) {
+        window.SubscriptionManager.iniciarFlujoSuscripcion();
+    } else {
+        console.error('[MercadoPago] SubscriptionManager no disponible');
     }
 }
 
@@ -167,17 +128,18 @@ function setupSubscriptionButton() {
     // Agregar nuevo handler
     newButton.addEventListener('click', async (e) => {
         e.preventDefault();
-        
+
         const token = getToken();
         if (!token) {
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+            // Usuario sin cuenta: redirigir a registro con plan=paid
+            window.location.href = 'registro.html?plan=paid&redirect=' + encodeURIComponent(window.location.href);
             return;
         }
-        
+
         if (newButton.disabled) {
             return;
         }
-        
+
         await iniciarCheckout();
     });
 }

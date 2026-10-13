@@ -52,12 +52,12 @@
                 <span class="sidebar-nav-item-text">Base de datos</span>
             </a>
 
-            <a href="solicitudes.html" class="sidebar-nav-item" data-page="solicitudes">
+            <button type="button" class="sidebar-nav-item" data-page="solicitudes" id="btnSolicitudes">
                 <span class="sidebar-nav-item-icon">
                     <i class="fa-solid fa-file-lines"></i>
                 </span>
                 <span class="sidebar-nav-item-text">Solicitudes</span>
-            </a>
+            </button>
 
             <button type="button" class="sidebar-nav-item" data-page="tasacion" id="btnNuevaTasacion">
                 <span class="sidebar-nav-item-icon">
@@ -162,8 +162,8 @@
                 </h1>
 
                 <div class="home-acciones">
-                    <a
-                        href="tasacion.html"
+                    <button
+                        type="button"
                         class="home-action-card btn-nueva-tasacion-home-card"
                         role="button"
                         aria-label="Abrir nueva tasación">
@@ -172,7 +172,7 @@
 
                         <span class="btn-nueva-tasacion-home-label">Nueva Tasación</span>
 
-                    </a>
+                    </button>
 
                     <a
                         href="historial.html"
@@ -344,6 +344,7 @@
     <script src="../js/route-guard.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/premium-guard.js"></script>
+    <script src="../js/subscription-manager.js"></script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/format-utils.js"></script>
@@ -409,41 +410,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // Handler para botón "Nueva tasación" - verifica acceso premium antes de navegar
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnNuevaTasacion = document.getElementById('btnNuevaTasacion');
-            if (btnNuevaTasacion) {
-                btnNuevaTasacion.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    
-                    // Verificar autenticación
-                    if (!window.isAuthenticated || !window.isAuthenticated()) {
-                        window.location.href = '../login.html?redirect=app/tasacion.html';
-                        return;
-                    }
-                    
-                    // Verificar acceso premium
-                    try {
-                        const access = await window.checkPremiumAccess();
-                        if (!access.hasAccess) {
-                            // No tiene acceso - abrir pricing para suscribirse
-                            window.location.href = '../index.html#pricing';
-                            return;
-                        }
-                        
-                        // Tiene acceso - navegar a tasación
-                        window.location.href = 'tasacion.html';
-                    } catch (error) {
-                        console.error('[Index] Error verificando acceso premium:', error);
-                        // En caso de error, ir a pricing por seguridad
-                        window.location.href = '../index.html#pricing';
-                    }
-                });
-            }
-        });
-    </script>
 
 </body>
 </html>

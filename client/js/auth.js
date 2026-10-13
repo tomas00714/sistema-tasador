@@ -44,6 +44,9 @@ function getApiUrl() {
     return isLocal ? 'http://127.0.0.1:8080' : 'https://sistema-tasador.onrender.com';
 }
 
+// Exponer getApiUrl en window para que otros módulos puedan usar la misma configuración
+window.getApiUrl = getApiUrl;
+
 function continuarConGoogle() {
     const apiUrl = getApiUrl();
     const popup = window.open(`${apiUrl}/api/auth/google?mode=continue`, GOOGLE_POPUP_NAME, GOOGLE_POPUP_FEATURES);
@@ -98,9 +101,17 @@ function isAuthenticated() {
 
 /**
  * Verifica si el usuario tiene acceso premium (suscripción activa o es admin).
+ * DEPRECATED: Usar SubscriptionManager.verificarAccesoPro() en su lugar.
+ * Esta función se mantiene por compatibilidad y delega a SubscriptionManager.
  * @returns {Promise<{hasAccess: boolean, isAuth: boolean, tiene_acceso_pro: boolean, is_admin: boolean}>}
  */
 async function checkPremiumAccess() {
+    // Delegar a SubscriptionManager si está disponible
+    if (window.SubscriptionManager && window.SubscriptionManager.verificarAccesoPro) {
+        return await window.SubscriptionManager.verificarAccesoPro();
+    }
+
+    // Fallback por compatibilidad (lógica original)
     const token = getToken();
     if (!token) {
         return { hasAccess: false, isAuth: false, tiene_acceso_pro: false, is_admin: false };
@@ -128,7 +139,7 @@ async function checkPremiumAccess() {
         const data = await response.json();
         const tiene_acceso_pro = data.tiene_acceso_pro || false;
         const is_admin = data.is_admin || false;
-        
+
         return {
             hasAccess: tiene_acceso_pro || is_admin,
             isAuth: true,
@@ -387,16 +398,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         registerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const registerBtn = document.getElementById('registerBtn');
-            
+
             hideError('authError');
-            
+
             // Validar contraseña
             const passwordError = validatePassword(password);
             if (passwordError) {
@@ -406,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 passwordHint.textContent = passwordError;
                 return;
             }
-            
+
             // Validar que las contraseñas coincidan
             if (password !== confirmPassword) {
                 showError('authError', 'Las contraseñas no coinciden');
@@ -415,13 +426,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmPasswordHint.textContent = 'Las contraseñas no coinciden';
                 return;
             }
-            
+
             registerBtn.disabled = true;
             registerBtn.textContent = 'Creando cuenta...';
 
             try {
                 await register(nombre, apellido, email, password);
-                window.location.href = getAuthRedirect();
+
+                // Leer parámetros de la URL para flujo de suscripción
+                const urlParams = new URLSearchParams(window.location.search);
+                const plan = urlParams.get('plan');
+                const redirect = urlParams.get('redirect');
+
+                if (plan === 'trial') {
+                    // Activar trial después del registro
+                    if (window.SubscriptionManager && window.SubscriptionManager.iniciarFlujoTrial) {
+                        window.SubscriptionManager.iniciarFlujoTrial();
+                    } else {
+                        // Fallback: redirigir a la app
+                        window.location.href = getAuthRedirect();
+                    }
+                } else if (plan === 'paid') {
+                    // Iniciar checkout de Mercado Pago después del registro
+                    if (window.SubscriptionManager && window.SubscriptionManager.iniciarFlujoSuscripcion) {
+                        window.SubscriptionManager.iniciarFlujoSuscripcion();
+                    } else {
+                        // Fallback: redirigir a pricing
+                        window.location.href = 'index.html#pricing';
+                    }
+                } else {
+                    // Flujo normal de registro
+                    window.location.href = getAuthRedirect();
+                }
             } catch (error) {
                 showError('authError', error.message);
                 registerBtn.disabled = false;

@@ -35,7 +35,10 @@ let tasacionPerfilAbiertaId = null;
 
 // Función para generar informe desde el historial
 function generarInformeDesdeHistorial(id) {
-    window.location.href = `vista-previa-informe.html?id=${id}`;
+    // Verificar acceso premium usando SubscriptionManager compartido
+    window.SubscriptionManager.ejecutarSiPro(() => {
+        window.location.href = `vista-previa-informe.html?id=${id}`;
+    });
 }
 let comparablePerfilAbiertoId = null;
 
@@ -491,36 +494,39 @@ function formatearFecha(fecha) {
 ========================= */
 
 function eliminarTasacion(id) {
-    mostrarModalGenerico({
-        titulo: "¿Estás seguro de eliminar?",
-        mensaje: "¿Deseas eliminar esta tasación del historial? Esta acción no se puede deshacer.",
-        botones: [
-            {
-                texto: "Cancelar",
-                clase: "btn-modal btn-modal-neutral",
-                onClick: () => {
-                    ocultarModalGenerico();
-                }
-            },
-            {
-                texto: "Eliminar",
-                clase: "btn-modal btn-modal-negative",
-                onClick: async () => {
-                    ocultarModalGenerico();
-                    try {
-                        await eliminarTasacionEntidad(id);
-                        tasaciones = tasaciones.filter(t => t.id !== id);
-                        cerrarPerfil();
-                        renderHistorial();
-                    } catch (e) {
-                        console.error('Error al eliminar tasación:', e);
-                        alert('No se pudo eliminar la tasación. Revisá la consola o el servidor.');
+    // Verificar acceso premium antes de eliminar
+    window.SubscriptionManager.ejecutarSiPro(async () => {
+            mostrarModalGenerico({
+                titulo: "¿Estás seguro de eliminar?",
+                mensaje: "¿Deseas eliminar esta tasación del historial? Esta acción no se puede deshacer.",
+                botones: [
+                    {
+                        texto: "Cancelar",
+                        clase: "btn-modal btn-modal-neutral",
+                        onClick: () => {
+                            ocultarModalGenerico();
+                        }
+                    },
+                    {
+                        texto: "Eliminar",
+                        clase: "btn-modal btn-modal-negative",
+                        onClick: async () => {
+                            ocultarModalGenerico();
+                            try {
+                                await eliminarTasacionEntidad(id);
+                                tasaciones = tasaciones.filter(t => t.id !== id);
+                                cerrarPerfil();
+                                renderHistorial();
+                            } catch (e) {
+                                console.error('Error al eliminar tasación:', e);
+                                alert('No se pudo eliminar la tasación. Revisá la consola o el servidor.');
+                            }
+                        }
                     }
-                }
-            }
-        ],
-        cerrarAlClick: false
-    });
+                ],
+                cerrarAlClick: false
+            });
+        });
 }
 
 window.abrirPerfilTasacion = async function(id) {
@@ -1113,36 +1119,18 @@ window.abrirPerfilTasacion = async function(id) {
     document
         .getElementById("btnCrearInformePerfil")
         ?.addEventListener("click", async () => {
-            // Verificar acceso premium antes de generar informe
-            if (window.PremiumGuard) {
-                const hasAccess = await PremiumGuard.executeIfPremium(() => {
-                    generarInformeDesdeHistorial(id);
-                });
-                if (!hasAccess) {
-                    return; // No tiene acceso, ya fue redirigido
-                }
-            } else {
-                // Fallback si PremiumGuard no está cargado
+            SubscriptionManager.ejecutarSiPro(() => {
                 generarInformeDesdeHistorial(id);
-            }
+            });
         });
 
     // Edit button event listener
     document
         .getElementById("btnEditarPerfil")
         ?.addEventListener("click", async () => {
-            // Verificar acceso premium antes de editar
-            if (window.PremiumGuard) {
-                const hasAccess = await PremiumGuard.executeIfPremium(() => {
-                    editarTasacion(id);
-                });
-                if (!hasAccess) {
-                    return; // No tiene acceso, ya fue redirigido
-                }
-            } else {
-                // Fallback si PremiumGuard no está cargado
+            SubscriptionManager.ejecutarSiPro(() => {
                 editarTasacion(id);
-            }
+            });
         });
 
     // Delete button event listener
@@ -1154,9 +1142,29 @@ window.abrirPerfilTasacion = async function(id) {
     document
         .getElementById("btnCompartirPerfil")
         ?.addEventListener("click", () => {
-            if (window.abrirModalCompartir) {
-                window.abrirModalCompartir(tasacion.id);
-            }
+            window.SubscriptionManager.ejecutarSiPro(() => {
+                if (window.abrirModalCompartir) {
+                    window.abrirModalCompartir(tasacion.id);
+                }
+            });
+        });
+
+    // Edit button event listener
+    document
+        .getElementById("btnEditarPerfil")
+        ?.addEventListener("click", () => {
+            window.SubscriptionManager.ejecutarSiPro(() => {
+                editarTasacion(id);
+            });
+        });
+
+    // Create report button event listener
+    document
+        .getElementById("btnCrearInformePerfil")
+        ?.addEventListener("click", () => {
+            window.SubscriptionManager.ejecutarSiPro(() => {
+                generarInformeDesdeHistorial(id);
+            });
         });
 
     // Add perfil-modal class to override modal-tasacion styles
@@ -1464,18 +1472,22 @@ window.abrirPerfilComparable = async function(comparableOrId) {
             const btnAceptar = document.getElementById("btnAceptarPerfil");
             if (btnAceptar) {
                 btnAceptar.addEventListener("click", () => {
-                    if (typeof window.aceptarComparableSolicitud === 'function') {
-                        window.aceptarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
-                    }
+                    window.SubscriptionManager.ejecutarSiPro(() => {
+                        if (typeof window.aceptarComparableSolicitud === 'function') {
+                            window.aceptarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
+                        }
+                    });
                 });
             }
 
             const btnRechazar = document.getElementById("btnRechazarPerfil");
             if (btnRechazar) {
                 btnRechazar.addEventListener("click", () => {
-                    if (typeof window.rechazarComparableSolicitud === 'function') {
-                        window.rechazarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
-                    }
+                    window.SubscriptionManager.ejecutarSiPro(() => {
+                        if (typeof window.rechazarComparableSolicitud === 'function') {
+                            window.rechazarComparableSolicitud(solicitudIdRaw, comparableIdRaw);
+                        }
+                    });
                 });
             }
         } else {

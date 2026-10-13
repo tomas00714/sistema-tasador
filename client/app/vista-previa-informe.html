@@ -14,8 +14,28 @@
     <link rel="stylesheet" href="../css/shell.css">
     <link rel="stylesheet" href="../css/vista-previa-informe.css">
     <link rel="stylesheet" href="../css/report-pdf.css">
+    <link rel="stylesheet" href="../css/tasacion.css">
 </head>
 <body>
+
+    <script src="../js/route-guard.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/premium-guard.js"></script>
+    <script src="../js/subscription-manager.js"></script>
+
+    <script>
+        // Verificar acceso premium al cargar la página
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Usar requirePremiumAccess para redirigir a pricing si no tiene acceso (acceso directo por URL)
+            if (window.PremiumGuard && window.PremiumGuard.requirePremiumAccess) {
+                const hasAccess = await window.PremiumGuard.requirePremiumAccess();
+                if (!hasAccess) {
+                    // Ya fue redirigido a pricing
+                    return;
+                }
+            }
+        });
+    </script>
 
     <div class="vista-previa-container">
         
@@ -233,6 +253,7 @@
     <script src="../js/route-guard.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/premium-guard.js"></script>
+    <script src="../js/subscription-manager.js"></script>
     <script src="../js/storage-cache.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/entidades.js"></script>
@@ -249,9 +270,13 @@
     <script>
         // Verificar acceso premium al cargar la página (generación de informes es función Pro)
         document.addEventListener('DOMContentLoaded', async function() {
-            const hasAccess = await window.PremiumGuard.requirePremiumAccess();
-            if (!hasAccess) {
-                // Ya fue bloqueado por premium-guard.js, no hacer nada más
+            // Usar requirePremiumAccess para redirigir a pricing si no tiene acceso (acceso directo por URL)
+            if (window.PremiumGuard && window.PremiumGuard.requirePremiumAccess) {
+                const hasAccess = await window.PremiumGuard.requirePremiumAccess();
+                if (!hasAccess) {
+                    // Ya fue redirigido a pricing
+                    return;
+                }
             }
         });
     </script>

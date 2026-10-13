@@ -2645,6 +2645,9 @@ def google_oauth_callback(
             "message": "Modo de OAuth inválido"
         })
 
+    # Obtener el intento (login o register) del parámetro state
+    intent = state_data.get("intent", "login")  # Por defecto es login
+
     # 1. Buscar por google_id
     usuario = repo.find_by_google_id(google_id)
     if usuario:
@@ -2664,6 +2667,17 @@ def google_oauth_callback(
     # 2. Si no existe por google_id, verificar por email
     usuario_por_email = repo.find_by_email(email)
     if usuario_por_email:
+        # Si el intento es login y el usuario tiene contraseña, permitir iniciar sesión
+        # sin vincular automáticamente Google (el usuario puede vincular después desde el perfil)
+        if intent == "login" and usuario_por_email.get("password_hash"):
+            repo.update_ultimo_acceso(usuario_por_email["id"])
+            access_token = auth.create_access_token(data={"sub": str(usuario_por_email["id"])})
+            return _google_callback_html({
+                "type": "google-auth-success",
+                "token": _datos_usuario_token(usuario_por_email, access_token).model_dump()
+            })
+        
+        # Si el intento es register o el usuario no tiene contraseña, mostrar mensaje de cuenta existente
         # NO vincular automáticamente. El usuario debe iniciar sesión con password
         # y vincular desde el perfil de forma explícita.
         return _google_callback_html({
