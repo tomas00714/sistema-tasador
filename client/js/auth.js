@@ -166,6 +166,10 @@ function validatePassword(password) {
 function logout() {
     removeToken();
     removeUserData();
+    // Limpiar estado de SubscriptionManager
+    if (window.SubscriptionManager && window.SubscriptionManager.limpiarEstado) {
+        window.SubscriptionManager.limpiarEstado();
+    }
     window.location.href = '../index.html';
 }
 
@@ -192,7 +196,12 @@ async function login(email, password) {
         apellido: data.apellido,
         is_admin: data.is_admin
     });
-    
+
+    // Cargar estado de permisos después de login exitoso
+    if (window.SubscriptionManager && window.SubscriptionManager.cargarEstadoInicial) {
+        window.SubscriptionManager.cargarEstadoInicial();
+    }
+
     return data;
 }
 
@@ -219,7 +228,12 @@ async function register(nombre, apellido, email, password) {
         apellido: data.apellido,
         is_admin: data.is_admin
     });
-    
+
+    // Cargar estado de permisos después de registro exitoso
+    if (window.SubscriptionManager && window.SubscriptionManager.cargarEstadoInicial) {
+        window.SubscriptionManager.cargarEstadoInicial();
+    }
+
     return data;
 }
 

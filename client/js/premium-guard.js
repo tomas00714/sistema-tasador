@@ -147,23 +147,20 @@ function showSubscriptionModal() {
             });
         }
     }
-    
-    // Verificar elegibilidad para trial usando SubscriptionManager (sin recarga si se acaba de verificar)
-    if (window.SubscriptionManager && window.SubscriptionManager.verificarAccesoPro) {
-        window.SubscriptionManager.verificarAccesoPro(false).then(access => {
-            const trialCtaModal = document.getElementById('trialCtaModal');
-            if (!trialCtaModal) return;
 
-            // Mostrar botón solo si autenticado y elegible
-            if (access.isAuth && !access.hasAccess &&
-                SubscriptionManager.estado.trialInfo &&
-                !SubscriptionManager.estado.trialInfo.esta_vigente &&
-                !SubscriptionManager.estado.trialInfo.usado) {
+    // Verificar elegibilidad para trial usando el estado centralizado (sin nueva petición)
+    if (window.SubscriptionManager && window.SubscriptionManager.estado) {
+        const estado = SubscriptionManager.estado;
+        const trialCtaModal = document.getElementById('trialCtaModal');
+        if (trialCtaModal) {
+            // Mostrar botón solo si autenticado y elegible (usando estado en caché)
+            if (estado.isAuthenticated && !estado.tieneAccesoPro && !estado.esAdmin &&
+                estado.trialInfo && !estado.trialInfo.esta_vigente && !estado.trialInfo.usado) {
                 trialCtaModal.style.display = 'block';
             } else {
                 trialCtaModal.style.display = 'none';
             }
-        });
+        }
     }
 
     // Mostrar modal con animación

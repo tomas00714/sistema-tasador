@@ -280,19 +280,6 @@
     <script src="../js/historial.js"></script>
     <script src="../js/solicitudes.js"></script>
 
-    <script>
-        // Verificar acceso premium al cargar la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Usar requirePremiumAccess para redirigir a pricing si no tiene acceso (acceso directo por URL)
-            if (window.PremiumGuard && window.PremiumGuard.requirePremiumAccess) {
-                const hasAccess = await window.PremiumGuard.requirePremiumAccess();
-                if (!hasAccess) {
-                    // Ya fue redirigido a pricing
-                    return;
-                }
-            }
-        });
-    </script>
 
 </body>
 </html>

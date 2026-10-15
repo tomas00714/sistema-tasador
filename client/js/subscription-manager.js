@@ -10,17 +10,33 @@
 
 const SubscriptionManager = {
     estado: {
+        // Estado de autenticación
+        isAuthenticated: false,
+        userId: null,
+        email: null,
+
+        // Estado de permisos
         tieneAccesoPro: false,
         esAdmin: false,
+        plan: 'free',
+        estadoSuscripcion: null,
+
+        // Trial específico
         trialInfo: null,
-        suscripcionInfo: null
+
+        // Metadatos
+        ultimaVerificacion: null,
+        esStale: false
     },
-    
+
     callbacks: {
         onAccesoProCambiado: null,
         onTrialActivado: null,
         onPagoCompletado: null
-    }
+    },
+
+    // Flag para evitar consultas simultáneas duplicadas
+    cargaEnCurso: false
 };
 
 // =========================
@@ -38,18 +54,39 @@ async function verificarAccesoPro(forzarRecarga = false) {
         return { hasAccess: false, isAuth: false, tiene_acceso_pro: false, is_admin: false };
     }
 
-    // Si no se fuerza recarga y ya tenemos estado reciente, usarlo (caché de 30 segundos)
+    // Si no se fuerza recarga y ya tenemos estado reciente, usarlo (caché de 5 minutos)
     if (!forzarRecarga && SubscriptionManager.estado.ultimaVerificacion) {
         const ahora = Date.now();
-        const haceMenosDe30s = ahora - SubscriptionManager.estado.ultimaVerificacion < 30000;
-        if (haceMenosDe30s) {
+        const haceMenosDe5min = ahora - SubscriptionManager.estado.ultimaVerificacion < 300000;
+        if (haceMenosDe5min && !SubscriptionManager.estado.esStale) {
             return {
-                hasAccess: SubscriptionManager.estado.tieneAccesoPro,
+                hasAccess: SubscriptionManager.estado.tieneAccesoPro || SubscriptionManager.estado.esAdmin,
                 isAuth: true,
                 tiene_acceso_pro: SubscriptionManager.estado.tieneAccesoPro,
                 is_admin: SubscriptionManager.estado.esAdmin
             };
         }
+    }
+
+    // Evitar consultas simultáneas duplicadas
+    if (SubscriptionManager.cargaEnCurso) {
+        // Esperar a que la carga actual termine
+        await new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+                if (!SubscriptionManager.cargaEnCurso) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+        });
+
+        // Después de esperar, devolver el estado actualizado
+        return {
+            hasAccess: SubscriptionManager.estado.tieneAccesoPro,
+            isAuth: true,
+            tiene_acceso_pro: SubscriptionManager.estado.tieneAccesoPro,
+            is_admin: SubscriptionManager.estado.esAdmin
+        };
     }
 
     try {
@@ -73,19 +110,8 @@ async function verificarAccesoPro(forzarRecarga = false) {
         const tiene_acceso_pro = data.tiene_acceso_pro || false;
         const is_admin = data.is_admin || false;
 
-        // Actualizar estado local
-        SubscriptionManager.estado = {
-            tieneAccesoPro: tiene_acceso_pro || is_admin,
-            esAdmin: is_admin,
-            trialInfo: data.trial_info || null,
-            suscripcionInfo: {
-                estado: data.estado_suscripcion || 'free',
-                plan: data.plan || 'Free',
-                fechaInicio: data.fecha_inicio,
-                fechaFinPeriodo: data.fecha_fin_periodo
-            },
-            ultimaVerificacion: Date.now()
-        };
+        // Actualizar estado local usando función centralizada
+        actualizarEstadoDesdeBackend(data);
 
         return {
             hasAccess: tiene_acceso_pro || is_admin,
@@ -95,7 +121,17 @@ async function verificarAccesoPro(forzarRecarga = false) {
         };
     } catch (error) {
         console.error('[SubscriptionManager] Error verificando acceso Pro:', error);
-        return { hasAccess: false, isAuth: true, tiene_acceso_pro: false, is_admin: false };
+        // Distinguir entre error de red y no permiso
+        const esErrorDeRed = error.name === 'TypeError' && error.message.includes('fetch');
+        return {
+            hasAccess: false,
+            isAuth: true,
+            tiene_acceso_pro: false,
+            is_admin: false,
+            error: esErrorDeRed ? 'network' : 'unknown'
+        };
+    } finally {
+        SubscriptionManager.cargaEnCurso = false;
     }
 }
 
@@ -119,6 +155,132 @@ async function ejecutarSiPro(action, mostrarModal = true) {
         action();
     }
     return true;
+}
+
+// =========================
+// GESTIÓN DE ESTADO
+// =========================
+
+/**
+ * Actualiza el estado centralizado desde la respuesta del backend.
+ * @param {Object} data - Respuesta del endpoint /api/suscripcion
+ */
+function actualizarEstadoDesdeBackend(data) {
+    const tiene_acceso_pro = data.tiene_acceso_pro || false;
+    const is_admin = data.is_admin || false;
+
+    // Evitar que respuestas antiguas sobrescriban actualizaciones más recientes
+    const timestampActual = Date.now();
+    if (SubscriptionManager.estado.ultimaVerificacion && timestampActual < SubscriptionManager.estado.ultimaVerificacion) {
+        console.warn('[SubscriptionManager] Ignorando respuesta antigua del backend');
+        return;
+    }
+
+    SubscriptionManager.estado = {
+        ...SubscriptionManager.estado,
+        isAuthenticated: true,
+        userId: data.usuario_id || null,
+        email: data.email || null,
+        tieneAccesoPro: tiene_acceso_pro,
+        esAdmin: is_admin,
+        plan: data.plan || 'free',
+        estadoSuscripcion: data.estado_suscripcion || null,
+        trialInfo: data.trial_info || null,
+        ultimaVerificacion: timestampActual,
+        esStale: false
+    };
+
+    // Guardar estado en sessionStorage para reutilizar entre navegaciones (optimización de UX, no autorización)
+    try {
+        const estadoParaCaché = {
+            version: 1,
+            expiracion: timestampActual + 300000, // 5 minutos
+            estado: SubscriptionManager.estado
+        };
+        sessionStorage.setItem('subscriptionState', JSON.stringify(estadoParaCaché));
+    } catch (e) {
+        console.warn('[SubscriptionManager] No se pudo guardar estado en sessionStorage:', e);
+    }
+
+    // Notificar a componentes que dependen del estado
+    if (SubscriptionManager.callbacks.onAccesoProCambiado) {
+        SubscriptionManager.callbacks.onAccesoProCambiado(SubscriptionManager.estado);
+    }
+}
+
+/**
+ * Carga el estado inicial de permisos.
+ * Se llama al iniciar sesión o al recuperar una sesión existente.
+ */
+async function cargarEstadoInicial() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    // Primero intentar recuperar de sessionStorage (optimización de UX)
+    try {
+        const estadoCaché = sessionStorage.getItem('subscriptionState');
+        if (estadoCaché) {
+            const parsed = JSON.parse(estadoCaché);
+            if (parsed.version === 1 && parsed.expiracion > Date.now()) {
+                // Caché válido, usarlo
+                SubscriptionManager.estado = parsed.estado;
+                console.log('[SubscriptionManager] Estado recuperado de sessionStorage');
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('[SubscriptionManager] Error al leer caché de sessionStorage:', e);
+    }
+
+    // Si no hay caché válido, consultar al backend
+    try {
+        const apiUrl = window.getApiUrl ? window.getApiUrl() : 'http://127.0.0.1:8080';
+        const response = await fetch(`${apiUrl}/api/suscripcion`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            actualizarEstadoDesdeBackend(data);
+        }
+    } catch (error) {
+        console.error('[SubscriptionManager] Error cargando estado inicial:', error);
+        // No fallar la sesión si falla la carga de permisos
+    }
+}
+
+/**
+ * Marca el estado como potencialmente desactualizado.
+ * Debe llamarse después de acciones que podrían cambiar el estado (trial, pago, etc.)
+ */
+function marcarStale() {
+    SubscriptionManager.estado.esStale = true;
+}
+
+/**
+ * Limpia el estado (al cerrar sesión).
+ */
+function limpiarEstado() {
+    SubscriptionManager.estado = {
+        isAuthenticated: false,
+        userId: null,
+        email: null,
+        tieneAccesoPro: false,
+        esAdmin: false,
+        plan: 'free',
+        estadoSuscripcion: null,
+        trialInfo: null,
+        ultimaVerificacion: null,
+        esStale: false
+    };
+
+    // Limpiar caché de sessionStorage
+    try {
+        sessionStorage.removeItem('subscriptionState');
+    } catch (e) {
+        console.warn('[SubscriptionManager] Error al limpiar caché de sessionStorage:', e);
+    }
 }
 
 // =========================
@@ -364,6 +526,10 @@ async function activarTrial() {
         // Mostrar aviso con fecha y hora exactas
         mostrarModalAvisoTrial(vencimientoStr);
 
+        // Marcar estado como stale y recargar inmediatamente con la nueva información de trial
+        marcarStale();
+        await cargarEstadoInicial();
+
         // Redirigir a la app después de unos segundos
         setTimeout(() => {
             window.location.href = 'app/index.html';
@@ -524,6 +690,9 @@ async function verificarRetornoMercadoPago() {
 
         const data = await response.json();
 
+        // Actualizar estado centralizado desde la respuesta del backend
+        actualizarEstadoDesdeBackend(data);
+
         // Limpiar URL (remover parámetros de Mercado Pago)
         window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -672,7 +841,12 @@ window.SubscriptionManager = {
     redirigirSiNoPro,
     iniciarFlujoTrial,
     iniciarFlujoSuscripcion,
-    verificarRetornoMercadoPago
+    verificarRetornoMercadoPago,
+    cargarEstadoInicial,
+    marcarStale,
+    limpiarEstado,
+    actualizarEstadoDesdeBackend,
+    estado: SubscriptionManager.estado
 };
 
 // Verificar retorno de Mercado Pago al cargar el script
@@ -680,4 +854,9 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', verificarRetornoMercadoPago);
 } else {
     verificarRetornoMercadoPago();
+}
+
+// Cargar estado inicial si hay token y el estado aún no está cargado
+if (localStorage.getItem('auth_token') && !SubscriptionManager.estado.ultimaVerificacion) {
+    cargarEstadoInicial();
 }
