@@ -670,14 +670,14 @@ class TestV10PostMessageOrigin(unittest.TestCase):
     def test_callback_html_fail_closed(self):
         with patch.object(main, "PUBLIC_APP_URL", ""):
             resp = main._google_callback_html({"type": "google_auth", "access_token": "JWT"})
-            html = resp.body.decode()
+            html = resp.body.decode('utf-8')
             self.assertIn("const targetOrigin = null", html)
             self.assertIn("if (targetOrigin && window.opener)", html)
 
     def test_callback_html_origin_correcto(self):
         with patch.object(main, "PUBLIC_APP_URL", "https://app.test"):
             resp = main._google_callback_html({"type": "google_auth"})
-            html = resp.body.decode()
+            html = resp.body.decode('utf-8')
             self.assertIn('"https://app.test"', html)
             self.assertNotIn('"*"', html)
 
