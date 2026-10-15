@@ -251,6 +251,12 @@ async def security_headers(request, call_next):
     """
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
+    
+    # Asegurar que las respuestas JSON tengan charset UTF-8
+    content_type = response.headers.get("content-type", "")
+    if "application/json" in content_type and "charset" not in content_type:
+        response.headers["content-type"] = f"{content_type}; charset=utf-8"
+    
     return response
 
 
@@ -2435,9 +2441,20 @@ def _google_callback_html(data: Dict[str, Any]) -> HTMLResponse:
 <body>
     <p id="estado">Cerrando ventana...</p>
     <script>
+        // Función para decodificar base64 a UTF-8 correctamente
+        function base64ToUtf8(base64) {{
+            const bytes = atob(base64);
+            const utf8Decoder = new TextDecoder('utf-8');
+            const uint8Array = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) {{
+                uint8Array[i] = bytes.charCodeAt(i);
+            }}
+            return utf8Decoder.decode(uint8Array);
+        }}
+        
         try {{
             const targetOrigin = {target_origin};
-            const data = JSON.parse(atob("{payload}"));
+            const data = JSON.parse(base64ToUtf8("{payload}"));
             if (targetOrigin && window.opener) {{
                 window.opener.postMessage(data, targetOrigin);
                 setTimeout(() => window.close(), 500);
