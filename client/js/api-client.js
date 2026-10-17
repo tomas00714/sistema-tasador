@@ -960,8 +960,8 @@ async function guardarTasacionCompartidaAPI(token) {
 // relativa porque las páginas viven en dos niveles: app/ y raíz.
 function urlAvatarPlaceholder() {
     return window.location.pathname.includes('/app/')
-        ? '../assets/images/default-avatar.png'
-        : 'assets/images/default-avatar.png';
+        ? '../assets/images/default-avatar.PNG'
+        : 'assets/images/default-avatar.PNG';
 }
 
 function crearAvatarImg(container) {
@@ -971,7 +971,7 @@ function crearAvatarImg(container) {
     img.onerror = function() {
         // Foto real rota → placeholder; si el placeholder tampoco existe,
         // el avatar queda vacío (sin imagen ni ícono).
-        if (!img.src.endsWith('default-avatar.png')) {
+        if (!img.src.endsWith('default-avatar.PNG')) {
             img.src = urlAvatarPlaceholder();
             return;
         }

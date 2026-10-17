@@ -77,8 +77,8 @@ function cargarDatosUsuario() {
 // Imágenes genéricas usadas cuando el usuario no cargó una foto/logo propio.
 // Los archivos NO forman parte del código: deben crearse manualmente en
 // client/assets/images/ (ver documentación de la feature).
-const DEFAULT_AVATAR_URL = '../assets/images/default-avatar.png';
-const DEFAULT_LOGO_URL = '../assets/images/default-logo.png';
+const DEFAULT_AVATAR_URL = '../assets/images/default-avatar.PNG';
+const DEFAULT_LOGO_URL = '../assets/images/default-logo.PNG';
 
 function actualizarAvatar(fotoPerfil) {
     const avatar = document.getElementById('perfilAvatar');
@@ -89,7 +89,7 @@ function actualizarAvatar(fotoPerfil) {
     img.onerror = () => {
         // Si falla la foto real, cae al placeholder; si el placeholder
         // tampoco existe, el avatar queda vacío (sin imagen ni ícono).
-        if (!img.src.endsWith('default-avatar.png')) {
+        if (!img.src.endsWith('default-avatar.PNG')) {
             img.src = DEFAULT_AVATAR_URL;
             return;
         }
@@ -108,7 +108,7 @@ function actualizarLogo(logoInmobiliaria) {
 
     img.onerror = () => {
         // Logo real roto → placeholder; placeholder inexistente → vacío.
-        if (!img.src.endsWith('default-logo.png')) {
+        if (!img.src.endsWith('default-logo.PNG')) {
             img.src = DEFAULT_LOGO_URL;
             return;
         }
@@ -233,7 +233,7 @@ function togglePopoverFoto() {
     const img = document.getElementById('perfilAvatarImg');
     const src = img && img.getAttribute('src');
     const tieneFoto = document.getElementById('perfilAvatar').classList.contains('con-foto')
-        && src && !src.endsWith('default-avatar.png');
+        && src && !src.endsWith('default-avatar.PNG');
     document.getElementById('btnEliminarFoto').style.display = tieneFoto ? 'flex' : 'none';
 
     popover.classList.toggle('abierto');
@@ -249,7 +249,7 @@ function togglePopoverLogo() {
     const img = document.getElementById('logoInmobiliariaImg');
     const src = img && img.getAttribute('src');
     const tieneLogo = img && img.style.display !== 'none' && src
-        && !src.endsWith('default-logo.png');
+        && !src.endsWith('default-logo.PNG');
     document.getElementById('btnEliminarLogo').style.display = tieneLogo ? 'flex' : 'none';
 
     popover.classList.toggle('abierto');
