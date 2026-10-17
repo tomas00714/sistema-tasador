@@ -2663,7 +2663,7 @@ def google_oauth_callback(
         })
 
     # Obtener el intento (login o register) del parámetro state
-    intent = state_data.get("intent", "login")  # Por defecto es login
+    intent = payload.get("intent", "login")  # Por defecto es login
 
     # 1. Buscar por google_id
     usuario = repo.find_by_google_id(google_id)
