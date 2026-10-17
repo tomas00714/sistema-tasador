@@ -162,6 +162,22 @@
                     <p>Conexiones seguras, contraseñas cifradas y acceso directo con tu cuenta de Google.</p>
                 </div>
             </div>
+            <div class="feature-highlights">
+                <article class="feature-row">
+                    <div class="feature-highlight-content">
+                        <h3>Genera el PDF de tu informe</h3>
+                        <p>Generá informes completos en segundos listos para imprimir o enviar a tus clientes. Personalizá el pdf con tu logo, colores institucionales, fotos del inmueble y los datos exactos que quieras mostrar.</p>
+                    </div>
+                    <img src="assets/images/foto-bloque1.PNG" alt="Vista de una propiedad inmobiliaria" class="feature-highlight-image">
+                </article>
+                <article class="feature-row reverse">
+                    <img src="assets/images/foto-bloque2.PNG" alt="Profesional analizando una propiedad" class="feature-highlight-image">
+                    <div class="feature-highlight-content">
+                        <h3>Base de Datos</h3>
+                        <p>Mantené un registro organizado y geolocalizado de todas tus tasaciones. Visualizala en el mapa interactivo, edita valores y compartilas con tu equipo o colegas.</p>
+                    </div>
+                </article>
+            </div>
         </div>
     </section>
 
@@ -508,12 +524,11 @@
                 const data = await response.json();
 
                 // Mostrar botón de trial solo si:
-                // - No tiene acceso Pro
-                // - Trial no está activo
-                // - Trial no ha sido usado
-                if (!data.tiene_acceso_pro && !data.is_admin &&
-                    (!data.trial_info || !data.trial_info.esta_vigente) &&
-                    (!data.trial_info || !data.trial_info.usado)) {
+                // - NO es administrador (admin tiene acceso completo sin trial)
+                // - NO tiene acceso Pro por suscripción/trial
+                // - Trial está disponible (no usado y sin pagos aprobados)
+                if (!data.is_admin && !data.tiene_acceso_pro &&
+                    data.trial_info && data.trial_info.disponible) {
                     trialCtaButton.style.display = 'block';
                 } else {
                     trialCtaButton.style.display = 'none';

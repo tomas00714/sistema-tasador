@@ -413,6 +413,10 @@ class SuscripcionService:
     def _obtener_info_trial(self, usuario_id: int) -> Optional[Dict[str, Any]]:
         """Obtiene información del trial de un usuario.
 
+        Verifica elegibilidad según reglas comerciales:
+        - No puede activar si ya usó el trial
+        - No puede activar si tiene algún pago aprobado en su historial
+
         Returns:
             Dict con trial_inicio, trial_fin, trial_usado, disponible o None si no existe el usuario.
         """
@@ -422,11 +426,27 @@ class SuscripcionService:
 
         trial_usado = usuario.get('trial_usado', False)
 
+        # Verificar si tiene pagos aprobados en su historial
+        tiene_pagos_aprobados = False
+        suscripciones = self.suscripcion_repo.find_by_usuario(usuario_id)
+        for sus in suscripciones:
+            pagos = self.pago_repo.find_by_suscripcion(sus['id'])
+            for pago in pagos:
+                if pago.get('estado') == 'approved':
+                    tiene_pagos_aprobados = True
+                    break
+            if tiene_pagos_aprobados:
+                break
+
+        # No es elegible si ya usó trial o si tiene pagos aprobados
+        disponible = not trial_usado and not tiene_pagos_aprobados
+
         return {
             'trial_inicio': usuario.get('trial_inicio'),
             'trial_fin': usuario.get('trial_fin'),
             'trial_usado': trial_usado,
-            'disponible': not trial_usado  # True si aún puede activar el trial
+            'tiene_pagos_aprobados': tiene_pagos_aprobados,
+            'disponible': disponible
         }
 
     def trial_esta_vigente(self, usuario_id: int) -> bool:
@@ -455,19 +475,26 @@ class SuscripcionService:
             Dict con trial_inicio y trial_fin
 
         Raises:
-            HTTPException: Si el usuario ya usó su trial o no existe
+            HTTPException: Si el usuario ya usó su trial, tiene pagos aprobados o no existe
         """
         # Verificar que el usuario existe
         usuario = self.usuario_repo.find_by_id(usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-        # Si ya tiene trial usado, rechazar inmediatamente (optimización)
-        if usuario.get('trial_usado'):
-            raise HTTPException(
-                status_code=409,
-                detail="El usuario ya utilizó su prueba gratuita"
-            )
+        # Verificar elegibilidad (trial no usado y sin pagos aprobados)
+        trial_info = self._obtener_info_trial(usuario_id)
+        if not trial_info['disponible']:
+            if trial_info['trial_usado']:
+                raise HTTPException(
+                    status_code=409,
+                    detail="El usuario ya utilizó su prueba gratuita"
+                )
+            if trial_info['tiene_pagos_aprobados']:
+                raise HTTPException(
+                    status_code=409,
+                    detail="El usuario no es elegible para la prueba gratuita (ya realizó pagos)"
+                )
 
         ahora = self._now()
         fin = ahora + timedelta(days=15)
@@ -544,10 +571,10 @@ class SuscripcionService:
             }
 
         is_admin = auth.is_admin(usuario['email'])
-        tiene_acceso_pro = self.tiene_acceso_pro_extendido(usuario_id)
 
-        # Obtener estado de suscripción
+        # Obtener estado de suscripción (sin incluir admin)
         estado_suscripcion = self.obtener_estado(usuario_id)
+        tiene_acceso_por_suscripcion = estado_suscripcion.get('tiene_acceso_pro', False)
 
         # Obtener info de trial
         trial_info = self._obtener_info_trial(usuario_id)
@@ -557,13 +584,15 @@ class SuscripcionService:
         # Determinar plan actual
         if is_admin:
             plan = 'Admin'
-        elif tiene_acceso_pro:
+        elif tiene_acceso_por_suscripcion:
             plan = 'Pro'
         else:
             plan = 'Free'
 
+        # tiene_acceso_pro indica si tiene acceso Pro por suscripción o trial (NO incluye admin)
+        # is_admin indica si es administrador (tiene acceso completo independientemente de suscripción)
         return {
-            'tiene_acceso_pro': tiene_acceso_pro,
+            'tiene_acceso_pro': tiene_acceso_por_suscripcion,
             'plan': plan,
             'estado_suscripcion': estado_suscripcion.get('estado', 'free'),
             'trial_info': trial_info,

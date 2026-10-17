@@ -50,7 +50,9 @@ class TestTrialActivation(unittest.TestCase):
     @patch('services.suscripcion_service.SuscripcionService._now')
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
     @patch('repositories.usuario_repository.UsuarioRepository.activar_trial_atomico')
-    def test_activar_trial_usa_update_condicional(self, mock_atomico, mock_find, mock_now):
+    @patch('services.suscripcion_service.SuscripcionService.suscripcion_repo')
+    @patch('services.suscripcion_service.SuscripcionService.pago_repo')
+    def test_activar_trial_usa_update_condicional(self, mock_pago_repo, mock_sus_repo, mock_atomico, mock_find, mock_now):
         """Test que activar_trial usa UPDATE condicional atómico."""
         # Configurar mocks
         mock_now.return_value = datetime(2026, 10, 11, 12, 0, 0)
@@ -61,6 +63,7 @@ class TestTrialActivation(unittest.TestCase):
             'trial_inicio': None,
             'trial_fin': None
         }
+        mock_sus_repo.find_by_usuario.return_value = []  # Sin suscripciones previas
         mock_atomico.return_value = True  # UPDATE exitoso
 
         # Ejecutar
@@ -76,7 +79,9 @@ class TestTrialActivation(unittest.TestCase):
     @patch('services.suscripcion_service.SuscripcionService._now')
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
     @patch('repositories.usuario_repository.UsuarioRepository.activar_trial_atomico')
-    def test_activar_trial_race_condition_falla_atomico(self, mock_atomico, mock_find, mock_now):
+    @patch('services.suscripcion_service.SuscripcionService.suscripcion_repo')
+    @patch('services.suscripcion_service.SuscripcionService.pago_repo')
+    def test_activar_trial_race_condition_falla_atomico(self, mock_pago_repo, mock_sus_repo, mock_atomico, mock_find, mock_now):
         """Test que si UPDATE condicional falla (race condition), se rechaza."""
         # Configurar mocks
         mock_now.return_value = datetime(2026, 10, 11, 12, 0, 0)
@@ -87,6 +92,7 @@ class TestTrialActivation(unittest.TestCase):
             'trial_inicio': None,
             'trial_fin': None
         }
+        mock_sus_repo.find_by_usuario.return_value = []  # Sin suscripciones previas
         mock_atomico.return_value = False  # UPDATE condicional falló (ya estaba usado)
 
         # Ejecutar y verificar que lanza excepción
@@ -98,7 +104,9 @@ class TestTrialActivation(unittest.TestCase):
         self.assertIn('ya utilizó', context.exception.detail)
 
     @patch('repositories.usuario_repository.UsuarioRepository.find_by_id')
-    def test_activar_trial_usuario_con_trial_previo_falla(self, mock_find):
+    @patch('services.suscripcion_service.SuscripcionService.suscripcion_repo')
+    @patch('services.suscripcion_service.SuscripcionService.pago_repo')
+    def test_activar_trial_usuario_con_trial_previo_falla(self, mock_pago_repo, mock_sus_repo, mock_find):
         """Test que un usuario con trial previo no puede activar otro trial."""
         # Configurar mock
         mock_find.return_value = {
@@ -108,6 +116,8 @@ class TestTrialActivation(unittest.TestCase):
             'trial_inicio': datetime(2026, 10, 1),
             'trial_fin': datetime(2026, 10, 16)
         }
+        mock_sus_repo.find_by_usuario.return_value = []
+        mock_pago_repo.find_by_suscripcion.return_value = []
 
         # Ejecutar y verificar que lanza excepción
         from fastapi import HTTPException

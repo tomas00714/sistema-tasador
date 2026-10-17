@@ -69,26 +69,8 @@ function showSubscriptionModal() {
             ">✕</button>
             <div class="subscription-modal-content">
                 <h2 style="margin-top: 0; margin-bottom: 10px; color: #333;">Se requiere suscripción Pro</h2>
-                <p style="color: #666; margin-bottom: 30px;">Para acceder a esta funcionalidad, necesitas una suscripción activa o activar la prueba gratuita.</p>
+                <p style="color: #666; margin-bottom: 30px;">Para acceder a esta funcionalidad, necesitas una suscripción activa.</p>
                 <div class="subscription-modal-plans" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <div class="pricing-card" style="margin: 0; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; text-align: center; background: white;">
-                        <h3 style="margin-top: 0; margin-bottom: 16px; color: #333;">Prueba gratuita</h3>
-                        <div class="pricing-price">
-                            15 días<span style="font-size: 16px; font-weight: 400; color: #666;">gratis</span>
-                        </div>
-                        <ul class="pricing-features" style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Tasaciones ilimitadas</li>
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Base de datos de comparables</li>
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Informes PDF personalizados</li>
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Integración con mapas</li>
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Colaboración en tiempo real</li>
-                            <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Soporte prioritario</li>
-                        </ul>
-                        <button class="btn btn-secondary trial-cta-modal" id="trialCtaModal">
-                            Activar prueba gratuita
-                        </button>
-                        <div id="trialMessageModal" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px; font-size: 14px;"></div>
-                    </div>
                     <div class="pricing-card" style="margin: 0; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; text-align: center; background: white;">
                         <h3 style="margin-top: 0; margin-bottom: 16px; color: #333;">Suscripción</h3>
                         <div class="pricing-price">
@@ -123,19 +105,9 @@ function showSubscriptionModal() {
                 hideSubscriptionModal();
             }
         });
-        
+
         // Handler para cerrar con Escape
         document.addEventListener('keydown', handleSubscriptionModalEscape);
-
-        // Handler para activar trial (usar SubscriptionManager compartido)
-        const trialCtaModal = document.getElementById('trialCtaModal');
-        if (trialCtaModal) {
-            trialCtaModal.addEventListener('click', function() {
-                if (window.SubscriptionManager && window.SubscriptionManager.iniciarFlujoTrial) {
-                    window.SubscriptionManager.iniciarFlujoTrial();
-                }
-            });
-        }
 
         // Handler para suscribirse (usar SubscriptionManager compartido)
         const pricingCtaModal = document.getElementById('pricingCtaModal');
@@ -145,21 +117,6 @@ function showSubscriptionModal() {
                     window.SubscriptionManager.iniciarFlujoSuscripcion();
                 }
             });
-        }
-    }
-
-    // Verificar elegibilidad para trial usando el estado centralizado (sin nueva petición)
-    if (window.SubscriptionManager && window.SubscriptionManager.estado) {
-        const estado = SubscriptionManager.estado;
-        const trialCtaModal = document.getElementById('trialCtaModal');
-        if (trialCtaModal) {
-            // Mostrar botón solo si autenticado y elegible (usando estado en caché)
-            if (estado.isAuthenticated && !estado.tieneAccesoPro && !estado.esAdmin &&
-                estado.trialInfo && !estado.trialInfo.esta_vigente && !estado.trialInfo.usado) {
-                trialCtaModal.style.display = 'block';
-            } else {
-                trialCtaModal.style.display = 'none';
-            }
         }
     }
 

@@ -113,11 +113,12 @@ async function verificarAccesoPro(forzarRecarga = false) {
         // Actualizar estado local usando función centralizada
         actualizarEstadoDesdeBackend(data);
 
+        // hasAccess combina acceso por suscripción/trial + acceso por admin
         return {
             hasAccess: tiene_acceso_pro || is_admin,
             isAuth: true,
-            tiene_acceso_pro,
-            is_admin
+            tiene_acceso_pro,  // Acceso por suscripción/trial (NO incluye admin)
+            is_admin           // Acceso por administrador
         };
     } catch (error) {
         console.error('[SubscriptionManager] Error verificando acceso Pro:', error);
@@ -166,8 +167,8 @@ async function ejecutarSiPro(action, mostrarModal = true) {
  * @param {Object} data - Respuesta del endpoint /api/suscripcion
  */
 function actualizarEstadoDesdeBackend(data) {
-    const tiene_acceso_pro = data.tiene_acceso_pro || false;
-    const is_admin = data.is_admin || false;
+    const tiene_acceso_pro = data.tiene_acceso_pro || false;  // Solo suscripción/trial, NO incluye admin
+    const is_admin = data.is_admin || false;                 // Administrador independiente
 
     // Evitar que respuestas antiguas sobrescriban actualizaciones más recientes
     const timestampActual = Date.now();
@@ -181,8 +182,8 @@ function actualizarEstadoDesdeBackend(data) {
         isAuthenticated: true,
         userId: data.usuario_id || null,
         email: data.email || null,
-        tieneAccesoPro: tiene_acceso_pro,
-        esAdmin: is_admin,
+        tieneAccesoPro: tiene_acceso_pro,  // Solo por suscripción/trial
+        esAdmin: is_admin,                 // Administrador independiente
         plan: data.plan || 'free',
         estadoSuscripcion: data.estado_suscripcion || null,
         trialInfo: data.trial_info || null,
@@ -530,10 +531,9 @@ async function activarTrial() {
         marcarStale();
         await cargarEstadoInicial();
 
-        // Redirigir a la app después de unos segundos
-        setTimeout(() => {
-            window.location.href = 'app/index.html';
-        }, 3000);
+        // Recargar la página actual para aplicar permisos
+        window.location.reload();
+
 
     } catch (error) {
         console.error('[SubscriptionManager] Error al activar trial:', error);

@@ -351,19 +351,19 @@ class TestFrontendErrorHandling(unittest.TestCase):
         # La implementación está en api-client.js handlePremiumError()
         import importlib.util
         import os
-        
+
         # Leer el archivo api-client.js
         api_client_path = os.path.join(os.path.dirname(__file__), '..', '..', 'client', 'js', 'api-client.js')
         if os.path.exists(api_client_path):
             with open(api_client_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
+
             # Verificar que existe la función handlePremiumError
             self.assertIn('handlePremiumError', content)
             # Verificar que maneja el código no_premium
             self.assertIn('no_premium', content)
-            # Verificar que abre el modal de suscripciones
-            self.assertIn('showSubscriptionModal', content)
+            # Verificar que usa SubscriptionManager para mostrar el modal
+            self.assertIn('SubscriptionManager', content)
 
 
 if __name__ == '__main__':

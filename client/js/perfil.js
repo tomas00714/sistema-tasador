@@ -65,12 +65,41 @@ function cargarDatosUsuario() {
     document.getElementById('verEmail').textContent = email;
 
     const planBadge = document.getElementById('perfilPlanBadge');
+    const trialVencimiento = document.getElementById('perfilTrialVencimiento');
+    
     if (userData.is_admin) {
         planBadge.textContent = 'Admin';
         planBadge.classList.add('perfil-badge-admin');
+        if (trialVencimiento) trialVencimiento.style.display = 'none';
     } else {
-        planBadge.textContent = 'Free';
-        planBadge.classList.remove('perfil-badge-admin');
+        // Verificar si tiene trial vigente
+        if (window.SubscriptionManager && window.SubscriptionManager.estado) {
+            const estado = SubscriptionManager.estado;
+            if (estado.trialInfo && estado.trialInfo.esta_vigente) {
+                planBadge.textContent = 'Prueba gratuita';
+                planBadge.classList.remove('perfil-badge-admin');
+                
+                // Mostrar fecha de vencimiento
+                if (trialVencimiento && estado.trialInfo.trial_fin) {
+                    const vencimiento = new Date(estado.trialInfo.trial_fin);
+                    const dia = String(vencimiento.getDate()).padStart(2, '0');
+                    const mes = String(vencimiento.getMonth() + 1).padStart(2, '0');
+                    const anio = vencimiento.getFullYear();
+                    const hora = String(vencimiento.getHours()).padStart(2, '0');
+                    const minuto = String(vencimiento.getMinutes()).padStart(2, '0');
+                    trialVencimiento.textContent = `Vence: ${dia}/${mes}/${anio} ${hora}:${minuto}`;
+                    trialVencimiento.style.display = 'inline';
+                }
+            } else {
+                planBadge.textContent = 'Free';
+                planBadge.classList.remove('perfil-badge-admin');
+                if (trialVencimiento) trialVencimiento.style.display = 'none';
+            }
+        } else {
+            planBadge.textContent = 'Free';
+            planBadge.classList.remove('perfil-badge-admin');
+            if (trialVencimiento) trialVencimiento.style.display = 'none';
+        }
     }
 }
 
