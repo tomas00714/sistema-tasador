@@ -3284,7 +3284,6 @@ input:checked + .slider:before {
 .subscription-modal-content {
     padding: 30px;
     max-width: 900px;
-    width: 100%;
 }
 
 .subscription-modal-content h2 {

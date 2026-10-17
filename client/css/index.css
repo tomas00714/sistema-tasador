@@ -276,43 +276,17 @@
     background: var(--color-white);
     border-radius: var(--radius-card);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    padding: 40px;
     max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
     border: 1px solid var(--color-border);
 }
 
-.mockup-header {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-}
-
-.mockup-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--color-border);
-}
-
-.mockup-dot:first-child {
-    background: #FF5F57;
-}
-
-.mockup-dot:nth-child(2) {
-    background: #FEBC2E;
-}
-
-.mockup-dot:nth-child(3) {
-    background: #28C840;
-}
-
-.mockup-content {
-    background: var(--color-bg-light);
+.hero-mockup-img {
+    width: 100%;
+    height: auto;
     border-radius: var(--radius-card);
-    padding: 32px;
-    min-height: 300px;
+    display: block;
 }
 
 /* Features Section */

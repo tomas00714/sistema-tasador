@@ -73,7 +73,7 @@ function showSubscriptionModal() {
                 <div class="subscription-modal-plans" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <div class="pricing-card" style="margin: 0; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; text-align: center; background: white;">
                         <h3 style="margin-top: 0; margin-bottom: 16px; color: #333;">Prueba gratuita</h3>
-                        <div class="pricing-price" style="font-size: 32px; font-weight: 700; color: #0066cc; margin-bottom: 24px;">
+                        <div class="pricing-price">
                             15 días<span style="font-size: 16px; font-weight: 400; color: #666;">gratis</span>
                         </div>
                         <ul class="pricing-features" style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
@@ -84,14 +84,14 @@ function showSubscriptionModal() {
                             <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Colaboración en tiempo real</li>
                             <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Soporte prioritario</li>
                         </ul>
-                        <button class="btn btn-secondary trial-cta-modal" id="trialCtaModal" style="width: 100%; justify-content: center; display: none; padding: 12px 24px; border: 1px solid #0066cc; background: white; color: #0066cc; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                        <button class="btn btn-secondary trial-cta-modal" id="trialCtaModal">
                             Activar prueba gratuita
                         </button>
                         <div id="trialMessageModal" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px; font-size: 14px;"></div>
                     </div>
                     <div class="pricing-card" style="margin: 0; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; text-align: center; background: white;">
                         <h3 style="margin-top: 0; margin-bottom: 16px; color: #333;">Suscripción</h3>
-                        <div class="pricing-price" style="font-size: 32px; font-weight: 700; color: #0066cc; margin-bottom: 24px;">
+                        <div class="pricing-price">
                             $15.000 ARS<span style="font-size: 16px; font-weight: 400; color: #666;">/mes</span>
                         </div>
                         <ul class="pricing-features" style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
@@ -102,7 +102,7 @@ function showSubscriptionModal() {
                             <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Colaboración en tiempo real</li>
                             <li style="padding: 8px 0; color: #666; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-check" style="color: #28a745;"></i> Soporte prioritario</li>
                         </ul>
-                        <button class="btn btn-primary pricing-cta-modal" id="pricingCtaModal" style="width: 100%; justify-content: center; padding: 12px 24px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <button class="btn btn-primary pricing-cta-modal" id="pricingCtaModal">
                             Suscribirme
                             <i class="fa-solid fa-arrow-right"></i>
                         </button>
