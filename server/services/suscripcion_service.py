@@ -574,7 +574,10 @@ class SuscripcionService:
 
         # Obtener estado de suscripción (sin incluir admin)
         estado_suscripcion = self.obtener_estado(usuario_id)
-        tiene_acceso_por_suscripcion = estado_suscripcion.get('tiene_acceso_pro', False)
+        tiene_acceso_por_suscripcion = (
+            estado_suscripcion.get('tiene_acceso_pro', False)
+            or self.trial_esta_vigente(usuario_id)
+        )
 
         # Obtener info de trial
         trial_info = self._obtener_info_trial(usuario_id)
