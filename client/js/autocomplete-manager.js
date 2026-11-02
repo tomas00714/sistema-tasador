@@ -327,10 +327,13 @@ function inicializarSuperficieTotal() {
  */
 function inicializarEstadoConservacion(tipo = 'departamento') {
     const datos = tipo === 'casa' ? datosTasacion.casa : datosTasacion.departamento;
-    
+
     inicializarAutocomplete("estadoConservacionInput", "estadoConservacionList", {
         onSelect: (item, input) => {
-            datos.estadoConservacion = item.textContent;
+            // Usar data-valor (valor numérico) para el cálculo, pero el input muestra el texto completo
+            datos.estadoConservacion = item.dataset.valor;
+            // Guardar el valor numérico en un atributo del input para recuperarlo después
+            input.dataset.valorNumerico = item.dataset.valor;
             if (tipo === 'departamento') {
                 datos.estadoConservacionCoef = parseInt(item.dataset.valor);
             }
@@ -423,6 +426,10 @@ function inicializarTipoLote() {
 
     input.addEventListener("click", () => {
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     });
 
     items.forEach(item => {
@@ -436,6 +443,7 @@ function inicializarTipoLote() {
             input.value = nuevoTipo;
             datosTasacion.lote.tipoLote = nuevoTipo;
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
 
             if (typeof actualizarEstadoBotonSiguiente === 'function') {
                 actualizarEstadoBotonSiguiente();
@@ -446,6 +454,7 @@ function inicializarTipoLote() {
     document.addEventListener("click", (e) => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
         }
     });
 }
@@ -480,7 +489,16 @@ function inicializarAutocompleteProvincia() {
         });
 
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     }
+
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
 
     input.addEventListener("click", () => {
         renderLista();
@@ -493,7 +511,7 @@ function inicializarAutocompleteProvincia() {
             const match = buscarProvincia(valorInput);
             if (match) {
                 input.value = match.nombre;
-                list.style.display = "none";
+                handleCerrar();
                 cargarLocalidadesUI(match.nombre);
                 actualizarMapa();
             }
@@ -503,13 +521,13 @@ function inicializarAutocompleteProvincia() {
     // Cerrar lista al perder el foco
     input.addEventListener("blur", () => {
         setTimeout(() => {
-            list.style.display = "none";
+            handleCerrar();
         }, 200);
     });
 
     document.addEventListener("click", (e) => {
         if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
+            handleCerrar();
         }
     });
 }
@@ -543,7 +561,16 @@ function inicializarAutocompleteLocalidad() {
         });
 
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     }
+
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
 
     input.addEventListener("click", () => {
         renderLista();
@@ -556,7 +583,7 @@ function inicializarAutocompleteLocalidad() {
             const match = buscarLocalidad(valorInput);
             if (match) {
                 input.value = match.nombre;
-                list.style.display = "none";
+                handleCerrar();
                 actualizarMapa();
             }
         }
@@ -565,13 +592,13 @@ function inicializarAutocompleteLocalidad() {
     // Cerrar lista al perder el foco
     input.addEventListener("blur", () => {
         setTimeout(() => {
-            list.style.display = "none";
+            handleCerrar();
         }, 200);
     });
 
     document.addEventListener("click", (e) => {
         if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
+            handleCerrar();
         }
     });
 }

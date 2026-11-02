@@ -284,7 +284,6 @@ var configuracionResultados = {
             { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
             { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
-            { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
             { id: "caracteristica_constructiva", label: "Características constructivas", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
@@ -296,7 +295,6 @@ var configuracionResultados = {
             { id: "superficie_homogeneizada", label: "Superficie homogeneizada", tipo: "numero", fuente: "superficie_homogeneizada" },
             { id: "ross_heidecke", label: "Ross-Heidecke", tipo: "coeficiente", fuente: "rossHeidecke" },
             { id: "superficie_cubierta", label: "Sup. Cubierta", tipo: "coeficiente", fuente: "superficieCubiertaCoef" },
-            { id: "superficie_total", label: "Sup. Total", tipo: "coeficiente", fuente: "superficieTotalCoef" },
             { id: "caracteristica_constructiva", label: "Características constructivas", tipo: "coeficiente", fuente: "caracteristicaConstructivaCoef" },
             { id: "ubicacion", label: "Ubicacion", tipo: "coeficiente_editable", es_fijo: true },
             { id: "actualizacion", label: "Actualización", tipo: "coeficiente_editable", es_fijo: true },
@@ -325,7 +323,6 @@ var configuracionResultados = {
                     superficie_homogeneizada: superficieHomogeneizada,
                     rossHeidecke,
                     superficieCubiertaCoef: parseFloat(casa.superficieCubiertaCoef) || 1,
-                    superficieTotalCoef: parseFloat(casa.superficieTotalCoef) || 1,
                     caracteristicaConstructivaCoef: parseFloat(casa.caracteristicaConstructivaCoef) || 1
                 };
             }

@@ -1,8 +1,6 @@
 import logging
 from tablas.ross_heidecke import (
-    coeficiente_ross_heidecke,
     coeficiente_depreciacion_ross_heidecke,
-    MAPEO_ESTADOS_CINCO_A_NUEVE,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,7 @@ def tasar_departamento(datos):
     # Vida útil configurable (default 80)
     vida_util = getattr(datos, "vida_util", 80) or 80
     antiguedad = max(datos.antiguedad, 0)
-    
+
     # Calcular porcentaje de vida transcurrida usando la vida útil real
     porcentaje_vida = round((antiguedad / vida_util) * 100)
     porcentaje_vida = min(max(porcentaje_vida, 0), 99)
@@ -64,33 +62,28 @@ def tasar_departamento(datos):
             "según Ross-Heidecke. Podés revisar o modificar la vida útil para recalcular."
         )
     logger.debug(f"Porcentaje de vida transcurrida: {porcentaje_vida}%")
-    
-    # Mapear los 5 estados de la interfaz a los 9 estados de la tabla
-    estado_tabla = MAPEO_ESTADOS_CINCO_A_NUEVE.get(datos.estado_conservacion, 7)
-    
-    # Obtener coeficiente K de la tabla Ross y Heidecke
-    coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, estado_tabla)
-    logger.debug(f"Coeficiente K: {coeficiente_k}")
-    
-    # Calcular coeficiente de depreciación C = 1 - k/2
-    coeficiente_depreciacion = 1 - (coeficiente_k / 2)
+
+    # Calcular coeficiente de depreciación usando la función unificada
+    coeficiente_depreciacion = coeficiente_depreciacion_ross_heidecke(
+        antiguedad, datos.estado_conservacion, vida_util
+    )
     logger.debug(f"Coeficiente de depreciación C: {coeficiente_depreciacion}")
-    
+
     # Calcular valor inicial
     valor_inicial = datos.superficie_cubierta * datos.valor_m2_referencia
     logger.debug(f"Valor inicial: {valor_inicial}")
-    
+
     # Aplicar coeficiente de depreciación
     valor_depreciado = valor_inicial * coeficiente_depreciacion
     logger.debug(f"Valor depreciado: {valor_depreciado}")
-    
+
     # Aplicar ajuste final si existe
     valor_final = valor_depreciado
     ajuste_final = datos.ajuste_final_porcentaje or 0
     if ajuste_final:
         valor_final *= (1 + ajuste_final / 100)
         logger.debug(f"Valor después de ajuste final ({ajuste_final}%): {valor_final}")
-    
+
     # Usar valor manual si se proporciona
     if datos.valor_final_manual is not None:
         valor_final = datos.valor_final_manual
@@ -125,7 +118,6 @@ def tasar_departamento(datos):
         "estado_conservacion": datos.estado_conservacion,
         "valor_m2_referencia": datos.valor_m2_referencia,
         "porcentaje_vida": porcentaje_vida,
-        "coeficiente_k": round(coeficiente_k, 4),
         "coeficiente_depreciacion": round(coeficiente_depreciacion, 4),
         "valor_inicial": round(valor_inicial, 2),
         "valor_depreciado": round(valor_depreciado, 2),

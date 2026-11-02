@@ -223,11 +223,15 @@ const OPCIONES_CARACTERISTICA_CONSTRUCTIVA = [
 ];
 
 const OPCIONES_ESTADO_CONSERVACION = [
-    { label: '1 - Excelente', valor: '1' },
+    { label: '1 - Nuevo / como nuevo', valor: '1' },
+    { label: '1.5 - Muy bueno', valor: '1.5' },
     { label: '2 - Bueno', valor: '2' },
-    { label: '3 - Regular', valor: '3' },
-    { label: '4 - Malo', valor: '4' },
-    { label: '5 - Muy malo', valor: '5' }
+    { label: '2.5 - Conservación normal', valor: '2.5' },
+    { label: '3 - Necesitado de reparaciones sencillas', valor: '3' },
+    { label: '3.5 - Necesitado de reparaciones moderadas', valor: '3.5' },
+    { label: '4 - Necesitado de reparaciones importantes', valor: '4' },
+    { label: '4.5 - Muy deteriorado', valor: '4.5' },
+    { label: '5 - Estado de demolición', valor: '5' }
 ];
 
 const OPCIONES_TIPO_LOTE = ['Medial', 'Esquina', 'Esquina larga (+30m)', 'Salida a dos calles', 'Irregular'];
@@ -242,21 +246,44 @@ const OPCIONES_UBICACION_PLANTA = [
 const OPCIONES_UBICACION_PISO_SIN_ASCENSOR = [
     { texto: 'PB', coef: 1 },
     { texto: 'PB con patio y jardín al fondo', coef: 1 },
-    { texto: '1ro', coef: 1 },
-    { texto: '2do', coef: 0.95 },
-    { texto: '3ro y 4to', coef: 0.90 },
+    { texto: '1.º', coef: 1 },
+    { texto: '2.º', coef: 0.95 },
+    { texto: '3.º y 4.º', coef: 0.90 },
     { texto: 'Último piso', coef: 0.90 }
 ];
 
 const OPCIONES_UBICACION_PISO_CON_ASCENSOR = [
     { texto: 'PB', coef: 0.90 },
     { texto: 'PB con patio y jardín al fondo', coef: 1 },
-    { texto: '1ro y 2do', coef: 0.95 },
-    { texto: '3ro y 4to', coef: 1 },
-    { texto: '5to y 6to', coef: 1.05 },
-    { texto: '7mo y 8vo', coef: 1.10 },
-    { texto: 'Pisos superiores', coef: 1.5 },
-    { texto: 'Último piso', coef: 0.90 }
+    { texto: '1.º y 2.º', coef: 0.95 },
+    { texto: '3.º y 4.º', coef: 1 },
+    { texto: '5.º', coef: 1.01 },
+    { texto: '6.º', coef: 1.02 },
+    { texto: '7.º', coef: 1.03 },
+    { texto: '8.º', coef: 1.04 },
+    { texto: '9.º', coef: 1.05 },
+    { texto: '10.º', coef: 1.06 },
+    { texto: '11.º', coef: 1.07 },
+    { texto: '12.º', coef: 1.08 },
+    { texto: '13.º', coef: 1.09 },
+    { texto: '14.º', coef: 1.10 },
+    { texto: '15.º', coef: 1.11 },
+    { texto: '16.º', coef: 1.12 },
+    { texto: '17.º', coef: 1.13 },
+    { texto: '18.º', coef: 1.14 },
+    { texto: '19.º', coef: 1.15 },
+    { texto: '20.º', coef: 1.16 },
+    { texto: '21.º', coef: 1.17 },
+    { texto: '22.º', coef: 1.18 },
+    { texto: '23.º', coef: 1.19 },
+    { texto: '24.º', coef: 1.20 },
+    { texto: '25.º', coef: 1.21 },
+    { texto: '26.º', coef: 1.22 },
+    { texto: '27.º', coef: 1.23 },
+    { texto: '28.º', coef: 1.24 },
+    { texto: '29.º', coef: 1.25 },
+    { texto: '30.º', coef: 1.26 },
+    { texto: 'Pisos superiores', coef: 1.26 }
 ];
 
 /**
@@ -267,12 +294,13 @@ const OPCIONES_UBICACION_PISO_CON_ASCENSOR = [
 function generarInputAutocompletado({ label, inputId, listId, opciones, placeholder = 'Seleccionar', value = '', disabled = false, claseInputGroup = '' }) {
     const items = opciones.map(opcion => {
         if (typeof opcion === 'string') {
-            return `<div class="autocomplete-item">${escapeHtml(opcion)}</div>`;
+            return `<div class="autocomplete-item" data-valor="${escapeHtml(opcion)}">${escapeHtml(opcion)}</div>`;
         }
         const attrs = Object.entries(opcion.attrs || {})
             .map(([k, v]) => `data-${k}="${escapeHtml(String(v))}"`)
             .join(' ');
-        return `<div class="autocomplete-item" ${attrs}>${escapeHtml(opcion.label)}</div>`;
+        const valor = opcion.valor || opcion.attrs?.valor || opcion.label;
+        return `<div class="autocomplete-item" data-valor="${escapeHtml(String(valor))}" ${attrs}>${escapeHtml(opcion.label)}</div>`;
     }).join('');
 
     const disabledAttr = disabled ? ' disabled' : '';
@@ -436,13 +464,17 @@ function generarInputCaracteristicaConstructiva({ inputId, listId, coefInputId, 
 }
 
 function generarInputEstadoConservacion({ inputId, listId, label = 'Estado de conservación', value = '', claseInputGroup = '' } = {}) {
+    // Si value es un valor numérico (ej. "1"), buscar el label correspondiente (ej. "1 - Nuevo / como nuevo")
+    const opcionEncontrada = OPCIONES_ESTADO_CONSERVACION.find(op => op.valor === value);
+    const valorAMostrar = opcionEncontrada ? opcionEncontrada.label : value;
+
     return generarInputAutocompletado({
         label,
         inputId,
         listId,
         placeholder: 'Seleccionar estado',
         opciones: OPCIONES_ESTADO_CONSERVACION.map(opcion => ({ ...opcion, attrs: { valor: opcion.valor } })),
-        value,
+        value: valorAMostrar,
         claseInputGroup
     });
 }

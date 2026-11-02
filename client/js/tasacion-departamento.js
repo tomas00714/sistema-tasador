@@ -186,8 +186,6 @@ function mostrarCaracteristicasDepartamento() {
 
             ${generarInputEstadoConservacion({ inputId: 'estadoConservacionInput', listId: 'estadoConservacionList', value: datosTasacion.departamento.estadoConservacion, claseInputGroup: 'input-2-3' })}
 
-            ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta propia', value: datosTasacion.departamento.superficieCubierta, coefValue: datosTasacion.departamento.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
-
             <div class="input-group input-2-3">
                 <label>Tiene ascensor</label>
                 <div class="switch-container-ascensor">
@@ -198,15 +196,7 @@ function mostrarCaracteristicasDepartamento() {
                 </div>
             </div>
 
-            <div class="input-group input-2-3">
-                <label>FOT</label>
-                <input type="number" id="fotDeptoInput" placeholder="Factor de ocupación total" step="0.01" min="0" value="${datosTasacion.departamento.fot != null ? datosTasacion.departamento.fot : ''}">
-            </div>
-
-            <div class="input-group input-2-3">
-                <label>FOS</label>
-                <input type="number" id="fosDeptoInput" placeholder="Factor de ocupación de suelo" step="0.01" min="0" value="${datosTasacion.departamento.fos != null ? datosTasacion.departamento.fos : ''}">
-            </div>
+            ${generarInputSuperficieCubierta({ inputId: 'superficieCubiertaInput', listId: 'superficieCubiertaList', coefInputId: 'superficieCubiertaCoef', label: 'Superficie cubierta propia', value: datosTasacion.departamento.superficieCubierta, coefValue: datosTasacion.departamento.superficieCubiertaCoef, claseInputGroup: 'input-2-3' })}
         </div>
     `;
 

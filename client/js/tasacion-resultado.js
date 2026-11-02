@@ -548,6 +548,9 @@ function recalcularConCoeficientesDepartamento() {
     r.valor_promedio_homogeneizado = valorPromedio;
     r.superficie_homogeneizada = superficieHomogeneizada;
 
+    // Actualizar rossHeidecke del resultado para que la tarjeta muestre el valor correcto
+    r.rossHeidecke = targetRossHeidecke;
+
     // El renderizado queda a cargo del llamador (mostrarPantallaResultado o reactive-coefficients)
 }
 
@@ -596,13 +599,12 @@ function recalcularConCoeficientesCasa() {
 
         // Coeficientes propios del comparable
         const compSuperficieCubierta = parseFloat(c.superficieCubiertaCoef) || 1;
-        const compSuperficieTotal = parseFloat(c.superficieTotalCoef) || 1;
         const compCalidadConstruccion = parseFloat(c.caracteristicaConstructivaCoef) || parseFloat(c.calidadConstruccionCoef) || 1;
         const compEstadoConservacion = parseFloat(c.estadoConservacionCoef) || parseFloat(c.rossHeidecke) || _coeficienteEstadoCasa(c.estadoConservacion, c.antiguedad);
 
         // Fórmula completa: valor_m2 / (todos los coeficientes)
         const valorM2Original = (Number(c.valor) || 0) / (Number(c.superficie) || 1);
-        const coeficienteTotal = compSuperficieCubierta * compSuperficieTotal * compCalidadConstruccion * compEstadoConservacion * coefUbicacion * coefActualizacion * coefPersonalizadoTotal;
+        const coeficienteTotal = compSuperficieCubierta * compCalidadConstruccion * compEstadoConservacion * coefUbicacion * coefActualizacion * coefPersonalizadoTotal;
         c.valor_m2_homogeneizado = valorM2Original / (coeficienteTotal || 1);
     });
 
@@ -643,19 +645,21 @@ function recalcularConCoeficientesCasa() {
     }
 
     const targetSuperficieCubierta = incluirSuperficieCubiertaEnCoef ? (parseFloat(casa.superficieCubiertaCoef) || 1) : 1;
-    const targetSuperficieTotal = parseFloat(casa.superficieTotalCoef) || 1;
     const targetCalidadConstruccion = parseFloat(casa.caracteristicaConstructivaCoef) || parseFloat(casa.calidadConstruccionCoef) || 1;
     // Ross-Heidecke del objetivo: el backend devuelve el coeficiente de depreciación
     // ya calculado (rossHeidecke; en resultados antiguos coeficiente_estado).
     // _coeficienteEstadoCasa queda como fallback histórico.
     const targetRossHeidecke = parseFloat(r.rossHeidecke) || parseFloat(r.coeficiente_estado) || _coeficienteEstadoCasa(casa.estadoConservacion, casa.antiguedad);
 
-    const targetCoefTotal = targetSuperficieCubierta * targetSuperficieTotal * targetCalidadConstruccion * targetRossHeidecke * targetUbicacion * targetActualizacion * targetPersonalizadoTotal;
+    const targetCoefTotal = targetSuperficieCubierta * targetCalidadConstruccion * targetRossHeidecke * targetUbicacion * targetActualizacion * targetPersonalizadoTotal;
 
     r.valor_m2 = valorPromedio * targetCoefTotal;
     r.valor_final = r.valor_m2 * superficieHomogeneizada;
     r.valor_promedio_homogeneizado = valorPromedio;
     r.superficie_homogeneizada = superficieHomogeneizada;
+
+    // Actualizar rossHeidecke del resultado para que la tarjeta muestre el valor correcto
+    r.rossHeidecke = targetRossHeidecke;
 
     // El renderizado lo realiza el llamador
 }

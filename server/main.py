@@ -394,14 +394,34 @@ def _parse_antiguedad(inmueble):
 
 
 def _parse_estado_conservacion(texto):
-    """Convierte el texto de estado de conservación a entero 1-5."""
+    """
+    Convierte el texto de estado de conservación a un valor numérico.
+
+    Acepta los 9 estados:
+    - Enteros: 1, 2, 3, 4, 5
+    - Decimales: 1.5, 2.5, 3.5, 4.5
+    - Strings: "1", "1.5", "2", etc.
+
+    Devuelve el valor numérico tal cual (para que coeficiente_depreciacion_ross_heidecke
+    lo use con el mapeo MAPEO_ESTADO_A_COLUMNA).
+
+    Returns:
+        float: Estado de conservación (1.0-5.0), o 1.0 (Excelente) como default.
+    """
     if not texto:
+        return 1.0
+
+    try:
+        # Intentar convertir a float primero (para soportar decimales)
+        estado_num = float(str(texto).strip())
+
+        if 1 <= estado_num <= 5:
+            # Redondear a 1 decimal para evitar problemas de precisión
+            return round(estado_num, 1)
+        return 1.0
+    except (ValueError, TypeError):
+        return 1.0
         return 1
-    import re
-    match = re.match(r"\s*(\d+)", str(texto))
-    if match:
-        return int(match.group(1))
-    return 1
 
 
 def _build_tasacion_lote_request(ubicacion, inmueble, comparables, ajuste, manual):

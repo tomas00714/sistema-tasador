@@ -898,8 +898,11 @@ function ReportTechnical({ selector, config }) {
         if (!isEmptyEditable(ubicacion.orientacion)) itemsExtrinsecos.push(itemTecnico('Orientación:', ubicacion.orientacion));
     }
     if (!isEmptyEditable(selector.getZonificacion())) itemsExtrinsecos.push(itemTecnico('Zonificación:', selector.getZonificacion()));
-    if (!isEmptyEditable(selector.getFOT())) itemsExtrinsecos.push(itemTecnico('FOT:', selector.getFOT()));
-    if (!isEmptyEditable(selector.getFOS())) itemsExtrinsecos.push(itemTecnico('FOS:', selector.getFOS()));
+    // FOT y FOS solo para lote y casa, no para departamento
+    if (selector.tipo !== 'departamento') {
+        if (!isEmptyEditable(selector.getFOT())) itemsExtrinsecos.push(itemTecnico('FOT:', selector.getFOT()));
+        if (!isEmptyEditable(selector.getFOS())) itemsExtrinsecos.push(itemTecnico('FOS:', selector.getFOS()));
+    }
 
     extrinsecasHTML = `
         ${itemsExtrinsecos.length ? `<div class="report-technical-grid">${itemsExtrinsecos.join('')}</div>` : ''}

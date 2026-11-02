@@ -106,7 +106,29 @@ class TasacionDepartamentoRequest(BaseModel):
 
     antiguedad: int  # años
 
-    estado_conservacion: int  # 1-5, mapeado internamente a 1-9
+    estado_conservacion: str | float  # 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 (acepta string o float)
+
+    @field_validator('estado_conservacion', mode='before')
+    @classmethod
+    def normalizar_estado_conservacion(cls, v):
+        """Normaliza el estado de conservación a string y valida que sea uno de los 9 valores permitidos."""
+        # Convertir a string si es número
+        if isinstance(v, (int, float)):
+            # Para floats enteros (2.0), convertir a int y luego a string para obtener "2" en lugar de "2.0"
+            if isinstance(v, float) and v.is_integer():
+                v_str = str(int(v))
+            else:
+                v_str = str(v)
+        else:
+            v_str = str(v).strip()
+
+        # Lista de valores permitidos
+        valores_permitidos = {'1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5'}
+
+        if v_str not in valores_permitidos:
+            raise ValueError(f"estado_conservacion debe ser uno de: {sorted(valores_permitidos)}")
+
+        return v_str
 
     vida_util: Optional[int] = 80
 
@@ -132,7 +154,29 @@ class TasacionCasaRequest(BaseModel):
 
     antiguedad: int = 0
 
-    estado_conservacion: str
+    estado_conservacion: str | float  # 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 (acepta string o float)
+
+    @field_validator('estado_conservacion', mode='before')
+    @classmethod
+    def normalizar_estado_conservacion(cls, v):
+        """Normaliza el estado de conservación a string y valida que sea uno de los 9 valores permitidos."""
+        # Convertir a string si es número
+        if isinstance(v, (int, float)):
+            # Para floats enteros (2.0), convertir a int y luego a string para obtener "2" en lugar de "2.0"
+            if isinstance(v, float) and v.is_integer():
+                v_str = str(int(v))
+            else:
+                v_str = str(v)
+        else:
+            v_str = str(v).strip()
+
+        # Lista de valores permitidos
+        valores_permitidos = {'1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5'}
+
+        if v_str not in valores_permitidos:
+            raise ValueError(f"estado_conservacion debe ser uno de: {sorted(valores_permitidos)}")
+
+        return v_str
 
     vida_util: Optional[int] = 80
 

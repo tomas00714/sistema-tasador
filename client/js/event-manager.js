@@ -108,6 +108,58 @@ function throttle(func, limit = 300) {
 }
 
 /**
+ * Ajusta la posición de la lista de autocomplete según el espacio disponible
+ * @param {HTMLElement} input - El input del autocomplete
+ * @param {HTMLElement} list - La lista de opciones
+ */
+function ajustarPosicionLista(input, list) {
+    // Obtener el contenedor scrollable (.tasacion-contenido)
+    const contenedorScroll = input.closest('.tasacion-contenido');
+    if (!contenedorScroll) return;
+
+    // Obtener rectángulos
+    const inputRect = input.getBoundingClientRect();
+    const contenedorRect = contenedorScroll.getBoundingClientRect();
+
+    // Calcular el espacio disponible
+    const espacioAbajo = contenedorRect.bottom - inputRect.bottom - 6; // 6px de gap
+    const espacioArriba = inputRect.top - contenedorRect.top - 6;
+
+    // Altura máxima de la lista (por defecto 260px)
+    const alturaMaxima = 260;
+
+    // Decidir dirección
+    if (espacioAbajo >= alturaMaxima) {
+        // Hay suficiente espacio abajo: abrir hacia abajo (comportamiento normal)
+        list.classList.remove('autocomplete-list-up');
+        list.style.top = 'calc(100% + 6px)';
+        list.style.bottom = 'auto';
+        list.style.maxHeight = `${alturaMaxima}px`;
+    } else if (espacioArriba >= alturaMaxima) {
+        // Hay suficiente espacio arriba: abrir hacia arriba
+        list.classList.add('autocomplete-list-up');
+        list.style.top = 'auto';
+        list.style.bottom = 'calc(100% + 6px)';
+        list.style.maxHeight = `${alturaMaxima}px`;
+    } else {
+        // No hay suficiente espacio en ninguna dirección: usar el mayor espacio disponible
+        if (espacioAbajo > espacioArriba) {
+            // Abrir hacia abajo con altura limitada
+            list.classList.remove('autocomplete-list-up');
+            list.style.top = 'calc(100% + 6px)';
+            list.style.bottom = 'auto';
+            list.style.maxHeight = `${Math.max(espacioAbajo, 100)}px`; // Mínimo 100px
+        } else {
+            // Abrir hacia arriba con altura limitada
+            list.classList.add('autocomplete-list-up');
+            list.style.top = 'auto';
+            list.style.bottom = 'calc(100% + 6px)';
+            list.style.maxHeight = `${Math.max(espacioArriba, 100)}px`; // Mínimo 100px
+        }
+    }
+}
+
+/**
  * Inicializa un autocomplete de forma genérica
  * @param {string} inputId - ID del input
  * @param {string} listId - ID de la lista de opciones
@@ -124,16 +176,26 @@ function inicializarAutocomplete(inputId, listId, opciones = {}) {
 
     const eventoAbrir = opciones.usarFocus ? 'focus' : 'click';
 
-    input.addEventListener(eventoAbrir, () => {
+    const handleAbrir = () => {
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        ajustarPosicionLista(input, list);
         if (opciones.onOpen) opciones.onOpen(input, list);
-    });
+    };
+
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
+
+    input.addEventListener(eventoAbrir, handleAbrir);
 
     list.querySelectorAll(".autocomplete-item").forEach(item => {
         item.addEventListener("click", () => {
+            // Mostrar el texto completo en el input, pero el callback onSelect recibirá el item completo
             input.value = item.textContent;
-            list.style.display = "none";
-            
+            handleCerrar();
+
             if (opciones.onSelect) {
                 opciones.onSelect(item, input);
             }
@@ -142,7 +204,24 @@ function inicializarAutocomplete(inputId, listId, opciones = {}) {
 
     document.addEventListener("click", (e) => {
         if (!input.parentElement.contains(e.target)) {
-            list.style.display = "none";
+            handleCerrar();
+        }
+    });
+
+    // Recalcular posición al hacer scroll del contenedor si la lista está abierta
+    const contenedorScroll = input.closest('.tasacion-contenido');
+    if (contenedorScroll) {
+        contenedorScroll.addEventListener('scroll', () => {
+            if (list.style.display === 'block') {
+                ajustarPosicionLista(input, list);
+            }
+        });
+    }
+
+    // Recalcular posición al cambiar el tamaño de la ventana si la lista está abierta
+    window.addEventListener('resize', () => {
+        if (list.style.display === 'block') {
+            ajustarPosicionLista(input, list);
         }
     });
 }

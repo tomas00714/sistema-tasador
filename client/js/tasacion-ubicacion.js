@@ -53,8 +53,11 @@ function configurarBusquedaMapa() {
     const provinciaInput = document.getElementById("provinciaInput");
     const localidadInput = document.getElementById("localidadInput");
 
+    // Contador de petición para prevenir race conditions
+    let peticionCounter = 0;
+
     const buscarConDelay = debounce(() => {
-        actualizarMapa();
+        actualizarMapa(++peticionCounter);
     }, 1200);
 
     direccionInput.addEventListener("input", buscarConDelay);
@@ -62,7 +65,7 @@ function configurarBusquedaMapa() {
     localidadInput.addEventListener("change", buscarConDelay);
 }
 
-async function actualizarMapa() {
+async function actualizarMapa(peticionId) {
     const direccionInput = document.querySelector('.form-left input[type="text"]');
     const provinciaInput = document.getElementById("provinciaInput");
     const localidadInput = document.getElementById("localidadInput");
@@ -77,17 +80,23 @@ async function actualizarMapa() {
 
     if (!direccion || !provincia || !localidad) return;
 
-    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina');
+    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina', `mapaTasacion-${peticionId}`);
 
     if (!resultado) {
-        mostrarMensajeMapa(contenedorMapa, 'No se pudo ubicar la dirección en el mapa.');
+        mostrarMensajeMapa(contenedorMapa, 'No se pudo verificar esta dirección. Revisá la calle, altura, localidad y provincia.');
         return;
     }
 
-    const { lat, lon, exacto, query } = resultado;
+    const { lat, lon, exacto, query, tipo } = resultado;
 
     if (!exacto) {
-        mostrarMensajeMapa(contenedorMapa, `No se encontró la dirección exacta. Mostrando: ${query}`);
+        if (tipo === 'calle_aproximada') {
+            mostrarMensajeMapa(contenedorMapa, 'Se encontró la calle, pero no la altura exacta. Podés arrastrar el marcador.');
+        } else if (tipo === 'localidad_aproximada') {
+            mostrarMensajeMapa(contenedorMapa, 'No se encontró la dirección. Mostrando centro de localidad. Podés arrastrar el marcador.');
+        } else {
+            mostrarMensajeMapa(contenedorMapa, `No se encontró la dirección exacta. Mostrando: ${query}`);
+        }
     }
 
     MapaCore.actualizarMarcador('mapaTasacion', { lat, lon, zoom: exacto ? 17 : 12 });

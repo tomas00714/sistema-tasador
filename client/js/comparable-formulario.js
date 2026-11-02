@@ -487,12 +487,17 @@ function inicializarFuenteComparable() {
 
     input.addEventListener("click", () => {
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     });
 
     items.forEach(item => {
         item.addEventListener("click", () => {
             input.value = item.textContent.trim();
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
             input.dispatchEvent(new Event("input"));
             input.dispatchEvent(new Event("change"));
         });
@@ -501,6 +506,7 @@ function inicializarFuenteComparable() {
     const cerrar = e => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
         }
     };
 
@@ -526,6 +532,11 @@ function inicializarAutocompleteProvinciaComparable() {
     
     if (!input || !list) return;
     
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
+    
     function renderLista(filtro = "") {
         list.innerHTML = "";
         const filtradas = filtrarProvincias(filtro);
@@ -541,27 +552,36 @@ function inicializarAutocompleteProvinciaComparable() {
             item.textContent = provincia.nombre;
             item.addEventListener("click", () => {
                 input.value = provincia.nombre;
-                list.style.display = "none";
+                handleCerrar();
                 input.dispatchEvent(new Event("input"));
                 cargarLocalidadesComparable(provincia.nombre);
             });
             list.appendChild(item);
         });
-        
+
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     }
-    
+
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
+
     input.addEventListener("focus", () => renderLista());
     input.addEventListener("input", () => {
         renderLista(input.value);
-        
+
         // Auto-select if there's an exact match (case-insensitive, sin acentos)
         const valorInput = input.value.trim();
         if (valorInput) {
             const match = buscarProvincia(valorInput);
             if (match) {
                 input.value = match.nombre;
-                list.style.display = "none";
+                handleCerrar();
                 cargarLocalidadesComparable(match.nombre);
             }
         }
@@ -570,6 +590,7 @@ function inicializarAutocompleteProvinciaComparable() {
     const cerrar = e => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
         }
     };
     
@@ -600,15 +621,24 @@ function inicializarAutocompleteLocalidadComparable() {
             item.textContent = localidad.nombre;
             item.addEventListener("click", () => {
                 input.value = localidad.nombre;
-                list.style.display = "none";
+                handleCerrar();
                 input.dispatchEvent(new Event("input"));
             });
             list.appendChild(item);
         });
-        
+
         list.style.display = "block";
+        input.parentElement.classList.add('is-open');
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     }
-    
+
+    const handleCerrar = () => {
+        list.style.display = "none";
+        input.parentElement.classList.remove('is-open');
+    };
+
     input.addEventListener("focus", () => {
         if (!input.disabled) renderLista();
     });
@@ -632,6 +662,7 @@ function inicializarAutocompleteLocalidadComparable() {
     const cerrar = e => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
         }
     };
 
@@ -678,6 +709,9 @@ function inicializarTipoLoteComparable() {
     
     input.addEventListener("click", () => {
         list.style.display = "block";
+        if (typeof ajustarPosicionLista === 'function') {
+            ajustarPosicionLista(input, list);
+        }
     });
     
     items.forEach(item => {
@@ -692,6 +726,7 @@ function inicializarTipoLoteComparable() {
     const cerrar = e => {
         if (!input.parentElement.contains(e.target)) {
             list.style.display = "none";
+            input.parentElement.classList.remove('is-open');
         }
     };
     
@@ -745,13 +780,16 @@ function configurarBusquedaMapaComparable() {
     const direccionInput = document.getElementById("compFormDireccionInput");
     const provinciaInput = document.getElementById("compFormProvinciaInput");
     const localidadInput = document.getElementById("compFormLocalidadInput");
-    
+
     if (!direccionInput || !provinciaInput || !localidadInput) return;
-    
+
+    // Contador de petición para prevenir race conditions
+    let peticionCounter = 0;
+
     const buscarConDelay = debounce(() => {
-        actualizarMapaComparable();
+        actualizarMapaComparable(++peticionCounter);
     }, 1200);
-    
+
     agregarListenerSeguro(direccionInput, "input", buscarConDelay);
     agregarListenerSeguro(provinciaInput, "change", buscarConDelay);
     agregarListenerSeguro(localidadInput, "change", buscarConDelay);
@@ -760,27 +798,33 @@ function configurarBusquedaMapaComparable() {
 /**
  * Actualiza el mapa con la dirección ingresada
  */
-async function actualizarMapaComparable() {
+async function actualizarMapaComparable(peticionId) {
     const direccion = document.getElementById("compFormDireccionInput")?.value;
     const provincia = document.getElementById("compFormProvinciaInput")?.value;
     const localidad = document.getElementById("compFormLocalidadInput")?.value;
     const mapaContainer = document.getElementById("compFormMapa");
-    
+
     if (!direccion || !provincia || !localidad) return;
-    
-    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina');
-    
+
+    const resultado = await geocodificarConFallback(direccion, localidad, provincia, 'Argentina', `compFormMapa-${peticionId}`);
+
     if (!resultado) {
-        mostrarMensajeMapa(mapaContainer, 'No se pudo ubicar la dirección en el mapa.');
+        mostrarMensajeMapa(mapaContainer, 'No se pudo verificar esta dirección. Revisá la calle, altura, localidad y provincia.');
         return;
     }
-    
-    const { lat, lon, exacto, query } = resultado;
-    
+
+    const { lat, lon, exacto, query, tipo } = resultado;
+
     if (!exacto) {
-        mostrarMensajeMapa(mapaContainer, `No se encontró la dirección exacta. Mostrando: ${query}`);
+        if (tipo === 'calle_aproximada') {
+            mostrarMensajeMapa(mapaContainer, 'Se encontró la calle, pero no la altura exacta. Podés arrastrar el marcador.');
+        } else if (tipo === 'localidad_aproximada') {
+            mostrarMensajeMapa(mapaContainer, 'No se encontró la dirección. Mostrando centro de localidad. Podés arrastrar el marcador.');
+        } else {
+            mostrarMensajeMapa(mapaContainer, `No se encontró la dirección exacta. Mostrando: ${query}`);
+        }
     }
-    
+
     if (comparableMapa && comparableMarcador) {
         comparableMapa.setView([lat, lon], exacto ? 15 : 12);
         comparableMarcador.setLatLng([lat, lon]);

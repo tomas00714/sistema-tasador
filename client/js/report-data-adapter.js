@@ -508,9 +508,7 @@ function mapearCaracteristicas(tasacion) {
             windows: '—',
             extra: [
                 { label: 'Ubicación en planta', value: valorSeguro(d.ubicacionPlanta) },
-                { label: 'Ascensor', value: d.tieneAscensor === 'si' ? 'Sí' : d.tieneAscensor === 'no' ? 'No' : '—' },
-                { label: 'FOT', value: valorSeguro(d.fot) },
-                { label: 'FOS', value: valorSeguro(d.fos) }
+                { label: 'Ascensor', value: d.tieneAscensor === 'si' ? 'Sí' : d.tieneAscensor === 'no' ? 'No' : '—' }
             ]
         };
     }

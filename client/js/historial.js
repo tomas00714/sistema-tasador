@@ -681,9 +681,6 @@ window.abrirPerfilTasacion = async function(id) {
     const fotCasa = !esLote && tasacion.casa ? (tasacion.casa.fot != null ? tasacion.casa.fot : '—') : null;
     const fosCasa = !esLote && tasacion.casa ? (tasacion.casa.fos != null ? tasacion.casa.fos : '—') : null;
 
-    const fotDepto = !esLote && tasacion.departamento ? (tasacion.departamento.fot != null ? tasacion.departamento.fot : '—') : null;
-    const fosDepto = !esLote && tasacion.departamento ? (tasacion.departamento.fos != null ? tasacion.departamento.fos : '—') : null;
-
     const hom = !esLote
         ? (tasacion.casa?.homogeneizacion || tasacion.departamento?.homogeneizacion)
         : null;
@@ -798,22 +795,6 @@ window.abrirPerfilTasacion = async function(id) {
                     <div class="perfil-card-item">
                         <div class="perfil-item-label">Ascensor</div>
                         <div class="perfil-item-value">${tieneAscensor}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="perfil-row">
-                <div class="perfil-grid-3">
-                    <div class="perfil-card-item">
-                        <div class="perfil-item-label">FOT</div>
-                        <div class="perfil-item-value">${fotDepto}</div>
-                    </div>
-                    <div class="perfil-card-item">
-                        <div class="perfil-item-label">FOS</div>
-                        <div class="perfil-item-value">${fosDepto}</div>
-                    </div>
-                    <div class="perfil-card-item">
-                        <div class="perfil-item-label">Orientación</div>
-                        <div class="perfil-item-value">${orientacion}</div>
                     </div>
                 </div>
             </div>

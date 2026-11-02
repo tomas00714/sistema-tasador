@@ -582,7 +582,9 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.superficieCubierta = document.getElementById("superficieCubiertaInput").value;
     datosTasacion.departamento.antiguedad = document.getElementById("antiguedadInput").value;
     datosTasacion.departamento.vidaUtil = document.getElementById("vidaUtilInput")?.value || 80;
-    datosTasacion.departamento.estadoConservacion = document.getElementById("estadoConservacionInput").value;
+    // Leer el valor numérico del atributo data-valor-numerico si existe, de lo contrario usar .value
+    const estadoConservacionInput = document.getElementById("estadoConservacionInput");
+    datosTasacion.departamento.estadoConservacion = estadoConservacionInput?.dataset.valorNumerico || estadoConservacionInput?.value || "";
     datosTasacion.departamento.caracteristicaConstructiva = document.getElementById("caracteristicaConstructivaInput").value;
 
     // Guardar coeficientes numéricos
@@ -590,15 +592,6 @@ function guardarDatosCaracteristicasDepartamento() {
     datosTasacion.departamento.ubicacionPisoCoef = parseFloat(document.getElementById("ubicacionPisoCoef").value) || 1;
     datosTasacion.departamento.superficieCubiertaCoef = parseFloat(document.getElementById("superficieCubiertaCoef").value) || 1;
     datosTasacion.departamento.caracteristicaConstructivaCoef = parseFloat(document.getElementById("caracteristicaConstructivaCoef").value) || 1;
-
-    const fotDeptoInput = document.getElementById("fotDeptoInput");
-    const fosDeptoInput = document.getElementById("fosDeptoInput");
-    if (fotDeptoInput) {
-        datosTasacion.departamento.fot = fotDeptoInput.value ? parseFloat(fotDeptoInput.value) : null;
-    }
-    if (fosDeptoInput) {
-        datosTasacion.departamento.fos = fosDeptoInput.value ? parseFloat(fosDeptoInput.value) : null;
-    }
 
     // El cálculo de Ross-Heidecke ahora es responsabilidad exclusiva del backend
     resultadoCalculado = false;

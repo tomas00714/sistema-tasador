@@ -1,8 +1,30 @@
 import logging
 import re
 
-# Mapeo de los 5 estados mostrados en la interfaz a los 9 estados originales de la tabla.
-# La tabla permanece intacta; este mapeo es trivial de modificar para soportar 9 estados.
+# Mapeo de los estados mostrados en la interfaz a las columnas de la tabla Ross-Heidecke.
+# Se usa directamente en coeficiente_depreciacion_ross_heidecke para simplificar el código.
+#
+# IMPORTANTE: Este mapeo rompe la compatibilidad con los resultados históricos para mantener
+# el orden semántico correcto. Los estados 4 y 5 históricos cambiarán sus resultados.
+#
+# Antes del cambio (MAPEO_ESTADOS_CINCO_A_NUEVE):
+#   1 → 1.0, 2 → 2.0, 3 → 3.0, 4 → 3.5, 5 → 4.0
+#
+# Después del cambio (mapeo directo semántico):
+#   1 → 1.0, 2 → 2.0, 3 → 3.0, 4 → 4.0, 5 → 5.0
+MAPEO_ESTADO_A_COLUMNA = {
+    1.0: 1.00,   # Nuevo / como nuevo
+    1.5: 1.50,   # Muy bueno
+    2.0: 2.00,   # Bueno
+    2.5: 2.50,   # Conservación normal
+    3.0: 3.00,   # Necesitado de reparaciones sencillas
+    3.5: 3.50,   # Necesitado de reparaciones moderadas
+    4.0: 4.00,   # Necesitado de reparaciones importantes
+    4.5: 4.50,   # Muy deteriorado
+    5.0: 5.00,   # Estado de demolición
+}
+
+# Mapeo histórico obsoleto, se mantiene por compatibilidad con código que podría usarlo directamente.
 MAPEO_ESTADOS_CINCO_A_NUEVE = {
     1: 1,   # Excelente
     2: 3,   # Bueno -> Buena
@@ -13,15 +35,46 @@ MAPEO_ESTADOS_CINCO_A_NUEVE = {
 
 
 def _parse_estado_ross_heidecke(estado):
-    """Extrae el primer dígito de un string de estado o devuelve el entero."""
+    """
+    Parsea el estado de conservación a un valor numérico.
+
+    Acepta:
+    - Enteros: 1, 2, 3, 4, 5
+    - Decimales: 1.5, 2.5, 3.5, 4.5
+    - Strings: "1", "1.5", "2", etc.
+
+    Returns:
+        float: Valor numérico del estado (1.0, 1.5, 2.0, etc.), o 0 si es inválido.
+    """
     if estado is None:
         return 0
+
+    # Si ya es entero, validar rango (solo 1-5 del frontend)
     if isinstance(estado, int):
+        return float(estado) if 1 <= estado <= 5 else 0
+
+    # Si es float, validar rango
+    if isinstance(estado, float):
         return estado if 1 <= estado <= 5 else 0
-    match = re.search(r"\d+", str(estado))
-    if match:
-        return int(match.group(0))
-    return 0
+
+    # Si es string, intentar convertir a número
+    try:
+        estado_str = str(estado).strip()
+        if not estado_str:
+            return 0
+
+        # Intentar convertir a float (para soportar decimales)
+        estado_num = float(estado_str)
+
+        if 1 <= estado_num <= 5:
+            # Redondear a 1 decimal para evitar problemas de precisión
+            return round(estado_num, 1)
+        return 0
+    except (ValueError, TypeError):
+        return 0
+
+
+
 
 
 def coeficiente_depreciacion_ross_heidecke(antiguedad, estado, vida_util=80):
@@ -30,7 +83,7 @@ def coeficiente_depreciacion_ross_heidecke(antiguedad, estado, vida_util=80):
 
     Args:
         antiguedad: Años de antigüedad.
-        estado: Estado de conservación (1-5, o string del frontend).
+        estado: Estado de conservación (1-5, 1.5, 2.5, etc., o string del frontend).
         vida_util: Vida útil en años (default 80).
 
     Returns:
@@ -43,8 +96,29 @@ def coeficiente_depreciacion_ross_heidecke(antiguedad, estado, vida_util=80):
     ant = max(ant, 0)
     porcentaje_vida = round((ant / vu) * 100)
     porcentaje_vida = min(max(porcentaje_vida, 0), 99)
-    estado_tabla = MAPEO_ESTADOS_CINCO_A_NUEVE.get(_parse_estado_ross_heidecke(estado), 7)
-    coeficiente_k = coeficiente_ross_heidecke(porcentaje_vida, estado_tabla)
+
+    # Parsear estado a valor numérico (1.0, 1.5, 2.0, etc.)
+    estado_num = _parse_estado_ross_heidecke(estado)
+
+    # Si el estado es inválido (0), usar default 4.0 (Muy malo)
+    if estado_num == 0:
+        estado_num = 4.0
+
+    # Mapeo del estado numérico a la columna de la tabla Ross-Heidecke
+    estado_columna = MAPEO_ESTADO_A_COLUMNA.get(estado_num, 4.00)
+
+    # Obtener valor de la tabla
+    tabla_porcentaje = TABLA_ROSS_HEIDECKE.get(porcentaje_vida)
+    if tabla_porcentaje is None:
+        logger.warning(f"Porcentaje de vida {porcentaje_vida} no encontrado en tabla Ross-Heidecke, usando coeficiente 1.0")
+        return 1.0
+
+    valor_tabla = tabla_porcentaje.get(estado_columna)
+    if valor_tabla is None:
+        logger.warning(f"Valor de tabla no encontrado para porcentaje {porcentaje_vida} y estado {estado_columna}, usando coeficiente 1.0")
+        return 1.0
+
+    coeficiente_k = valor_tabla / 100
     return 1 - (coeficiente_k / 2)
 
 
@@ -1154,27 +1228,24 @@ TABLA_ROSS_HEIDECKE = {
 logger = logging.getLogger(__name__)
 
 
-def coeficiente_ross_heidecke(
-    porcentaje_vida,
-    estado
-):
+def _obtener_valor_tabla_ross_heidecke(porcentaje_vida, estado_indice):
     """
-    Calcula el coeficiente K de Ross y Heidecke.
-    
+    Obtiene el valor K de la tabla Ross-Heidecke para un porcentaje y estado.
+
     Args:
         porcentaje_vida: Porcentaje de vida transcurrida (0-99)
-        estado: Estado del bien (1-9, donde 1=EXCELENTE, 9=IRRECUPERABLE)
-    
+        estado_indice: Índice del estado (1-9)
+
     Returns:
-        Coeficiente K (valor de la tabla dividido por 100)
+        float: Coeficiente K (valor de la tabla dividido por 100)
     """
     try:
         tabla_porcentaje = TABLA_ROSS_HEIDECKE.get(porcentaje_vida)
-        
+
         if tabla_porcentaje is None:
             logger.warning(f"Porcentaje de vida {porcentaje_vida} no encontrado en tabla Ross-Heidecke, usando coeficiente 1.0")
             return 1.00
-        
+
         # Mapear estado (1-9) a los valores de la tabla (1.00-5.00)
         estado_valores = {
             1: 1.00,   # EXCELENTE
@@ -1187,21 +1258,38 @@ def coeficiente_ross_heidecke(
             8: 4.50,   # DEMOLICION
             9: 5.00    # IRRECUPERABLE
         }
-        
-        estado_valor = estado_valores.get(estado)
-        
+
+        estado_valor = estado_valores.get(estado_indice)
+
         if estado_valor is None:
-            logger.warning(f"Estado {estado} no válido en tabla Ross-Heidecke, usando coeficiente 1.0")
+            logger.warning(f"Estado {estado_indice} no válido en tabla Ross-Heidecke, usando coeficiente 1.0")
             return 1.00
-        
+
         valor_tabla = tabla_porcentaje.get(estado_valor)
-        
+
         if valor_tabla is None:
-            logger.warning(f"Valor de tabla no encontrado para porcentaje {porcentaje_vida} y estado {estado}, usando coeficiente 1.0")
+            logger.warning(f"Valor de tabla no encontrado para porcentaje {porcentaje_vida} y estado {estado_indice}, usando coeficiente 1.0")
             return 1.00
-        
+
         # El valor obtenido en la tabla debe dividirse por cien para obtener el coeficiente K
         return valor_tabla / 100
     except Exception as e:
         logger.error(f"Error al calcular coeficiente Ross-Heidecke: {e}")
         return 1.00
+
+
+def coeficiente_ross_heidecke(
+    porcentaje_vida,
+    estado
+):
+    """
+    Calcula el coeficiente K de Ross y Heidecke.
+
+    Args:
+        porcentaje_vida: Porcentaje de vida transcurrida (0-99)
+        estado: Estado del bien (1-9, donde 1=EXCELENTE, 9=IRRECUPERABLE)
+
+    Returns:
+        Coeficiente K (valor de la tabla dividido por 100)
+    """
+    return _obtener_valor_tabla_ross_heidecke(porcentaje_vida, estado)
